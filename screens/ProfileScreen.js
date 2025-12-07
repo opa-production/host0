@@ -141,18 +141,17 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.linkText}>Upload Documents</Text>
             <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
           </TouchableOpacity>
-        </View>
 
-        {/* Logout Button */}
-        <View style={styles.logoutSection}>
           <TouchableOpacity 
-            style={styles.logoutButton}
-            onPress={handleLogout}
+            style={styles.linkItem}
+            onPress={() => navigation.navigate('Feedback')}
           >
-            <Ionicons name="log-out-outline" size={20} color="#FF1577" style={styles.logoutIcon} />
-            <Text style={styles.logoutText}>Logout</Text>
+            <Ionicons name="chatbox-ellipses-outline" size={22} color="#666666" style={styles.linkIcon} />
+            <Text style={styles.linkText}>Share Feedback</Text>
+            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
           </TouchableOpacity>
         </View>
+
       </ScrollView>
     </View>
   );
@@ -300,28 +299,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-SemiBold',
     color: '#000000',
-  },
-  logoutSection: {
-    paddingHorizontal: 24,
-    marginTop: 16,
-    marginBottom: 32,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderWidth: 2,
-    borderColor: '#FF1577',
-    borderRadius: 30,
-    backgroundColor: 'transparent',
-  },
-  logoutIcon: {
-    marginRight: 8,
-  },
-  logoutText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
   },
 });
