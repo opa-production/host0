@@ -145,18 +145,23 @@ export default function MyListingsScreen({ navigation }) {
             </View>
           )}
           
-          {/* Status Badge */}
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
-          </View>
-
-          {/* Swipe Indicator */}
-          {index < allListings.length - 1 && (
-            <View style={styles.swipeIndicator}>
-              <Ionicons name="chevron-up" size={16} color="#ffffff" />
-              <Text style={styles.swipeText}>Swipe</Text>
+          {/* Bottom Indicators */}
+          <View style={styles.imageBottomBar}>
+            {/* Swipe Indicator - Centered */}
+            {index < allListings.length - 1 && (
+              <View style={styles.swipeIndicator}>
+                <Ionicons name="chevron-up" size={16} color="#ffffff" />
+                <Text style={styles.swipeText}>Swipe</Text>
+              </View>
+            )}
+            
+            {/* Page Indicator - Right */}
+            <View style={styles.pageIndicator}>
+              <Text style={styles.pageIndicatorText}>
+                {index + 1} / {allListings.length}
+              </Text>
             </View>
-          )}
+          </View>
         </View>
 
         {/* Content Section */}
@@ -176,38 +181,46 @@ export default function MyListingsScreen({ navigation }) {
             />
           </View>
 
-          {/* Details */}
+          {/* Details - 2 Columns */}
           <View style={styles.detailsSection}>
-            <View style={styles.detailRow}>
-              <Ionicons name="location-outline" size={16} color="#666666" />
-              <Text style={styles.detailText}>{item.location}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Ionicons name="cash-outline" size={16} color="#666666" />
-              <Text style={styles.detailText}>{item.price}</Text>
-            </View>
-
-            {/* Ratings */}
-            <View style={styles.detailRow}>
-              <Ionicons name="star" size={16} color="#666666" />
-              <Text style={styles.detailText}>
-                {item.totalRatings?.toFixed(1) || 'N/A'} ({item.ratingCount || 0} reviews)
-              </Text>
-            </View>
-
-            {isCar && (
-              <>
+            <View style={styles.detailsGrid}>
+              <View style={styles.detailColumn}>
                 <View style={styles.detailRow}>
-                  <Ionicons name="people-outline" size={16} color="#666666" />
-                  <Text style={styles.detailText}>{item.seats} seats</Text>
+                  <Ionicons name="location-outline" size={16} color="#666666" />
+                  <Text style={styles.detailText}>{item.location}</Text>
                 </View>
+                
                 <View style={styles.detailRow}>
-                  <Ionicons name="flash-outline" size={16} color="#666666" />
-                  <Text style={styles.detailText}>{item.fuelType} • {item.transmission}</Text>
+                  <Ionicons name="cash-outline" size={16} color="#666666" />
+                  <Text style={styles.detailText}>{item.price}</Text>
                 </View>
-              </>
-            )}
+
+                {/* Ratings */}
+                <View style={styles.detailRow}>
+                  <Ionicons name="star" size={16} color="#666666" />
+                  <Text style={styles.detailText}>
+                    {item.totalRatings?.toFixed(1) || 'N/A'} ({item.ratingCount || 0})
+                  </Text>
+                </View>
+              </View>
+
+              {isCar && (
+                <View style={styles.detailColumn}>
+                  <View style={styles.detailRow}>
+                    <Ionicons name="people-outline" size={16} color="#666666" />
+                    <Text style={styles.detailText}>{item.seats} seats</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Ionicons name="flash-outline" size={16} color="#666666" />
+                    <Text style={styles.detailText}>{item.fuelType}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Ionicons name="settings-outline" size={16} color="#666666" />
+                    <Text style={styles.detailText}>{item.transmission}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
 
             {/* Description */}
             {item.description && (
@@ -224,12 +237,22 @@ export default function MyListingsScreen({ navigation }) {
                 <Text style={styles.statLabel}>
                   {isCar ? 'Active Rentals' : 'Active Bookings'}
                 </Text>
+                <Text style={styles.statDetail}>
+                  {isCar 
+                    ? `${item.activeRentals} currently rented` 
+                    : `${item.activeBookings} ongoing bookings`}
+                </Text>
               </View>
               <View style={styles.statBox}>
                 <Text style={styles.statValue}>
                   {isCar ? item.totalBookings : item.totalBookings}
                 </Text>
                 <Text style={styles.statLabel}>Total Bookings</Text>
+                <Text style={styles.statDetail}>
+                  {isCar 
+                    ? `${item.totalBookings} total rentals` 
+                    : `${item.totalBookings} completed`}
+                </Text>
               </View>
             </View>
           </View>
@@ -279,20 +302,23 @@ export default function MyListingsScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       
-      {/* Floating Back Button */}
-      <TouchableOpacity
-        style={[styles.backButton, { top: insets.top + 16 }]}
-        onPress={() => navigation.goBack()}
-        activeOpacity={1}
-      >
-        <Ionicons name="arrow-back" size={24} color="#ffffff" />
-      </TouchableOpacity>
-
-      {/* Page Indicator */}
-      <View style={[styles.pageIndicator, { top: insets.top + 60 }]}>
-        <Text style={styles.pageIndicatorText}>
-          {currentIndex + 1} / {allListings.length}
-        </Text>
+      {/* Floating Back Button and Status Badge */}
+      <View style={[styles.topBar, { top: insets.top + 16 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={1}
+        >
+          <Ionicons name="arrow-back" size={24} color="#ffffff" />
+        </TouchableOpacity>
+        
+        {allListings[currentIndex] && (
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusText}>
+              {getStatusText(allListings[currentIndex].status)}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Swipeable Cards */}
@@ -318,10 +344,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
-  backButton: {
+  topBar: {
     position: 'absolute',
     left: 16,
+    right: 16,
     zIndex: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
@@ -329,10 +361,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  statusBadge: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  statusText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#ffffff',
+  },
+  imageBottomBar: {
+    position: 'absolute',
+    bottom: 24,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   pageIndicator: {
     position: 'absolute',
-    right: 16,
-    zIndex: 10,
+    right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -363,24 +414,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statusBadge: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#ffffff',
-  },
   swipeIndicator: {
-    position: 'absolute',
-    bottom: 24,
-    alignSelf: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     paddingVertical: 6,
@@ -425,6 +459,13 @@ const styles = StyleSheet.create({
   detailsSection: {
     marginBottom: 20,
   },
+  detailsGrid: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  detailColumn: {
+    flex: 1,
+  },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -435,6 +476,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Nunito-Regular',
     color: '#666666',
+    flex: 1,
   },
   descriptionContainer: {
     marginTop: 12,
@@ -470,6 +512,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Nunito-Regular',
     color: '#666666',
+    marginBottom: 2,
+  },
+  statDetail: {
+    fontSize: 10,
+    fontFamily: 'Nunito-Regular',
+    color: '#999999',
   },
   actionsSection: {
     flexDirection: 'row',
@@ -501,10 +549,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#ffffff',
     paddingVertical: 14,
     borderRadius: 16,
     gap: 8,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#e8e8e8',
   },
   updateButtonText: {
     fontSize: 15,
