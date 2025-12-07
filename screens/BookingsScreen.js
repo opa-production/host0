@@ -1,8 +1,11 @@
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function BookingsScreen() {
+export default function BookingsScreen({ navigation }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [fadeAnim] = useState(new Animated.Value(0));
+
   // Mock booking data
   const mockBooking = {
     id: '1',
@@ -12,9 +15,23 @@ export default function BookingsScreen() {
     startDate: '2024-01-15',
     endDate: '2024-01-20',
     status: 'active', // active, completed, upcoming
-    totalAmount: '$450',
-    location: 'San Francisco, CA',
+    totalAmount: 'KSh 45,000',
+    location: 'Nakuru, Kenya',
   };
+
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -42,8 +59,117 @@ export default function BookingsScreen() {
     }
   };
 
+  const SkeletonBox = ({ width, height, style }) => {
+    const [pulseAnim] = useState(new Animated.Value(0.3));
+
+    useEffect(() => {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.7,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0.3,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }, []);
+
+    return (
+      <Animated.View
+        style={[
+          {
+            width,
+            height,
+            backgroundColor: '#e8e8e8',
+            borderRadius: 8,
+            opacity: pulseAnim,
+          },
+          style,
+        ]}
+      />
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+        <ScrollView 
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Skeleton */}
+          <View style={styles.header}>
+            <View style={styles.headerTop}>
+              <View>
+                <SkeletonBox width={140} height={32} style={{ marginBottom: 8 }} />
+                <SkeletonBox width={200} height={16} />
+              </View>
+              <SkeletonBox width={48} height={48} style={{ borderRadius: 24 }} />
+            </View>
+          </View>
+
+          {/* Booking Card Skeleton */}
+          <View style={styles.bookingCard}>
+            {/* Image Skeleton */}
+            <SkeletonBox width="100%" height={200} style={{ borderRadius: 0 }} />
+
+            {/* Content Skeleton */}
+            <View style={styles.cardContent}>
+              {/* Header Row Skeleton */}
+              <View style={styles.cardHeader}>
+                <View style={{ flex: 1 }}>
+                  <SkeletonBox width={120} height={20} style={{ marginBottom: 8 }} />
+                  <SkeletonBox width={150} height={14} />
+                </View>
+                <SkeletonBox width={80} height={24} style={{ borderRadius: 12 }} />
+              </View>
+
+              {/* Renter Info Skeleton */}
+              <View style={styles.renterInfo}>
+                <SkeletonBox width={16} height={16} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={100} height={14} />
+              </View>
+
+              {/* Date Range Skeleton */}
+              <View style={styles.dateRange}>
+                <View style={styles.dateItem}>
+                  <SkeletonBox width={16} height={16} style={{ borderRadius: 8 }} />
+                  <View style={styles.dateTextContainer}>
+                    <SkeletonBox width={70} height={12} style={{ marginBottom: 4 }} />
+                    <SkeletonBox width={100} height={14} />
+                  </View>
+                </View>
+                <View style={styles.dateItem}>
+                  <SkeletonBox width={16} height={16} style={{ borderRadius: 8 }} />
+                  <View style={styles.dateTextContainer}>
+                    <SkeletonBox width={60} height={12} style={{ marginBottom: 4 }} />
+                    <SkeletonBox width={100} height={14} />
+                  </View>
+                </View>
+              </View>
+
+              {/* Amount Row Skeleton */}
+              <View style={styles.amountRow}>
+                <SkeletonBox width={100} height={14} />
+                <SkeletonBox width={120} height={20} />
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       <ScrollView 
         contentContainerStyle={styles.content}
@@ -51,8 +177,19 @@ export default function BookingsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Bookings</Text>
-          <Text style={styles.subtitle}>Manage your bookings</Text>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.title}>Bookings</Text>
+              <Text style={styles.subtitle}>Manage your bookings</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={() => navigation.navigate('Notifications')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="notifications-outline" size={24} color="#000000" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Booking Card */}
@@ -116,7 +253,7 @@ export default function BookingsScreen() {
           </View>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -132,6 +269,27 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 24,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  notificationButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f8f8f8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
     fontSize: 32,

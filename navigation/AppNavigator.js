@@ -28,6 +28,7 @@ import UserAgreementScreen from '../screens/UserAgreementScreen';
 import LiabilityInsuranceScreen from '../screens/LiabilityInsuranceScreen';
 import IntellectualPropertyScreen from '../screens/IntellectualPropertyScreen';
 import MapScreen from '../screens/MapScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -98,6 +99,15 @@ export default function AppNavigator() {
         
         {/* Map Screen */}
         <Stack.Screen name="Map" component={MapScreen} />
+        
+        {/* Notifications Screen */}
+        <Stack.Screen 
+          name="Notifications" 
+          component={NotificationsScreen}
+          options={{
+            tabBarStyle: { display: 'none' },
+          }}
+        />
         
         {/* Settings and Related Screens */}
         <Stack.Screen name="Settings" component={SettingsScreen} />

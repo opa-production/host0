@@ -7,10 +7,10 @@ import MapView from 'react-native-maps';
 export default function MapScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
-  // Default location: San Francisco
+  // Default location: Nakuru, Kenya
   const initialRegion = {
-    latitude: 37.7749,
-    longitude: -122.4194,
+    latitude: -0.3031,
+    longitude: 36.0800,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   };

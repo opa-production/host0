@@ -1,8 +1,11 @@
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function HomeScreen({ navigation }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [fadeAnim] = useState(new Animated.Value(0));
+
   // TODO: Replace with actual data from API/context
   const carData = {
     totalCars: 5,
@@ -18,6 +21,20 @@ export default function HomeScreen({ navigation }) {
     otherServices: 0,
   };
 
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const StatItem = ({ label, value }) => (
     <View style={styles.statItem}>
       <Text style={styles.statValue}>{value}</Text>
@@ -25,8 +42,118 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 
+  const SkeletonBox = ({ width, height, style }) => {
+    const [pulseAnim] = useState(new Animated.Value(0.3));
+
+    useEffect(() => {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.7,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0.3,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }, []);
+
+    return (
+      <Animated.View
+        style={[
+          {
+            width,
+            height,
+            backgroundColor: '#e8e8e8',
+            borderRadius: 8,
+            opacity: pulseAnim,
+          },
+          style,
+        ]}
+      />
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+        <ScrollView 
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Skeleton */}
+          <View style={styles.header}>
+            <View style={styles.headerTop}>
+              <View>
+                <SkeletonBox width={120} height={32} style={{ marginBottom: 8 }} />
+                <SkeletonBox width={180} height={16} />
+              </View>
+              <SkeletonBox width={48} height={48} style={{ borderRadius: 24 }} />
+            </View>
+          </View>
+
+          {/* Card Skeleton */}
+          <View style={styles.card}>
+            {/* Section Header Skeleton */}
+            <View style={styles.sectionHeader}>
+              <SkeletonBox width={16} height={16} style={{ borderRadius: 8 }} />
+              <SkeletonBox width={100} height={14} />
+            </View>
+
+            {/* Stats Grid Skeleton */}
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <SkeletonBox width={40} height={20} style={{ marginBottom: 4 }} />
+                <SkeletonBox width={80} height={11} />
+              </View>
+              <View style={styles.statItem}>
+                <SkeletonBox width={40} height={20} style={{ marginBottom: 4 }} />
+                <SkeletonBox width={100} height={11} />
+              </View>
+              <View style={styles.statItem}>
+                <SkeletonBox width={40} height={20} style={{ marginBottom: 4 }} />
+                <SkeletonBox width={90} height={11} />
+              </View>
+              <View style={styles.statItem}>
+                <SkeletonBox width={40} height={20} style={{ marginBottom: 4 }} />
+                <SkeletonBox width={70} height={11} />
+              </View>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.divider} />
+
+            {/* Services Section Skeleton */}
+            <View style={styles.sectionHeader}>
+              <SkeletonBox width={16} height={16} style={{ borderRadius: 8 }} />
+              <SkeletonBox width={80} height={14} />
+            </View>
+
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <SkeletonBox width={40} height={20} style={{ marginBottom: 4 }} />
+                <SkeletonBox width={90} height={11} />
+              </View>
+              <View style={styles.statItem}>
+                <SkeletonBox width={40} height={20} style={{ marginBottom: 4 }} />
+                <SkeletonBox width={80} height={11} />
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       <ScrollView 
         contentContainerStyle={styles.content}
@@ -86,7 +213,7 @@ export default function HomeScreen({ navigation }) {
           )}
         </View>
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
