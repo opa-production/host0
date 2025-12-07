@@ -34,6 +34,7 @@ import FinanceScreen from '../screens/FinanceScreen';
 import ActiveBookingScreen from '../screens/ActiveBookingScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
 import OpaClientDownloadScreen from '../screens/OpaClientDownloadScreen';
+import SupaHostScreen from '../screens/SupaHostScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
 import UploadDocsScreen from '../screens/UploadDocsScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
@@ -147,6 +148,12 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="OpaClientDownload" 
           component={OpaClientDownloadScreen}
+        />
+
+        {/* SupaHost Screen */}
+        <Stack.Screen 
+          name="SupaHost" 
+          component={SupaHostScreen}
         />
         
         {/* Update Profile Screen */}
