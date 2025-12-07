@@ -8,6 +8,7 @@ export default function HomeScreen({ navigation }) {
     totalCars: 5,
     activelyListed: 3,
     activeRentals: 2,
+    available: 2,
   };
 
   const serviceData = {
@@ -19,10 +20,8 @@ export default function HomeScreen({ navigation }) {
 
   const StatItem = ({ label, value }) => (
     <View style={styles.statItem}>
-      <View style={styles.statContent}>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
-      </View>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 
@@ -50,55 +49,42 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Car Details Card */}
+        {/* Combined Dashboard Card */}
         <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="car-outline" size={18} color="#000000" />
-            <Text style={styles.cardTitle}>Car Details</Text>
+          {/* Car Details Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="car-outline" size={18} color="#000000" />
+              <Text style={styles.sectionTitle}>Car Details</Text>
+            </View>
+            <View style={styles.statsGrid}>
+              <StatItem label="Total Cars" value={carData.totalCars} />
+              <StatItem label="Actively Listed" value={carData.activelyListed} />
+              <StatItem label="Active Rentals" value={carData.activeRentals} />
+              <StatItem label="Available" value={carData.available} />
+            </View>
           </View>
-          
-          <View style={styles.statsContainer}>
-            <StatItem 
-              label="Total Cars" 
-              value={carData.totalCars} 
-            />
-            <StatItem 
-              label="Actively Listed" 
-              value={carData.activelyListed} 
-            />
-            <StatItem 
-              label="Active Rentals" 
-              value={carData.activeRentals} 
-            />
-          </View>
-        </View>
 
-        {/* Services Card */}
-        {serviceData.hasServices && (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="construct-outline" size={18} color="#000000" />
-              <Text style={styles.cardTitle}>Services</Text>
-            </View>
-            
-            <View style={styles.statsContainer}>
-              <StatItem 
-                label="Chauffeurs" 
-                value={serviceData.chauffeurs} 
-              />
-              <StatItem 
-                label="Road Trips" 
-                value={serviceData.roadTrips} 
-              />
-              {serviceData.otherServices > 0 && (
-                <StatItem 
-                  label="Other Services" 
-                  value={serviceData.otherServices} 
-                />
-              )}
-            </View>
-          </View>
-        )}
+          {/* Services Section */}
+          {serviceData.hasServices && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons name="construct-outline" size={18} color="#000000" />
+                  <Text style={styles.sectionTitle}>Services</Text>
+                </View>
+                <View style={styles.statsGrid}>
+                  <StatItem label="Chauffeurs" value={serviceData.chauffeurs} />
+                  <StatItem label="Road Trips" value={serviceData.roadTrips} />
+                  {serviceData.otherServices > 0 && (
+                    <StatItem label="Other Services" value={serviceData.otherServices} />
+                  )}
+                </View>
+              </View>
+            </>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -115,7 +101,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   headerTop: {
     flexDirection: 'row',
@@ -150,49 +136,57 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   card: {
-    backgroundColor: '#f8f8f8',
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
     padding: 12,
-    marginBottom: 16,
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
-  cardHeader: {
+  section: {
+    marginBottom: 2,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    gap: 8,
+    marginBottom: 8,
+    gap: 6,
   },
-  cardTitle: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 14,
     fontFamily: 'Nunito-Bold',
     color: '#000000',
   },
-  statsContainer: {
-    gap: 8,
+  divider: {
+    height: 1,
+    backgroundColor: '#e8e8e8',
+    marginVertical: 10,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   statItem: {
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
-  },
-  statContent: {
-    flex: 1,
+    width: '47%',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Nunito-Bold',
     color: '#000000',
     marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Nunito-Regular',
     color: '#666666',
   },
