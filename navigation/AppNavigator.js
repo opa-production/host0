@@ -32,6 +32,7 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import AddPaymentMethodScreen from '../screens/AddPaymentMethodScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
 import UploadDocsScreen from '../screens/UploadDocsScreen';
+import MyListingsScreen from '../screens/MyListingsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -128,6 +129,12 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="UploadDocs" 
           component={UploadDocsScreen}
+        />
+        
+        {/* My Listings Screen */}
+        <Stack.Screen 
+          name="MyListings" 
+          component={MyListingsScreen}
         />
         
         {/* Settings and Related Screens */}
