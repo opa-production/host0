@@ -30,6 +30,8 @@ import IntellectualPropertyScreen from '../screens/IntellectualPropertyScreen';
 import MapScreen from '../screens/MapScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import AddPaymentMethodScreen from '../screens/AddPaymentMethodScreen';
+import FinanceScreen from '../screens/FinanceScreen';
+import ActiveBookingScreen from '../screens/ActiveBookingScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
 import UploadDocsScreen from '../screens/UploadDocsScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
@@ -119,6 +121,18 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="AddPaymentMethod" 
           component={AddPaymentMethodScreen}
+        />
+
+        {/* Active Booking Screen */}
+        <Stack.Screen 
+          name="ActiveBooking" 
+          component={ActiveBookingScreen}
+        />
+        
+        {/* Finance Screen */}
+        <Stack.Screen 
+          name="Finance" 
+          component={FinanceScreen}
         />
         
         {/* Update Profile Screen */}

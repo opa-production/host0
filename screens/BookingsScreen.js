@@ -211,8 +211,28 @@ export default function BookingsScreen({ navigation }) {
                   <Ionicons name="location-outline" size={14} color="#666666" /> {mockBooking.location}
                 </Text>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(mockBooking.status) + '15' }]}>
-                <Text style={[styles.statusText, { color: getStatusColor(mockBooking.status) }]}>
+              <View
+                style={[
+                  styles.statusBadge,
+                  {
+                    backgroundColor:
+                      mockBooking.status === 'active'
+                        ? '#ffffff'
+                        : getStatusColor(mockBooking.status) + '15',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusText,
+                    {
+                      color:
+                        mockBooking.status === 'active'
+                          ? '#2e8b57'
+                          : getStatusColor(mockBooking.status),
+                    },
+                  ]}
+                >
                   {getStatusText(mockBooking.status)}
                 </Text>
               </View>
@@ -246,6 +266,25 @@ export default function BookingsScreen({ navigation }) {
             <View style={styles.amountRow}>
               <Text style={styles.amountLabel}>Total Amount</Text>
               <Text style={styles.amountValue}>{mockBooking.totalAmount}</Text>
+            </View>
+
+            {/* Actions */}
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => navigation.navigate('Messages')}
+                activeOpacity={0.9}
+              >
+                <Ionicons name="chatbubble-ellipses-outline" size={18} color="#111111" />
+                <Text style={styles.secondaryButtonText}>Message renter</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => navigation.navigate('ActiveBooking')}
+                activeOpacity={0.9}
+              >
+                <Text style={styles.primaryButtonText}>View details</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -404,5 +443,46 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Nunito-Bold',
     color: '#000000',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 16,
+  },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: '#111111',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontFamily: 'Nunito-Bold',
+  },
+  secondaryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 13,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  secondaryButtonText: {
+    color: '#111111',
+    fontSize: 15,
+    fontFamily: 'Nunito-SemiBold',
   },
 });
