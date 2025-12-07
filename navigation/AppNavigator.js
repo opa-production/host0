@@ -33,6 +33,7 @@ import AddPaymentMethodScreen from '../screens/AddPaymentMethodScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
 import UploadDocsScreen from '../screens/UploadDocsScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
+import HostVehicleScreen from '../screens/HostVehicleScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -135,6 +136,12 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="MyListings" 
           component={MyListingsScreen}
+        />
+        
+        {/* Host Vehicle Screen */}
+        <Stack.Screen 
+          name="HostVehicle" 
+          component={HostVehicleScreen}
         />
         
         {/* Settings and Related Screens */}

@@ -4,8 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function HostScreen({ navigation }) {
   const handleHostVehicle = () => {
-    // TODO: Navigate to host vehicle screen
-    console.log('Host Vehicle pressed');
+    navigation.navigate('HostVehicle');
   };
 
   const handleHostService = () => {
