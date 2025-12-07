@@ -32,7 +32,7 @@ export default function HostScreen() {
           onPress={handleHostVehicle}
           activeOpacity={0.8}
         >
-          <Ionicons name="car-outline" size={24} color="#FF1577" style={styles.buttonIcon} />
+          <Ionicons name="car-outline" size={24} color="#666666" style={styles.buttonIcon} />
           <Text style={styles.buttonText}>Host a Vehicle</Text>
           <Ionicons name="chevron-forward-outline" size={20} color="#666666" />
         </TouchableOpacity>
@@ -43,7 +43,7 @@ export default function HostScreen() {
           onPress={handleHostService}
           activeOpacity={0.8}
         >
-          <Ionicons name="construct-outline" size={24} color="#FF1577" style={styles.buttonIcon} />
+          <Ionicons name="construct-outline" size={24} color="#666666" style={styles.buttonIcon} />
           <Text style={styles.buttonText}>Host a Service</Text>
           <Ionicons name="chevron-forward-outline" size={20} color="#666666" />
         </TouchableOpacity>

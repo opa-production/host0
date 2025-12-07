@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function MessagesScreen() {
   return (
@@ -8,8 +9,14 @@ export default function MessagesScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Messages</Text>
         <Text style={styles.subtitle}>Your conversations</Text>
-        <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>Messages content will go here</Text>
+        <View style={styles.emptyStateContainer}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="chatbubbles-outline" size={64} color="#e0e0e0" />
+          </View>
+          <Text style={styles.emptyStateTitle}>No Messages Yet</Text>
+          <Text style={styles.emptyStateText}>
+            When you message hosts or guests, your conversations will appear here
+          </Text>
         </View>
       </ScrollView>
     </View>
@@ -37,15 +44,35 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginBottom: 24,
   },
-  placeholder: {
-    padding: 40,
+  emptyStateContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 200,
+    padding: 24,
+    marginTop: Dimensions.get('window').height * 0.15,
   },
-  placeholderText: {
+  iconContainer: {
+    backgroundColor: '#f8f8f8',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  emptyStateTitle: {
+    fontSize: 22,
+    fontFamily: 'Nunito-Bold',
+    color: '#333333',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyStateText: {
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
-    color: '#999999',
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 24,
+    maxWidth: 300,
   },
 });
