@@ -94,10 +94,7 @@ export default function ProfileScreen({ navigation }) {
           
           <TouchableOpacity 
             style={styles.linkItem}
-            onPress={() => {
-              // TODO: Navigate to add payment method
-              console.log('Add payment method pressed');
-            }}
+            onPress={() => navigation.navigate('AddPaymentMethod')}
           >
             <Ionicons name="card-outline" size={22} color="#666666" style={styles.linkIcon} />
             <Text style={styles.linkText}>Add Payment Method</Text>

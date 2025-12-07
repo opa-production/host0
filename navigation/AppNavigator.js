@@ -29,6 +29,7 @@ import LiabilityInsuranceScreen from '../screens/LiabilityInsuranceScreen';
 import IntellectualPropertyScreen from '../screens/IntellectualPropertyScreen';
 import MapScreen from '../screens/MapScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import AddPaymentMethodScreen from '../screens/AddPaymentMethodScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -107,6 +108,12 @@ export default function AppNavigator() {
           options={{
             tabBarStyle: { display: 'none' },
           }}
+        />
+        
+        {/* Add Payment Method Screen */}
+        <Stack.Screen 
+          name="AddPaymentMethod" 
+          component={AddPaymentMethodScreen}
         />
         
         {/* Settings and Related Screens */}
