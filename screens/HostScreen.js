@@ -1,17 +1,52 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function HostScreen() {
+  const handleHostVehicle = () => {
+    // TODO: Navigate to host vehicle screen
+    console.log('Host Vehicle pressed');
+  };
+
+  const handleHostService = () => {
+    // TODO: Navigate to host service screen
+    console.log('Host Service pressed');
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Host</Text>
-        <Text style={styles.subtitle}>Add cars and services</Text>
-        <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>Host content will go here</Text>
-          <Text style={styles.placeholderSubtext}>Add cars and services to your fleet</Text>
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Host</Text>
+          <Text style={styles.subtitle}>Add cars and services</Text>
         </View>
+
+        {/* Host Vehicle Button */}
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={handleHostVehicle}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="car-outline" size={24} color="#FF1577" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Host a Vehicle</Text>
+          <Ionicons name="chevron-forward-outline" size={20} color="#666666" />
+        </TouchableOpacity>
+
+        {/* Host Service Button */}
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={handleHostService}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="construct-outline" size={24} color="#FF1577" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Host a Service</Text>
+          <Ionicons name="chevron-forward-outline" size={20} color="#666666" />
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -25,6 +60,10 @@ const styles = StyleSheet.create({
   content: {
     padding: 24,
     paddingTop: 60,
+    paddingBottom: 100,
+  },
+  header: {
+    marginBottom: 32,
   },
   title: {
     fontSize: 32,
@@ -36,23 +75,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
     color: '#666666',
-    marginBottom: 24,
   },
-  placeholder: {
-    padding: 40,
+  button: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 200,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  placeholderText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: '#999999',
-    marginBottom: 8,
+  buttonIcon: {
+    marginRight: 16,
   },
-  placeholderSubtext: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#999999',
+  buttonText: {
+    flex: 1,
+    fontSize: 18,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#000000',
   },
 });
