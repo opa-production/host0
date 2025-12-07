@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
-// Screens
+// Main Screens
 import LandingScreen from '../screens/LandingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
@@ -13,6 +13,20 @@ import BookingsScreen from '../screens/BookingsScreen';
 import HostScreen from '../screens/HostScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+
+// Settings and Related Screens
+import SettingsScreen from '../screens/SettingsScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import CustomerSupportScreen from '../screens/CustomerSupportScreen';
+import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
+import LanguageScreen from '../screens/LanguageScreen';
+import AboutScreen from '../screens/AboutScreen';
+import PrivacyScreen from '../screens/PrivacyScreen';
+import LegalScreen from '../screens/LegalScreen';
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
+import UserAgreementScreen from '../screens/UserAgreementScreen';
+import LiabilityInsuranceScreen from '../screens/LiabilityInsuranceScreen';
+import IntellectualPropertyScreen from '../screens/IntellectualPropertyScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -73,12 +87,28 @@ export default function AppNavigator() {
           headerShown: false,
         }}
       >
+        {/* Auth Flow */}
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
+        
+        {/* Main App */}
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        
+        {/* Settings and Related Screens */}
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen name="CustomerSupport" component={CustomerSupportScreen} />
+        <Stack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
+        <Stack.Screen name="Language" component={LanguageScreen} />
+        <Stack.Screen name="About" component={AboutScreen} />
+        <Stack.Screen name="Privacy" component={PrivacyScreen} />
+        <Stack.Screen name="Legal" component={LegalScreen} />
+        <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+        <Stack.Screen name="UserAgreement" component={UserAgreementScreen} />
+        <Stack.Screen name="LiabilityInsurance" component={LiabilityInsuranceScreen} />
+        <Stack.Screen name="IntellectualProperty" component={IntellectualPropertyScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-

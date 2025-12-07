@@ -30,10 +30,7 @@ export default function ProfileScreen({ navigation }) {
       {/* Floating Settings Button */}
       <TouchableOpacity 
         style={styles.settingsButton}
-        onPress={() => {
-          // TODO: Navigate to settings
-          console.log('Settings pressed');
-        }}
+        onPress={() => navigation.navigate('Settings')}
       >
         <View style={styles.settingsButtonCircle}>
           <Ionicons name="settings-outline" size={22} color="#000000" />
