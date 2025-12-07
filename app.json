@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "OpaHost",
+    "slug": "opahost",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.opahost.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.opahost.app"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-video"
+    ]
+  }
+}
