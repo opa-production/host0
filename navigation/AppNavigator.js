@@ -30,6 +30,8 @@ import IntellectualPropertyScreen from '../screens/IntellectualPropertyScreen';
 import MapScreen from '../screens/MapScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import AddPaymentMethodScreen from '../screens/AddPaymentMethodScreen';
+import UpdateProfileScreen from '../screens/UpdateProfileScreen';
+import UploadDocsScreen from '../screens/UploadDocsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -114,6 +116,18 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="AddPaymentMethod" 
           component={AddPaymentMethodScreen}
+        />
+        
+        {/* Update Profile Screen */}
+        <Stack.Screen 
+          name="UpdateProfile" 
+          component={UpdateProfileScreen}
+        />
+        
+        {/* Upload Docs Screen */}
+        <Stack.Screen 
+          name="UploadDocs" 
+          component={UploadDocsScreen}
         />
         
         {/* Settings and Related Screens */}

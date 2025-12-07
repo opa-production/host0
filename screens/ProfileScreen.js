@@ -19,8 +19,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleEditProfile = () => {
-    // TODO: Navigate to edit profile screen
-    console.log('Edit profile pressed');
+    navigation.navigate('UpdateProfile', { userData });
   };
 
   return (
@@ -103,10 +102,7 @@ export default function ProfileScreen({ navigation }) {
 
           <TouchableOpacity 
             style={styles.linkItem}
-            onPress={() => {
-              // TODO: Navigate to upload docs
-              console.log('Upload docs pressed');
-            }}
+            onPress={() => navigation.navigate('UploadDocs')}
           >
             <Ionicons name="document-text-outline" size={22} color="#666666" style={styles.linkIcon} />
             <Text style={styles.linkText}>Upload Documents</Text>
