@@ -172,9 +172,7 @@ export default function HomeScreen({ navigation }) {
                 onPress={() => navigation.navigate('Bookings')}
                 activeOpacity={1}
               >
-                <View style={styles.bookingIcon}>
-                  <Ionicons name="time-outline" size={20} color="#000000" />
-                </View>
+                <Ionicons name="time-outline" size={20} color="#000000" style={styles.bookingIcon} />
                 <View style={styles.bookingContent}>
                   <Text style={styles.bookingText}>
                     <Text style={styles.bookingCarName}>{booking.carName}</Text>
@@ -198,9 +196,7 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigation.navigate('Bookings')}
               activeOpacity={1}
             >
-              <View style={styles.actionIcon}>
-                <Ionicons name="calendar-outline" size={24} color="#000000" />
-              </View>
+              <Ionicons name="calendar-outline" size={24} color="#000000" style={styles.actionIcon} />
               <Text style={styles.actionTitle}>Manage Bookings</Text>
               {quickStats.activeBookings > 0 && (
                 <View style={styles.badge}>
@@ -214,9 +210,7 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigation.navigate('MyListings')}
               activeOpacity={1}
             >
-              <View style={styles.actionIcon}>
-                <Ionicons name="car-outline" size={24} color="#000000" />
-              </View>
+              <Ionicons name="car-outline" size={24} color="#000000" style={styles.actionIcon} />
               <Text style={styles.actionTitle}>Manage Cars</Text>
               <Text style={styles.actionSubtitle}>{quickStats.totalCars} listed</Text>
             </TouchableOpacity>
@@ -226,9 +220,7 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigation.navigate('Messages')}
               activeOpacity={1}
             >
-              <View style={styles.actionIcon}>
-                <Ionicons name="chatbubbles-outline" size={24} color="#000000" />
-              </View>
+              <Ionicons name="chatbubbles-outline" size={24} color="#000000" style={styles.actionIcon} />
               <Text style={styles.actionTitle}>Messages</Text>
               {quickStats.unreadMessages > 0 && (
                 <View style={styles.badge}>
@@ -242,9 +234,7 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigation.navigate('Host')}
               activeOpacity={1}
             >
-              <View style={styles.actionIcon}>
-                <Ionicons name="add-circle-outline" size={24} color="#000000" />
-              </View>
+              <Ionicons name="add-circle-outline" size={24} color="#000000" style={styles.actionIcon} />
               <Text style={styles.actionTitle}>Add Listing</Text>
               <Text style={styles.actionSubtitle}>Car or service</Text>
             </TouchableOpacity>
@@ -383,12 +373,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   bookingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f8f8',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginRight: 12,
   },
   bookingContent: {
@@ -437,12 +421,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#f8f8f8',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 12,
   },
   actionTitle: {
