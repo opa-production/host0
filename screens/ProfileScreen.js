@@ -144,6 +144,15 @@ export default function ProfileScreen({ navigation }) {
 
           <TouchableOpacity 
             style={styles.linkItem}
+            onPress={() => navigation.navigate('OpaClientDownload')}
+          >
+            <Ionicons name="download-outline" size={22} color="#666666" style={styles.linkIcon} />
+            <Text style={styles.linkText}>Download Opa Client</Text>
+            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.linkItem}
             onPress={() => navigation.navigate('Feedback')}
           >
             <Ionicons name="chatbox-ellipses-outline" size={22} color="#666666" style={styles.linkIcon} />

@@ -33,6 +33,7 @@ import AddPaymentMethodScreen from '../screens/AddPaymentMethodScreen';
 import FinanceScreen from '../screens/FinanceScreen';
 import ActiveBookingScreen from '../screens/ActiveBookingScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
+import OpaClientDownloadScreen from '../screens/OpaClientDownloadScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
 import UploadDocsScreen from '../screens/UploadDocsScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
@@ -140,6 +141,12 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="Feedback" 
           component={FeedbackScreen}
+        />
+
+        {/* Opa Client Download Screen */}
+        <Stack.Screen 
+          name="OpaClientDownload" 
+          component={OpaClientDownloadScreen}
         />
         
         {/* Update Profile Screen */}
