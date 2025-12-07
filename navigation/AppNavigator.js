@@ -27,6 +27,7 @@ import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
 import UserAgreementScreen from '../screens/UserAgreementScreen';
 import LiabilityInsuranceScreen from '../screens/LiabilityInsuranceScreen';
 import IntellectualPropertyScreen from '../screens/IntellectualPropertyScreen';
+import MapScreen from '../screens/MapScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -94,6 +95,9 @@ export default function AppNavigator() {
         
         {/* Main App */}
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        
+        {/* Map Screen */}
+        <Stack.Screen name="Map" component={MapScreen} />
         
         {/* Settings and Related Screens */}
         <Stack.Screen name="Settings" component={SettingsScreen} />

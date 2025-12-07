@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   // TODO: Replace with actual data from API/context
   const carData = {
     totalCars: 5,
@@ -35,8 +35,19 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Home</Text>
-          <Text style={styles.subtitle}>Dashboard Overview</Text>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.title}>Home</Text>
+              <Text style={styles.subtitle}>Dashboard Overview</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.mapButton}
+              onPress={() => navigation.navigate('Map')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="map-outline" size={24} color="#000000" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Car Details Card */}
@@ -105,6 +116,27 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  mapButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f8f8f8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
     fontSize: 32,
