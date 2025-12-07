@@ -34,6 +34,7 @@ import UpdateProfileScreen from '../screens/UpdateProfileScreen';
 import UploadDocsScreen from '../screens/UploadDocsScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
 import HostVehicleScreen from '../screens/HostVehicleScreen';
+import CarGalleryScreen from '../screens/CarGalleryScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -142,6 +143,12 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="HostVehicle" 
           component={HostVehicleScreen}
+        />
+        
+        {/* Car Gallery Screen */}
+        <Stack.Screen 
+          name="CarGallery" 
+          component={CarGalleryScreen}
         />
         
         {/* Settings and Related Screens */}

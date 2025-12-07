@@ -154,13 +154,6 @@ export default function MyListingsScreen({ navigation }) {
                 <Text style={styles.swipeText}>Swipe</Text>
               </View>
             )}
-            
-            {/* Page Indicator - Right */}
-            <View style={styles.pageIndicator}>
-              <Text style={styles.pageIndicatorText}>
-                {index + 1} / {allListings.length}
-              </Text>
-            </View>
           </View>
         </View>
 
@@ -227,6 +220,19 @@ export default function MyListingsScreen({ navigation }) {
               <View style={styles.descriptionContainer}>
                 <Text style={styles.descriptionText}>{item.description}</Text>
               </View>
+            )}
+
+            {/* Image Repository */}
+            {isCar && (
+              <TouchableOpacity
+                style={styles.imageRepositorySection}
+                onPress={() => navigation.navigate('CarGallery', { carId: item.id, carName: item.name })}
+                activeOpacity={1}
+              >
+                <Ionicons name="images-outline" size={20} color="#000000" />
+                <Text style={styles.imageRepositoryText}>Image Repository</Text>
+                <Ionicons name="chevron-forward" size={18} color="#666666" />
+              </TouchableOpacity>
             )}
 
             <View style={styles.statsRow}>
@@ -381,19 +387,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pageIndicator: {
-    position: 'absolute',
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  pageIndicatorText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#ffffff',
-  },
   cardContainer: {
     height: SCREEN_HEIGHT,
     backgroundColor: '#ffffff',
@@ -430,17 +423,18 @@ const styles = StyleSheet.create({
   },
   contentSection: {
     height: '60%',
-    padding: 24,
+    padding: 20,
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     marginTop: -24,
+    justifyContent: 'space-between',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   titleSection: {
     flex: 1,
@@ -457,7 +451,7 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   detailsSection: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   detailsGrid: {
     flexDirection: 'row',
@@ -469,7 +463,7 @@ const styles = StyleSheet.create({
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     gap: 8,
   },
   detailText: {
@@ -479,8 +473,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   descriptionContainer: {
-    marginTop: 12,
-    marginBottom: 16,
+    marginTop: 8,
+    marginBottom: 12,
     padding: 12,
     backgroundColor: '#f8f8f8',
     borderRadius: 12,
@@ -491,11 +485,27 @@ const styles = StyleSheet.create({
     color: '#666666',
     lineHeight: 20,
   },
+  imageRepositorySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    padding: 14,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 12,
+    gap: 12,
+  },
+  imageRepositoryText: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#000000',
+  },
   statsRow: {
     flexDirection: 'row',
     gap: 16,
-    marginTop: 12,
-    paddingTop: 16,
+    marginTop: 8,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#e8e8e8',
   },
@@ -503,10 +513,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: 'Nunito-Bold',
     color: '#000000',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   statLabel: {
     fontSize: 11,
@@ -515,16 +525,17 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statDetail: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Nunito-Regular',
     color: '#999999',
   },
   actionsSection: {
     flexDirection: 'row',
     gap: 12,
-    paddingTop: 16,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#e8e8e8',
+    marginTop: 8,
   },
   availabilityButton: {
     flex: 1,
