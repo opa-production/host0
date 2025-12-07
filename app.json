@@ -5,7 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/images/logo.png",
     "splash": {
+      "image": "./assets/images/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,13 +20,32 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.opahost.app"
+      "package": "com.opahost.app",
+      "versionCode": 1,
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "CAMERA"
+      ]
     },
     "plugins": [
       "expo-font",
-      "expo-video"
-    ]
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs access to your photos to upload documents.",
+          "cameraPermission": "The app needs access to your camera to take photos."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
   }
 }

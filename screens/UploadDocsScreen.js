@@ -26,10 +26,10 @@ export default function UploadDocsScreen({ navigation }) {
 
   // Handle image picker
   const pickImage = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
-
     try {
+      const hasPermission = await requestPermissions();
+      if (!hasPermission) return;
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -37,7 +37,11 @@ export default function UploadDocsScreen({ navigation }) {
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets && result.assets[0]) {
+      if (result.canceled) {
+        return;
+      }
+
+      if (result.assets && result.assets.length > 0 && result.assets[0].uri) {
         if (docType === 'id') {
           setIdFrontImage(result.assets[0].uri);
         } else {
