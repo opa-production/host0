@@ -1,11 +1,12 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, StatusBar } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, StatusBar, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import MapView from 'react-native-maps';
 
 export default function MapScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [mapError, setMapError] = React.useState(null);
 
   // Default location: Nakuru, Kenya
   const initialRegion = {
@@ -23,19 +24,30 @@ export default function MapScreen({ navigation }) {
       <TouchableOpacity
         style={[styles.backButton, { top: insets.top + 16 }]}
         onPress={() => navigation.goBack()}
-        activeOpacity={0.8}
+        activeOpacity={1}
       >
         <Ionicons name="arrow-back" size={24} color="#000000" />
       </TouchableOpacity>
 
       {/* Map */}
-      <MapView
-        style={styles.map}
-        initialRegion={initialRegion}
-        showsUserLocation={true}
-        showsMyLocationButton={true}
-        mapType="standard"
-      />
+      {mapError ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Map unavailable</Text>
+        </View>
+      ) : (
+        <MapView
+          style={styles.map}
+          initialRegion={initialRegion}
+          showsUserLocation={true}
+          showsMyLocationButton={true}
+          mapType="standard"
+          onMapReady={() => setMapError(null)}
+          onError={(error) => {
+            console.log('Map error:', error);
+            setMapError('Map failed to load');
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -66,5 +78,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Nunito-Regular',
+    color: '#666666',
   },
 });

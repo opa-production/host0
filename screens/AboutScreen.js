@@ -99,7 +99,7 @@ const AboutScreen = () => {
               key={index}
               style={styles.contactItem}
               onPress={contact.action}
-              activeOpacity={0.7}
+              activeOpacity={1}
             >
               <Ionicons name={contact.icon} size={22} color="#FF1577" />
               <View style={styles.contactInfo}>

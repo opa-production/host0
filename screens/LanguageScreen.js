@@ -71,7 +71,7 @@ const LanguageScreen = () => {
               key={language.code}
               style={styles.languageItem}
               onPress={() => handleLanguageSelect(language)}
-              activeOpacity={0.7}
+              activeOpacity={1}
             >
               <View style={styles.languageItemLeft}>
                 <Text style={styles.flag}>{language.flag}</Text>

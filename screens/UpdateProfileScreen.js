@@ -76,7 +76,7 @@ export default function UpdateProfileScreen({ navigation, route }) {
       <TouchableOpacity
         style={[styles.backButton, { top: insets.top + 16 }]}
         onPress={() => navigation.goBack()}
-        activeOpacity={0.8}
+        activeOpacity={1}
       >
         <Ionicons name="arrow-back" size={24} color="#000000" />
       </TouchableOpacity>
@@ -184,7 +184,7 @@ export default function UpdateProfileScreen({ navigation, route }) {
           <TouchableOpacity
             style={styles.saveButton}
             onPress={handleSave}
-            activeOpacity={0.8}
+            activeOpacity={1}
           >
             <Text style={styles.saveButtonText}>Save Changes</Text>
           </TouchableOpacity>

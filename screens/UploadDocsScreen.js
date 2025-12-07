@@ -93,7 +93,7 @@ export default function UploadDocsScreen({ navigation }) {
       <TouchableOpacity
         style={[styles.backButton, { top: insets.top + 16 }]}
         onPress={() => navigation.goBack()}
-        activeOpacity={0.8}
+        activeOpacity={1}
       >
         <Ionicons name="arrow-back" size={24} color="#000000" />
       </TouchableOpacity>
@@ -113,7 +113,7 @@ export default function UploadDocsScreen({ navigation }) {
           <TouchableOpacity
             style={[styles.toggleOption, docType === 'id' && styles.toggleOptionActive]}
             onPress={() => setDocType('id')}
-            activeOpacity={0.8}
+            activeOpacity={1}
           >
             <Ionicons 
               name="card-outline" 
@@ -128,7 +128,7 @@ export default function UploadDocsScreen({ navigation }) {
           <TouchableOpacity
             style={[styles.toggleOption, docType === 'dl' && styles.toggleOptionActive]}
             onPress={() => setDocType('dl')}
-            activeOpacity={0.8}
+            activeOpacity={1}
           >
             <Ionicons 
               name="document-outline" 
@@ -152,7 +152,7 @@ export default function UploadDocsScreen({ navigation }) {
                   <TouchableOpacity
                     style={styles.removeButton}
                     onPress={handleRemoveImage}
-                    activeOpacity={0.8}
+                    activeOpacity={1}
                   >
                     <Ionicons name="close-circle" size={32} color="#FF1577" />
                   </TouchableOpacity>
@@ -161,7 +161,7 @@ export default function UploadDocsScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.uploadButton}
                   onPress={pickImage}
-                  activeOpacity={0.8}
+                  activeOpacity={1}
                 >
                   <Ionicons name="camera-outline" size={48} color="#666666" />
                   <Text style={styles.uploadButtonText}>Tap to upload ID front picture</Text>
@@ -178,7 +178,7 @@ export default function UploadDocsScreen({ navigation }) {
                   <TouchableOpacity
                     style={styles.removeButton}
                     onPress={handleRemoveImage}
-                    activeOpacity={0.8}
+                    activeOpacity={1}
                   >
                     <Ionicons name="close-circle" size={32} color="#FF1577" />
                   </TouchableOpacity>
@@ -187,7 +187,7 @@ export default function UploadDocsScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.uploadButton}
                   onPress={pickImage}
-                  activeOpacity={0.8}
+                  activeOpacity={1}
                 >
                   <Ionicons name="camera-outline" size={48} color="#666666" />
                   <Text style={styles.uploadButtonText}>Tap to upload Driver's License</Text>
@@ -204,7 +204,7 @@ export default function UploadDocsScreen({ navigation }) {
               ((docType === 'id' && !idFrontImage) || (docType === 'dl' && !dlImage)) && styles.saveButtonDisabled
             ]}
             onPress={handleSave}
-            activeOpacity={0.8}
+            activeOpacity={1}
             disabled={(docType === 'id' && !idFrontImage) || (docType === 'dl' && !dlImage)}
           >
             <Text style={styles.saveButtonText}>Save</Text>

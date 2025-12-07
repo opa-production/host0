@@ -81,7 +81,7 @@ export default function MyListingsScreen({ navigation }) {
       <TouchableOpacity
         style={[styles.backButton, { top: insets.top + 16 }]}
         onPress={() => navigation.goBack()}
-        activeOpacity={0.8}
+        activeOpacity={1}
       >
         <Ionicons name="arrow-back" size={24} color="#000000" />
       </TouchableOpacity>
@@ -109,7 +109,7 @@ export default function MyListingsScreen({ navigation }) {
                 <TouchableOpacity
                   key={car.id}
                   style={styles.listingCard}
-                  activeOpacity={0.8}
+                  activeOpacity={1}
                 >
                   {car.image ? (
                     <Image source={car.image} style={styles.listingImage} resizeMode="cover" />
@@ -160,7 +160,7 @@ export default function MyListingsScreen({ navigation }) {
                 <TouchableOpacity
                   key={service.id}
                   style={styles.listingCard}
-                  activeOpacity={0.8}
+                  activeOpacity={1}
                 >
                   <View style={styles.serviceIconContainer}>
                     <Ionicons 

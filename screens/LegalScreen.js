@@ -77,7 +77,7 @@ const LegalScreen = () => {
                   console.log(`Screen ${section.screenName} not found`);
                 }
               }}
-              activeOpacity={0.7}
+              activeOpacity={1}
             >
               <Text style={styles.readMoreText}>Read More</Text>
             </TouchableOpacity>
@@ -93,7 +93,7 @@ const LegalScreen = () => {
           <TouchableOpacity
             style={styles.websiteButton}
             onPress={() => handleLinkPress('https://opa.deonhq.xyz')}
-            activeOpacity={0.7}
+            activeOpacity={1}
           >
             <Ionicons name="globe-outline" size={20} color="#FF1577" />
             <Text style={styles.websiteButtonText}>opa.deonhq.xyz</Text>
@@ -110,7 +110,7 @@ const LegalScreen = () => {
           <TouchableOpacity
             style={styles.contactButton}
             onPress={() => handleLinkPress('mailto:legal@opahost.com')}
-            activeOpacity={0.7}
+            activeOpacity={1}
           >
             <Ionicons name="mail-outline" size={20} color="#FF1577" />
             <Text style={styles.contactButtonText}>legal@opahost.com</Text>

@@ -57,7 +57,7 @@ const PrivacyScreen = () => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleDownloadData}
-            activeOpacity={0.7}
+            activeOpacity={1}
           >
             <View style={styles.actionButtonLeft}>
               <Ionicons name="download-outline" size={22} color="#FF1577" />
@@ -94,14 +94,14 @@ const PrivacyScreen = () => {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonCancel]}
                   onPress={() => setShowDownloadModal(false)}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
                 >
                   <Text style={styles.modalButtonTextCancel}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonPrimary]}
                   onPress={handleConfirmDownload}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
                 >
                   <Text style={styles.modalButtonTextPrimary}>Download</Text>
                 </TouchableOpacity>
@@ -122,7 +122,7 @@ const PrivacyScreen = () => {
               <TouchableOpacity
                 style={styles.modalCloseButton}
                 onPress={handleCloseSuccessModal}
-                activeOpacity={0.7}
+                activeOpacity={1}
               >
                 <Ionicons name="close" size={24} color="#999999" />
               </TouchableOpacity>
@@ -137,7 +137,7 @@ const PrivacyScreen = () => {
               <TouchableOpacity
                 style={[styles.modalButtonSingle, styles.modalButtonPrimary]}
                 onPress={handleCloseSuccessModal}
-                activeOpacity={0.7}
+                activeOpacity={1}
               >
                 <Text style={styles.modalButtonTextPrimary}>OK</Text>
               </TouchableOpacity>

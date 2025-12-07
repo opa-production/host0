@@ -234,7 +234,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
       <TouchableOpacity
         style={[styles.backButton, { top: insets.top + 16 }]}
         onPress={() => navigation.goBack()}
-        activeOpacity={0.8}
+        activeOpacity={1}
       >
         <Ionicons name="arrow-back" size={24} color="#000000" />
       </TouchableOpacity>
@@ -259,7 +259,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.paymentTypeCard}
                 onPress={() => setSelectedType('mpesa')}
-                activeOpacity={0.8}
+                activeOpacity={1}
               >
                 <Image 
                   source={require('../assets/images/mpesa.png')} 
@@ -273,7 +273,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.paymentTypeCard}
                 onPress={() => setSelectedType('card')}
-                activeOpacity={0.8}
+                activeOpacity={1}
               >
                 <View style={styles.cardLogosContainer}>
                   <Image 
@@ -359,7 +359,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleMpesaSubmit}
-                activeOpacity={0.8}
+                activeOpacity={1}
               >
                 <Text style={styles.submitButtonText}>Add M-Pesa</Text>
               </TouchableOpacity>
@@ -492,7 +492,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleCardSubmit}
-                activeOpacity={0.8}
+                activeOpacity={1}
               >
                 <Text style={styles.submitButtonText}>Add Card</Text>
               </TouchableOpacity>
@@ -530,7 +530,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.removeButton}
                   onPress={() => handleRemoveMethod(method.id)}
-                  activeOpacity={0.8}
+                  activeOpacity={1}
                 >
                   <Ionicons name="trash-outline" size={20} color="#FF1577" />
                 </TouchableOpacity>

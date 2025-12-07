@@ -185,7 +185,7 @@ export default function BookingsScreen({ navigation }) {
             <TouchableOpacity
               style={styles.notificationButton}
               onPress={() => navigation.navigate('Notifications')}
-              activeOpacity={0.8}
+              activeOpacity={1}
             >
               <Ionicons name="notifications-outline" size={24} color="#000000" />
             </TouchableOpacity>
@@ -193,10 +193,7 @@ export default function BookingsScreen({ navigation }) {
         </View>
 
         {/* Booking Card */}
-        <TouchableOpacity 
-          style={styles.bookingCard}
-          activeOpacity={0.9}
-        >
+        <View style={styles.bookingCard}>
           {/* Vehicle Image */}
           <Image 
             source={mockBooking.vehicleImage} 
@@ -251,7 +248,7 @@ export default function BookingsScreen({ navigation }) {
               <Text style={styles.amountValue}>{mockBooking.totalAmount}</Text>
             </View>
           </View>
-        </TouchableOpacity>
+        </View>
       </ScrollView>
     </Animated.View>
   );

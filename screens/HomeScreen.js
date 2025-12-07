@@ -169,7 +169,7 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity
               style={styles.mapButton}
               onPress={() => navigation.navigate('Map')}
-              activeOpacity={0.8}
+              activeOpacity={1}
             >
               <Ionicons name="map-outline" size={24} color="#000000" />
             </TouchableOpacity>

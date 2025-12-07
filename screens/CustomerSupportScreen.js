@@ -74,7 +74,7 @@ const CustomerSupportScreen = () => {
         <TouchableOpacity
           style={styles.optionButton}
           onPress={() => setShowTicketForm(true)}
-          activeOpacity={0.7}
+          activeOpacity={1}
         >
           <Ionicons name="document-text-outline" size={24} color="#666666" />
           <View style={styles.optionButtonContent}>
@@ -87,7 +87,7 @@ const CustomerSupportScreen = () => {
         <TouchableOpacity
           style={styles.optionButton}
           onPress={handleCallAgent}
-          activeOpacity={0.7}
+          activeOpacity={1}
         >
           <Ionicons name="call-outline" size={24} color="#666666" />
           <View style={styles.optionButtonContent}>
@@ -126,7 +126,7 @@ const CustomerSupportScreen = () => {
                 },
               ]}
               onPress={() => setTicketUrgency(urgency)}
-              activeOpacity={0.7}
+              activeOpacity={1}
             >
               <Text
                 style={[

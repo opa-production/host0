@@ -96,7 +96,7 @@ const SettingsScreen = () => {
     <TouchableOpacity
       style={styles.settingItem}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={1}
       disabled={!onPress}
     >
       <View style={styles.settingItemLeft}>
@@ -231,7 +231,7 @@ const SettingsScreen = () => {
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
-          activeOpacity={0.7}
+          activeOpacity={1}
         >
           <Ionicons name="log-out-outline" size={24} color="#FF1577" />
           <Text style={styles.logoutText}>Logout</Text>
@@ -268,14 +268,14 @@ const SettingsScreen = () => {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonCancel]}
                   onPress={() => setShowLogoutModal(false)}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
                 >
                   <Text style={styles.modalButtonTextCancel}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonLogout]}
                   onPress={handleConfirmLogout}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
                 >
                   <Text style={styles.modalButtonTextLogout}>Logout</Text>
                 </TouchableOpacity>
@@ -309,7 +309,7 @@ const SettingsScreen = () => {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonCancel]}
                   onPress={handleDeleteCancel}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
                 >
                   <Text style={styles.modalButtonTextCancel}>Cancel</Text>
                 </TouchableOpacity>
@@ -320,7 +320,7 @@ const SettingsScreen = () => {
                     deleteConfirmText.toLowerCase() !== 'delete' && { opacity: 0.5 }
                   ]}
                   onPress={handleDeleteConfirm}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
                   disabled={deleteConfirmText.toLowerCase() !== 'delete'}
                 >
                   <Text style={styles.modalButtonTextDelete}>Delete</Text>

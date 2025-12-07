@@ -30,7 +30,7 @@ export default function HostScreen({ navigation }) {
             <TouchableOpacity
               style={styles.listButton}
               onPress={() => navigation.navigate('MyListings')}
-              activeOpacity={0.8}
+              activeOpacity={1}
             >
               <Ionicons name="list-outline" size={24} color="#000000" />
             </TouchableOpacity>
@@ -41,7 +41,7 @@ export default function HostScreen({ navigation }) {
         <TouchableOpacity 
           style={styles.button}
           onPress={handleHostVehicle}
-          activeOpacity={0.8}
+          activeOpacity={1}
         >
           <Ionicons name="car-outline" size={24} color="#666666" style={styles.buttonIcon} />
           <Text style={styles.buttonText}>Host a Vehicle</Text>
@@ -52,7 +52,7 @@ export default function HostScreen({ navigation }) {
         <TouchableOpacity 
           style={styles.button}
           onPress={handleHostService}
-          activeOpacity={0.8}
+          activeOpacity={1}
         >
           <Ionicons name="construct-outline" size={24} color="#666666" style={styles.buttonIcon} />
           <Text style={styles.buttonText}>Host a Service</Text>
