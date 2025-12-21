@@ -81,7 +81,11 @@ export default function SupaHostScreen({ navigation }) {
             ))}
           </View>
 
-          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.9} onPress={handleGetBadge}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('GetBadge')}
+          >
             <Text style={styles.primaryButtonText}>Get badge</Text>
           </TouchableOpacity>
         </View>

@@ -194,6 +194,10 @@ export default function AppNavigator() {
           name="SupaHost" 
           component={SupaHostScreen}
         />
+        <Stack.Screen
+          name="GetBadge"
+          component={require('../screens/GetBadgeScreen').default}
+        />
         
         {/* Reset Password Screen */}
         <Stack.Screen 

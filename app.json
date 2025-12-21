@@ -43,7 +43,6 @@
       "expo-font",
       "expo-splash-screen",
       "expo-video",
-      "react-native-maps",
       [
         "expo-image-picker",
         {
