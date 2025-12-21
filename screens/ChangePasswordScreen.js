@@ -2,6 +2,7 @@ import React, { useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, StatusBar, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 const ChangePasswordScreen = () => {
   const navigation = useNavigation();
@@ -62,7 +63,7 @@ const ChangePasswordScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Back Button */}
       <TouchableOpacity 
@@ -239,7 +240,7 @@ const ChangePasswordScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   floatingBackButton: {
     position: 'absolute',
@@ -251,7 +252,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
@@ -259,9 +260,11 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -270,86 +273,86 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 24,
+    padding: SPACING.l,
     paddingTop: 100,
-    paddingBottom: 200,
+    paddingBottom: 160,
   },
   header: {
     marginBottom: 24,
   },
   headerTitle: {
-    fontSize: 32,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.largeTitle,
   },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    padding: 16,
-    borderRadius: 12,
+    padding: SPACING.m,
+    borderRadius: RADIUS.card,
     marginBottom: 24,
-    backgroundColor: '#fff5f9',
+    backgroundColor: '#FFF3F8',
     gap: 12,
   },
   infoText: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.body,
+    fontSize: 13,
     lineHeight: 20,
-    color: '#666666',
+    color: '#8E8E93',
   },
   inputContainer: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
+    ...TYPE.bodyStrong,
+    fontSize: 12,
     marginBottom: 8,
-    color: '#000000',
+    color: '#8E8E93',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
     paddingHorizontal: 16,
-    height: 56,
+    height: 52,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: '#000000',
+    ...TYPE.body,
+    fontSize: 14,
+    color: '#1C1C1E',
   },
   eyeIcon: {
     padding: 4,
   },
   errorText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.caption,
+    fontSize: 11,
     color: '#F44336',
     marginTop: 4,
   },
   changePasswordButton: {
-    backgroundColor: '#FF1577',
-    borderRadius: 30,
-    paddingVertical: 18,
+    backgroundColor: '#000000',
+    borderRadius: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
-    shadowColor: '#FF1577',
+    shadowColor: '#000000',
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 3,
   },
   changePasswordButtonText: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
-    color: '#ffffff',
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: '#FFFFFF',
   },
   modalOverlay: {
     flex: 1,
@@ -374,32 +377,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF5020',
   },
   successModalTitle: {
-    fontSize: 24,
-    fontFamily: 'Nunito-Bold',
+    ...TYPE.title,
+    fontSize: 20,
     marginBottom: 12,
     textAlign: 'center',
-    color: '#000000',
+    color: '#1C1C1E',
   },
   successModalMessage: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.body,
+    fontSize: 13,
     textAlign: 'center',
     marginBottom: 24,
-    lineHeight: 22,
-    color: '#666666',
+    lineHeight: 20,
+    color: '#8E8E93',
   },
   successModalButton: {
     width: '100%',
-    paddingVertical: 16,
-    borderRadius: 30,
-    backgroundColor: '#FF1577',
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
   },
   successModalButtonText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Bold',
-    color: '#ffffff',
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: '#FFFFFF',
   },
 });
 
