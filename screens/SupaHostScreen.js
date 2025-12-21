@@ -61,10 +61,10 @@ export default function SupaHostScreen({ navigation }) {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>SupaHost</Text>
-            <View style={styles.badge}>
+            {/* <View style={styles.badge}>
               <Ionicons name="star" size={14} color="#111111" />
               <Text style={styles.badgeText}>Premium</Text>
-            </View>
+            </View> */}
           </View>
           <Text style={styles.price}>{pricing.range}</Text>
           <Text style={styles.note}>Pricing varies by number of cars.</Text>
@@ -132,11 +132,13 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFFFFF',
     borderRadius: 999,
     padding: 3,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
+    alignSelf: 'center',
+    width: '68%',
   },
   toggleOption: {
     flex: 1,
@@ -144,9 +146,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: 999,
+    backgroundColor: '#FFFFFF',
   },
   toggleOptionActive: {
-    backgroundColor: '#000000',
+    backgroundColor: '#111111',
   },
   toggleText: {
     ...TYPE.bodyStrong,
