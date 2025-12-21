@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function BookingsScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -87,8 +88,8 @@ export default function BookingsScreen({ navigation }) {
           {
             width,
             height,
-            backgroundColor: '#e8e8e8',
-            borderRadius: 8,
+            backgroundColor: '#E5E5EA',
+            borderRadius: 12,
             opacity: pulseAnim,
           },
           style,
@@ -100,7 +101,7 @@ export default function BookingsScreen({ navigation }) {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
         <ScrollView 
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
@@ -119,7 +120,7 @@ export default function BookingsScreen({ navigation }) {
           {/* Booking Card Skeleton */}
           <View style={styles.bookingCard}>
             {/* Image Skeleton */}
-            <SkeletonBox width="100%" height={200} style={{ borderRadius: 0 }} />
+            <SkeletonBox width="100%" height={160} style={{ borderRadius: 0 }} />
 
             {/* Content Skeleton */}
             <View style={styles.cardContent}>
@@ -170,7 +171,7 @@ export default function BookingsScreen({ navigation }) {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       <ScrollView 
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -296,10 +297,10 @@ export default function BookingsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 24,
+    padding: SPACING.l,
     paddingTop: 60,
     paddingBottom: 100,
   },
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
@@ -323,43 +324,42 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   title: {
-    fontSize: 32,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
-    marginBottom: 8,
+    ...TYPE.largeTitle,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    color: '#8E8E93',
   },
   bookingCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
     overflow: 'hidden',
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   vehicleImage: {
     width: '100%',
-    height: 200,
-    backgroundColor: '#f0f0f0',
+    height: 150,
+    backgroundColor: '#F2F2F7',
   },
   cardContent: {
-    padding: 16,
+    padding: SPACING.m,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -371,15 +371,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   vehicleName: {
-    fontSize: 20,
-    fontFamily: 'Nunito-Bold',
+    ...TYPE.section,
     color: '#000000',
     marginBottom: 4,
   },
   location: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.caption,
+    color: '#8E8E93',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -397,9 +395,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   renterName: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   dateRange: {
     flexDirection: 'row',
@@ -416,15 +414,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dateLabel: {
-    fontSize: 12,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.micro,
+    color: '#8E8E93',
     marginBottom: 2,
   },
   dateValue: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
   },
   amountRow: {
     flexDirection: 'row',
@@ -432,17 +429,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#e8e8e8',
+    borderTopColor: COLORS.borderStrong,
   },
   amountLabel: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   amountValue: {
-    fontSize: 20,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.section,
+    color: '#1C1C1E',
   },
   actionsRow: {
     flexDirection: 'row',

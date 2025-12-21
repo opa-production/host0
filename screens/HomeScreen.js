@@ -207,41 +207,18 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Earnings Summary */}
-          <View style={styles.earningsSection}>
-            <Text style={styles.sectionLabel}>Earnings Summary</Text>
-            <View style={styles.earningsRow}>
-              <Text style={styles.earningsValue}>{formatCurrency(financialData.currentEarnings)}</Text>
-              <View style={styles.trendBadge}>
-                <Ionicons name="trending-up" size={14} color="#34C759" />
-                <Text style={styles.trendText}>+12% vs last mo</Text>
-              </View>
+          <View style={styles.metricsList}>
+            <View style={styles.metricsRow}>
+              <Text style={styles.metricsLabel}>Gross income</Text>
+              <Text style={styles.metricsValue}>{formatCurrency(financialData.currentEarnings)}</Text>
             </View>
-          </View>
 
-          <View style={styles.divider} />
+            <View style={styles.metricsDivider} />
 
-          {/* Utilization Rate */}
-          <View style={styles.utilizationSection}>
-            <View style={styles.utilizationHeader}>
-              <Text style={styles.sectionLabel}>Utilization Rate</Text>
-              <Text style={styles.utilizationValue}>{financialData.utilization}%</Text>
+            <View style={styles.metricsRow}>
+              <Text style={styles.metricsLabel}>Withdrawable</Text>
+              <Text style={styles.metricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
             </View>
-            <View style={styles.progressBarBackground}>
-              <View style={[styles.progressBarFill, { width: `${financialData.utilization}%` }]} />
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* Payout Status */}
-          <View style={styles.payoutContainer}>
-            <View style={styles.payoutIcon}>
-              <Ionicons name="cash-outline" size={20} color="#007AFF" />
-            </View>
-            <Text style={styles.payoutText}>
-              Next payout of <Text style={styles.payoutAmount}>{formatCurrency(financialData.nextPayout.amount)}</Text> scheduled for {financialData.nextPayout.date}.
-            </Text>
           </View>
         </View>
 
@@ -359,6 +336,33 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
   },
   // Financial Card Styles
+  metricsList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  metricsLabel: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  metricsValue: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
+  },
+  metricsDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E5EA',
+    marginLeft: 12,
+  },
   earningsSection: {
     marginBottom: 16,
   },
