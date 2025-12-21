@@ -76,10 +76,10 @@ function MainTabs() {
         tabBarInactiveTintColor: '#999999',
         headerShown: false,
         tabBarBackground: () => (
-          <BlurView intensity={35} tint="light" style={{ flex: 1 }} />
+          <BlurView intensity={45} tint="light" style={{ flex: 1, opacity: 1 }} />
         ),
         tabBarStyle: {
-          backgroundColor: 'transparent',
+          backgroundColor: 'rgba(255, 255, 255, 0.92)',
           borderTopWidth: 0,
           elevation: 0,
           position: 'absolute',
