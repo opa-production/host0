@@ -9,9 +9,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image
+  Image,
+  Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+const { width } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -40,7 +43,7 @@ export default function LoginScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" />
       
       {/* Floating Back Button */}
       <TouchableOpacity 
@@ -48,7 +51,7 @@ export default function LoginScreen({ navigation }) {
         onPress={() => navigation.goBack()}
       >
         <View style={styles.backButtonCircle}>
-          <Ionicons name="arrow-back" size={20} color="#000000" />
+          <Ionicons name="arrow-back" size={24} color="#000000" />
         </View>
       </TouchableOpacity>
 
@@ -63,41 +66,45 @@ export default function LoginScreen({ navigation }) {
         </View>
 
         <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color="#666666" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#999999"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color="#666666" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#999999"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-            />
-            <TouchableOpacity 
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <Ionicons 
-                name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                size={20} 
-                color="#666666" 
+          <View style={styles.inputGroup}>
+            <View style={styles.inputContainer}>
+              <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="#C7C7CC"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
               />
-            </TouchableOpacity>
+            </View>
+            
+            <View style={styles.separator} />
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#C7C7CC"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity 
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons 
+                  name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                  size={20} 
+                  color="#8E8E93" 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ResetPassword')}>
@@ -114,23 +121,25 @@ export default function LoginScreen({ navigation }) {
             <View style={styles.dividerLine} />
           </View>
 
-          <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-            <Image 
-              source={require('../assets/images/google.png')} 
-              style={styles.socialIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
+          <View style={styles.socialButtonsContainer}>
+            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin}>
+              <Image 
+                source={require('../assets/images/google.png')} 
+                style={styles.socialIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.socialButtonText}>Google</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.appleButton} onPress={handleAppleLogin}>
-            <Image 
-              source={require('../assets/images/apple.png')} 
-              style={styles.socialIconDark}
-              resizeMode="contain"
-            />
-            <Text style={styles.appleButtonText}>Continue with Apple</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.socialButton} onPress={handleAppleLogin}>
+              <Image 
+                source={require('../assets/images/apple.png')} 
+                style={styles.socialIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.socialButtonText}>Apple</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.signUpLink}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
@@ -147,11 +156,11 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F2F2F7', // iOS System Background
   },
   floatingBackButton: {
     position: 'absolute',
-    top: 50,
+    top: Platform.OS === 'ios' ? 60 : 40,
     left: 20,
     zIndex: 10,
   },
@@ -159,161 +168,155 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 3,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 100,
+    paddingHorizontal: 20,
+    paddingTop: 120,
     paddingBottom: 40,
   },
   header: {
-    marginBottom: 40,
+    marginBottom: 32,
   },
   title: {
-    fontSize: 32,
+    fontSize: 34,
     fontFamily: 'Nunito-Bold',
     color: '#000000',
     marginBottom: 8,
+    letterSpacing: 0.35,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: '#8E8E93', // iOS System Gray
+    letterSpacing: -0.4,
   },
   form: {
     flex: 1,
   },
+  inputGroup: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    marginBottom: 16,
     height: 56,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#C6C6C8',
+    marginLeft: 52, // Indent to align with text
   },
   inputIcon: {
     marginRight: 12,
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: 'Nunito-Regular',
     color: '#000000',
+    height: '100%',
   },
   eyeIcon: {
-    padding: 4,
+    padding: 8,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
     marginBottom: 24,
   },
   forgotPasswordText: {
-    fontSize: 14,
+    fontSize: 15,
+    color: '#007AFF', // iOS Blue
     fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
   },
   loginButton: {
-    backgroundColor: '#FF1577',
-    borderRadius: 30,
-    paddingVertical: 16,
+    backgroundColor: '#000000', // Brand color
+    borderRadius: 14,
+    height: 56,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#FF1577',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
   },
   loginButtonText: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: 'Nunito-Bold',
-    color: '#ffffff',
+    color: '#FFFFFF',
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24,
+    marginBottom: 32,
   },
   dividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: '#e0e0e0',
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#C6C6C8',
   },
   dividerText: {
     marginHorizontal: 16,
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#999999',
+    fontSize: 13,
+    color: '#8E8E93',
+    fontFamily: 'Nunito-SemiBold',
   },
-  googleButton: {
+  socialButtonsContainer: {
+    flexDirection: 'column',
+    gap: 12,
+    marginBottom: 32,
+  },
+  socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 30,
-    paddingVertical: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    height: 50,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   socialIcon: {
     width: 20,
     height: 20,
-    marginRight: 12,
+    marginRight: 8,
   },
-  socialIconDark: {
-    width: 20,
-    height: 20,
-    marginRight: 12,
-    tintColor: '#ffffff',
-  },
-  googleButtonText: {
+  socialButtonText: {
     fontSize: 16,
     fontFamily: 'Nunito-SemiBold',
     color: '#000000',
   },
-  appleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000000',
-    borderRadius: 30,
-    paddingVertical: 16,
-    marginBottom: 24,
-  },
-  appleButtonText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#ffffff',
-  },
   signUpLink: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 'auto',
+    alignItems: 'center',
   },
   signUpText: {
-    fontSize: 14,
+    fontSize: 15,
+    color: '#8E8E93',
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
   },
   signUpLinkText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
+    fontSize: 15,
+    fontFamily: 'Nunito-Bold',
+    color: '#007AFF',
   },
 });
