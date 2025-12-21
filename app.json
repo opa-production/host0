@@ -33,11 +33,17 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION"
       ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      }
     },
     "plugins": [
       "expo-font",
       "expo-splash-screen",
       "expo-video",
+      "react-native-maps",
       [
         "expo-image-picker",
         {

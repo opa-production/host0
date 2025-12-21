@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, StatusBar, Text } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, StatusBar, Text, PermissionsAndroid, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import MapView from 'react-native-maps';
@@ -7,6 +7,25 @@ import MapView from 'react-native-maps';
 export default function MapScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [mapError, setMapError] = React.useState(null);
+  const [locationGranted, setLocationGranted] = React.useState(false);
+
+  React.useEffect(() => {
+    const request = async () => {
+      try {
+        if (Platform.OS !== 'android') {
+          setLocationGranted(true);
+          return;
+        }
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+        );
+        setLocationGranted(granted === PermissionsAndroid.RESULTS.GRANTED);
+      } catch (e) {
+        setLocationGranted(false);
+      }
+    };
+    request();
+  }, []);
 
   // Default location: Nakuru, Kenya
   const initialRegion = {
@@ -38,8 +57,8 @@ export default function MapScreen({ navigation }) {
         <MapView
           style={styles.map}
           initialRegion={initialRegion}
-          showsUserLocation={true}
-          showsMyLocationButton={true}
+          showsUserLocation={locationGranted}
+          showsMyLocationButton={locationGranted}
           mapType="standard"
           onMapReady={() => setMapError(null)}
           onError={(error) => {
