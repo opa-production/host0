@@ -251,7 +251,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Map')} activeOpacity={1}>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TrackCarSelect')} activeOpacity={1}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Track your car</Text>
             <Ionicons name="location-outline" size={20} color="#8E8E93" />

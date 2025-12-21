@@ -36,6 +36,7 @@ import ActiveBookingScreen from '../screens/ActiveBookingScreen';
 import PastBookingsScreen from '../screens/PastBookingsScreen';
 import WithdrawScreen from '../screens/WithdrawScreen';
 import AllTransactionsScreen from '../screens/AllTransactionsScreen';
+import TrackCarSelectScreen from '../screens/TrackCarSelectScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
 import OpaClientDownloadScreen from '../screens/OpaClientDownloadScreen';
 import SupaHostScreen from '../screens/SupaHostScreen';
@@ -163,6 +164,11 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="AllTransactions" 
           component={AllTransactionsScreen}
+        />
+
+        <Stack.Screen 
+          name="TrackCarSelect" 
+          component={TrackCarSelectScreen}
         />
 
         {/* Feedback Screen */}

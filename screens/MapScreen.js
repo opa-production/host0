@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import MapView from 'react-native-maps';
 
-export default function MapScreen({ navigation }) {
+export default function MapScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const [mapError, setMapError] = React.useState(null);
   const [locationGranted, setLocationGranted] = React.useState(false);
@@ -28,12 +28,16 @@ export default function MapScreen({ navigation }) {
   }, []);
 
   // Default location: Nakuru, Kenya
-  const initialRegion = {
+  const defaultRegion = {
     latitude: -0.3031,
     longitude: 36.0800,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   };
+
+  const title = route?.params?.title;
+  const plate = route?.params?.plate;
+  const initialRegion = route?.params?.initialRegion ?? defaultRegion;
 
   return (
     <View style={styles.container}>
@@ -47,6 +51,15 @@ export default function MapScreen({ navigation }) {
       >
         <Ionicons name="arrow-back" size={24} color="#000000" />
       </TouchableOpacity>
+
+      {(title || plate) && (
+        <View style={[styles.infoPill, { top: insets.top + 16 }]}>
+          <Text style={styles.infoTitle} numberOfLines={1}>
+            {title || 'Vehicle'}
+          </Text>
+          {!!plate && <Text style={styles.infoSub}>{plate}</Text>}
+        </View>
+      )}
 
       {/* Map */}
       {mapError ? (
@@ -97,6 +110,32 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  infoPill: {
+    position: 'absolute',
+    left: 76,
+    right: 16,
+    zIndex: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Bold',
+    color: '#000000',
+  },
+  infoSub: {
+    marginTop: 2,
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: '#666666',
   },
   errorContainer: {
     flex: 1,
