@@ -145,42 +145,56 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           </View>
           
-          <View style={styles.gridContainer}>
-            {/* Active Rentals */}
-            <View style={styles.gridItem}>
-              <View style={styles.iconBadge}>
-                <Ionicons name="car-outline" size={22} color={styles.iconMono.color} />
+          <View style={styles.opsList}>
+            <TouchableOpacity style={styles.opsRow} activeOpacity={0.75}>
+              <View style={styles.opsLeft}>
+                <Ionicons name="car-sport-outline" size={20} color={styles.iconMono.color} />
+                <Text style={styles.opsLabel}>Rentals</Text>
               </View>
-              <Text style={styles.gridValue}>{operationsData.activeRentals}</Text>
-              <Text style={styles.gridLabel}>Rentals</Text>
-            </View>
+              <View style={styles.opsRight}>
+                <Text style={styles.opsValue}>{operationsData.activeRentals}</Text>
+                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+              </View>
+            </TouchableOpacity>
 
-            {/* Today's Pickups */}
-            <View style={styles.gridItem}>
-              <View style={styles.iconBadge}>
-                <Ionicons name="key-outline" size={22} color={styles.iconMono.color} />
-              </View>
-              <Text style={styles.gridValue}>{operationsData.pickups}</Text>
-              <Text style={styles.gridLabel}>Pickups</Text>
-            </View>
+            <View style={styles.opsDivider} />
 
-            {/* Today's Returns */}
-            <View style={styles.gridItem}>
-              <View style={styles.iconBadge}>
-                <Ionicons name="return-down-back-outline" size={22} color={styles.iconMono.color} />
+            <TouchableOpacity style={styles.opsRow} activeOpacity={0.75}>
+              <View style={styles.opsLeft}>
+                <Ionicons name="enter-outline" size={20} color={styles.iconMono.color} />
+                <Text style={styles.opsLabel}>Pickups</Text>
               </View>
-              <Text style={styles.gridValue}>{operationsData.returns}</Text>
-              <Text style={styles.gridLabel}>Returns</Text>
-            </View>
+              <View style={styles.opsRight}>
+                <Text style={styles.opsValue}>{operationsData.pickups}</Text>
+                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+              </View>
+            </TouchableOpacity>
 
-            {/* Pending Requests */}
-            <View style={styles.gridItem}>
-              <View style={styles.iconBadge}>
-                <Ionicons name="time-outline" size={22} color={styles.iconMono.color} />
+            <View style={styles.opsDivider} />
+
+            <TouchableOpacity style={styles.opsRow} activeOpacity={0.75}>
+              <View style={styles.opsLeft}>
+                <Ionicons name="exit-outline" size={20} color={styles.iconMono.color} />
+                <Text style={styles.opsLabel}>Returns</Text>
               </View>
-              <Text style={styles.gridValue}>{operationsData.pendingRequests}</Text>
-              <Text style={styles.gridLabel}>Pending</Text>
-            </View>
+              <View style={styles.opsRight}>
+                <Text style={styles.opsValue}>{operationsData.returns}</Text>
+                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.opsDivider} />
+
+            <TouchableOpacity style={styles.opsRow} activeOpacity={0.75}>
+              <View style={styles.opsLeft}>
+                <Ionicons name="hourglass-outline" size={20} color={styles.iconMono.color} />
+                <Text style={styles.opsLabel}>Pending</Text>
+              </View>
+              <View style={styles.opsRight}>
+                <Text style={styles.opsValue}>{operationsData.pendingRequests}</Text>
+                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -304,44 +318,45 @@ const styles = StyleSheet.create({
   cardTitle: {
     ...TYPE.section,
   },
-  // Grid Styles for Operations Card
-  gridContainer: {
+  // Daily Operations (list links)
+  opsList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  opsRow: {
     flexDirection: 'row',
-    flexWrap: 'nowrap',
+    alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  gridItem: {
-    width: '23%',
-    backgroundColor: '#F9F9F9', // Subtle background for items
-    borderRadius: 12,
     paddingVertical: 14,
-    paddingHorizontal: 10,
-    marginBottom: 0,
-    alignItems: 'center',
+    paddingHorizontal: 12,
   },
-  iconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  opsLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-    backgroundColor: '#F2F2F7',
+    gap: 10,
+  },
+  opsLabel: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+  },
+  opsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  opsValue: {
+    fontSize: 13,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#1C1C1E',
+  },
+  opsDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E5EA',
+    marginLeft: 42,
   },
   iconMono: {
     color: '#1C1C1E',
-  },
-  gridValue: {
-    fontSize: 20,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  gridLabel: {
-    fontSize: 11,
-    fontFamily: 'Nunito-Regular',
-    color: '#8E8E93',
-    textAlign: 'center',
   },
   // Financial Card Styles
   earningsSection: {
