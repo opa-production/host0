@@ -230,7 +230,7 @@ export default function HomeScreen({ navigation }) {
         {/* Card 2: Financial Performance */}
         <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Finance')} activeOpacity={1}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Performance & Analytics</Text>
+            <Text style={styles.cardTitle}>Financial Performance</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Finance')} activeOpacity={1}>
               <Ionicons name="arrow-forward" size={20} color="#8E8E93" />
             </TouchableOpacity>
