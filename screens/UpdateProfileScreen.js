@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function UpdateProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -70,7 +71,7 @@ export default function UpdateProfileScreen({ navigation, route }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Back Button */}
       <TouchableOpacity
@@ -78,7 +79,7 @@ export default function UpdateProfileScreen({ navigation, route }) {
         onPress={() => navigation.goBack()}
         activeOpacity={1}
       >
-        <Ionicons name="arrow-back" size={24} color="#000000" />
+        <Ionicons name="arrow-back" size={22} color="#000000" />
       </TouchableOpacity>
 
       <ScrollView 
@@ -197,20 +198,20 @@ export default function UpdateProfileScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 24,
-    paddingBottom: 40,
+    padding: SPACING.l,
+    paddingBottom: 120,
   },
   backButton: {
     position: 'absolute',
     left: 16,
     zIndex: 10,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#ffffff',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
@@ -218,79 +219,80 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 32,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.title,
+    fontSize: 20,
+    color: '#1C1C1E',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   form: {
-    gap: 20,
+    gap: 12,
   },
   inputGroup: {
     marginBottom: 4,
   },
   label: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
-    marginBottom: 8,
+    ...TYPE.micro,
+    color: '#8E8E93',
+    marginBottom: 6,
   },
   input: {
     width: '100%',
-    height: 52,
+    height: 48,
     paddingHorizontal: 16,
-    backgroundColor: '#f8f8f8',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: '#000000',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    ...TYPE.body,
+    fontSize: 14,
+    color: '#1C1C1E',
   },
   inputError: {
-    borderColor: '#FF1577',
-    backgroundColor: '#fff5f8',
+    borderColor: '#FF3B30',
   },
   errorText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-Regular',
-    color: '#FF1577',
+    ...TYPE.caption,
+    fontSize: 11,
+    color: '#FF3B30',
     marginTop: 4,
   },
   saveButton: {
     width: '100%',
-    height: 52,
-    backgroundColor: '#FF1577',
-    borderRadius: 30,
+    height: 46,
+    backgroundColor: '#000000',
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#FF1577',
+    marginTop: 6,
+    shadowColor: '#000000',
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 3,
   },
   saveButtonText: {
-    fontSize: 16,
+    ...TYPE.bodyStrong,
+    fontSize: 14,
     fontFamily: 'Nunito-Bold',
-    color: '#ffffff',
+    color: '#FFFFFF',
   },
 });
 
