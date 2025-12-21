@@ -21,7 +21,6 @@ const SettingsScreen = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -81,16 +80,6 @@ const SettingsScreen = () => {
   const handleDeleteCancel = () => {
     setShowDeleteModal(false);
     setDeleteConfirmText('');
-  };
-
-  const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
-
-  const handleConfirmLogout = () => {
-    setShowLogoutModal(false);
-    // TODO: Implement logout logic
-    navigation.replace('Landing');
   };
 
   const SettingItem = ({ icon, title, onPress, rightComponent, showArrow = true }) => (
@@ -228,19 +217,6 @@ const SettingsScreen = () => {
           />
         </View>
 
-        {/* Logout Button */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          activeOpacity={1}
-        >
-          <Ionicons name="log-out-outline" size={24} color="#FF1577" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-
-        {/* Separator Line */}
-        <View style={styles.sectionSeparator} />
-
         {/* App Version Section */}
         <View style={styles.versionSection}>
           <Text style={styles.versionText}>Version 1.0.0 Beta</Text>
@@ -249,43 +225,6 @@ const SettingsScreen = () => {
           </Text>
         </View>
 
-        {/* Logout Confirmation Modal */}
-        <Modal
-          visible={showLogoutModal}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowLogoutModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.logoutIconCircle}>
-                <Ionicons name="log-out-outline" size={64} color="#FF1577" />
-              </View>
-              <Text style={styles.modalTitle}>Logout</Text>
-              <Text style={styles.modalMessage}>
-                Are you sure you want to log out? You'll need to sign in again to access your account.
-              </Text>
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonCancel]}
-                  onPress={() => setShowLogoutModal(false)}
-                  activeOpacity={1}
-                >
-                  <Text style={styles.modalButtonTextCancel}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonLogout]}
-                  onPress={handleConfirmLogout}
-                  activeOpacity={1}
-                >
-                  <Text style={styles.modalButtonTextLogout}>Logout</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        {/* Delete Account Modal */}
         <Modal
           visible={showDeleteModal}
           transparent
@@ -318,7 +257,7 @@ const SettingsScreen = () => {
                   style={[
                     styles.modalButton,
                     styles.modalButtonDelete,
-                    deleteConfirmText.toLowerCase() !== 'delete' && { opacity: 0.5 }
+                    deleteConfirmText.toLowerCase() !== 'delete' && { opacity: 0.5 },
                   ]}
                   onPress={handleDeleteConfirm}
                   activeOpacity={1}
@@ -428,20 +367,6 @@ const styles = StyleSheet.create({
     ...TYPE.body,
     fontSize: 13,
     color: '#8E8E93',
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-    marginHorizontal: 24,
-    gap: 12,
-    marginTop: 8,
-  },
-  logoutText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
   },
   versionSection: {
     paddingHorizontal: 24,

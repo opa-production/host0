@@ -35,9 +35,18 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logout pressed');
-    // navigation.replace('Landing');
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log out',
+        style: 'destructive',
+        onPress: () =>
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Landing' }],
+          }),
+      },
+    ]);
   };
 
   const handleEditProfile = () => {
@@ -185,6 +194,11 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
+          <Ionicons name="log-out-outline" size={22} color="#FF1577" style={styles.linkIcon} />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
 
       </ScrollView>
     </View>
@@ -337,5 +351,22 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#1C1C1E',
+  },
+  logoutButton: {
+    marginTop: SPACING.l,
+    marginHorizontal: SPACING.l,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  logoutText: {
+    ...TYPE.bodyStrong,
+    color: '#FF1577',
+    marginLeft: 10,
   },
 });

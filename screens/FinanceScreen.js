@@ -28,7 +28,7 @@ export default function FinanceScreen({ navigation }) {
   };
 
   const handleViewMoreTransactions = () => {
-    alert('Transaction history is coming soon.');
+    navigation.navigate('AllTransactions', { transactions: recentTransactions });
   };
 
   return (

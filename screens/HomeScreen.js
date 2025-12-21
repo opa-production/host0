@@ -105,11 +105,8 @@ export default function HomeScreen({ navigation }) {
   }
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
+    const numericAmount = Number(amount) || 0;
+    return `KSh ${numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
   };
 
   return (
