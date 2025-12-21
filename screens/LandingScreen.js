@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: '#111111',
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.button,
     paddingVertical: 14,
     paddingHorizontal: 16,
     alignItems: 'center',
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.button,
     paddingVertical: 14,
     paddingHorizontal: 16,
     alignItems: 'center',

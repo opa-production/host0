@@ -21,6 +21,7 @@ export const SPACING = {
 export const RADIUS = {
   card: 16,
   lg: 18,
+  button: 28,
   pill: 999,
 };
 

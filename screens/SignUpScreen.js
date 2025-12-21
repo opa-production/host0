@@ -12,7 +12,7 @@ import {
   Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPE } from '../ui/tokens';
+import { COLORS, TYPE, RADIUS } from '../ui/tokens';
 
 export default function SignUpScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   },
   signUpButton: {
     backgroundColor: '#000000',
-    borderRadius: 14,
+    borderRadius: RADIUS.button,
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: RADIUS.button,
     height: 50,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

@@ -13,7 +13,7 @@ import {
   Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPE } from '../ui/tokens';
+import { COLORS, TYPE, RADIUS } from '../ui/tokens';
 
 const { width } = Dimensions.get('window');
 
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: '#000000', // Brand color
-    borderRadius: 14,
+    borderRadius: RADIUS.button,
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: RADIUS.button,
     height: 50,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
