@@ -2,6 +2,7 @@ import React, { useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput, StatusBar, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 // Simple Toggle Component
 const Toggle = ({ value, onValueChange, disabled = false }) => (
@@ -118,7 +119,7 @@ const SettingsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Back Button */}
       <TouchableOpacity 
@@ -190,12 +191,12 @@ const SettingsScreen = () => {
         <SectionHeader title="Support & Information" />
         <View style={styles.section}>
           <SettingItem
-            icon="help-circle-outline"
+            icon="headset-outline"
             title="Customer Support"
             onPress={handleCustomerSupport}
           />
           <SettingItem
-            icon="shield-checkmark-outline"
+            icon="hand-left-outline"
             title="Privacy"
             onPress={handlePrivacy}
           />
@@ -337,7 +338,7 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   floatingBackButton: {
     position: 'absolute',
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
@@ -357,45 +358,44 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
     paddingTop: 100,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
-    paddingHorizontal: 24,
+    paddingHorizontal: SPACING.l,
     paddingBottom: 8,
   },
   headerTitle: {
-    fontSize: 32,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.largeTitle,
   },
   sectionHeader: {
-    fontSize: 12,
-    fontFamily: 'Nunito-SemiBold',
+    ...TYPE.micro,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: 24,
     marginBottom: 8,
-    paddingHorizontal: 24,
-    color: '#999999',
+    paddingHorizontal: SPACING.l,
+    color: '#8E8E93',
   },
   section: {
-    marginHorizontal: 24,
+    marginHorizontal: SPACING.l,
     marginBottom: 8,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
   },
   sectionSeparator: {
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    marginHorizontal: 24,
+    borderTopColor: '#E5E5EA',
+    marginHorizontal: SPACING.l,
     marginTop: 8,
     marginBottom: 8,
   },
@@ -405,6 +405,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E5EA',
   },
   settingItemLeft: {
     flexDirection: 'row',
@@ -413,9 +415,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   settingItemTitle: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
   },
   settingItemRight: {
     flexDirection: 'row',
@@ -423,9 +425,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   settingItemValue: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#999999',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   logoutButton: {
     flexDirection: 'row',
