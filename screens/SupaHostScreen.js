@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function SupaHostScreen({ navigation }) {
   const [billing, setBilling] = useState('monthly'); // monthly | yearly
@@ -29,7 +30,7 @@ export default function SupaHostScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
         <Ionicons name="arrow-back" size={22} color="#000000" />
@@ -39,22 +40,22 @@ export default function SupaHostScreen({ navigation }) {
         <Text style={styles.title}>Become a SupaHost</Text>
         <Text style={styles.subtitle}>Unlock boosted earnings and visibility with the premium host badge.</Text>
 
-        <View style={styles.toggleRow}>
-          {['monthly', 'yearly'].map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.toggle,
-                billing === option && styles.toggleActive,
-              ]}
-              activeOpacity={0.9}
-              onPress={() => setBilling(option)}
-            >
-              <Text style={[styles.toggleText, billing === option && styles.toggleTextActive]}>
-                {option === 'monthly' ? 'Monthly' : 'Yearly'}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity
+            style={[styles.toggleOption, billing === 'monthly' && styles.toggleOptionActive]}
+            onPress={() => setBilling('monthly')}
+            activeOpacity={0.9}
+          >
+            <Text style={[styles.toggleText, billing === 'monthly' && styles.toggleTextActive]}>Monthly</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.toggleOption, billing === 'yearly' && styles.toggleOptionActive]}
+            onPress={() => setBilling('yearly')}
+            activeOpacity={0.9}
+          >
+            <Text style={[styles.toggleText, billing === 'yearly' && styles.toggleTextActive]}>Yearly</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.card}>
@@ -74,7 +75,7 @@ export default function SupaHostScreen({ navigation }) {
           <View style={styles.benefitsList}>
             {benefits.map((item) => (
               <View style={styles.benefitItem} key={item}>
-                <Ionicons name="checkmark-circle" size={18} color="#2e8b57" />
+                <Ionicons name="checkmark" size={18} color="#111111" />
                 <Text style={styles.benefitText}>{item}</Text>
               </View>
             ))}
@@ -92,7 +93,7 @@ export default function SupaHostScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fdfdfd',
+    backgroundColor: COLORS.bg,
   },
   backButton: {
     position: 'absolute',
@@ -102,62 +103,65 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   content: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.l,
     paddingTop: 90,
     paddingBottom: 80,
-    gap: 16,
+    gap: 14,
   },
   title: {
-    fontSize: 24,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.title,
+    fontSize: 20,
+    color: '#1C1C1E',
   },
   subtitle: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
   },
-  toggleRow: {
+  toggleContainer: {
     flexDirection: 'row',
-    gap: 10,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 999,
+    padding: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
-  toggle: {
+  toggleOption: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 999,
   },
-  toggleActive: {
-    backgroundColor: '#111111',
-    borderColor: '#111111',
+  toggleOptionActive: {
+    backgroundColor: '#000000',
   },
   toggleText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#111111',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   toggleTextActive: {
     color: '#ffffff',
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#efefef',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.m,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -171,9 +175,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.section,
+    fontSize: 15,
+    color: '#1C1C1E',
   },
   badge: {
     flexDirection: 'row',
@@ -190,23 +194,23 @@ const styles = StyleSheet.create({
     color: '#111111',
   },
   price: {
-    fontSize: 20,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.section,
+    fontSize: 15,
+    color: '#1C1C1E',
   },
   note: {
+    ...TYPE.body,
     fontSize: 13,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: '#8E8E93',
   },
   divider: {
     height: 1,
     backgroundColor: '#f0f0f0',
   },
   benefitsTitle: {
+    ...TYPE.section,
     fontSize: 15,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    color: '#1C1C1E',
   },
   benefitsList: {
     gap: 8,
@@ -218,9 +222,9 @@ const styles = StyleSheet.create({
   },
   benefitText: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#333333',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#1C1C1E',
   },
   primaryButton: {
     backgroundColor: '#111111',
@@ -230,8 +234,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   primaryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
+    ...TYPE.bodyStrong,
+    fontSize: 14,
     fontFamily: 'Nunito-Bold',
+    color: '#FFFFFF',
   },
 });

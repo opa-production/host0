@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function OpaClientDownloadScreen({ navigation }) {
   const handleDownload = () => {
@@ -9,7 +10,7 @@ export default function OpaClientDownloadScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
         <Ionicons name="arrow-back" size={22} color="#000000" />
@@ -38,7 +39,7 @@ export default function OpaClientDownloadScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fdfdfd',
+    backgroundColor: COLORS.bg,
   },
   backButton: {
     position: 'absolute',
@@ -48,41 +49,43 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.l,
     paddingTop: 90,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
     marginBottom: 18,
     gap: 6,
   },
   title: {
-    fontSize: 24,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.title,
+    fontSize: 20,
+    color: '#1C1C1E',
   },
   subtitle: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#efefef',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.m,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -97,19 +100,20 @@ const styles = StyleSheet.create({
   },
   cardText: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#444444',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   primaryButton: {
-    backgroundColor: '#111111',
+    backgroundColor: '#000000',
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 16,
     alignItems: 'center',
   },
   primaryButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    ...TYPE.bodyStrong,
+    fontSize: 14,
     fontFamily: 'Nunito-Bold',
   },
 });
