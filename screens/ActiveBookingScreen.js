@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function ActiveBookingScreen({ navigation }) {
   const booking = {
@@ -27,7 +28,7 @@ export default function ActiveBookingScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
       {/* Back button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
@@ -37,17 +38,17 @@ export default function ActiveBookingScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={styles.heroCard}>
-          <Image source={booking.vehicleImage} style={styles.heroImage} resizeMode="cover" />
-          <View style={styles.heroOverlay}>
+          <Image source={booking.vehicleImage} style={styles.heroAvatar} resizeMode="cover" />
+          <View style={styles.heroInfo}>
             <Text style={styles.heroTitle}>{booking.vehicleName}</Text>
             <Text style={styles.heroSubtitle}>{booking.location}</Text>
             <View style={styles.badgeRow}>
               <View style={styles.badge}>
-                <Ionicons name="car-sport-outline" size={14} color="#222222" />
+                <Ionicons name="car-sport-outline" size={14} color={COLORS.text} />
                 <Text style={styles.badgeText}>{booking.plate}</Text>
               </View>
               <View style={[styles.badge, styles.badgeAlt]}>
-                <Ionicons name="radio-button-on-outline" size={14} color="#32CD32" />
+                <Ionicons name="radio-button-on-outline" size={14} color="#34C759" />
                 <Text style={[styles.badgeText, styles.badgeTextAlt]}>{booking.status}</Text>
               </View>
             </View>
@@ -163,42 +164,46 @@ export default function ActiveBookingScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fdfdfd',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 20,
+    padding: SPACING.l,
     paddingTop: 90,
-    paddingBottom: 100,
+    paddingBottom: 110,
     gap: 16,
   },
   heroCard: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    height: 220,
-    backgroundColor: '#f0f0f0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.m,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  heroImage: {
-    width: '100%',
-    height: '100%',
+  heroAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.bg,
+    marginRight: 14,
   },
-  heroOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: 16,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+  heroInfo: {
+    flex: 1,
   },
   heroTitle: {
-    fontSize: 20,
-    fontFamily: 'Nunito-Bold',
-    color: '#ffffff',
-    marginBottom: 4,
+    ...TYPE.title,
+    fontSize: 18,
+    color: COLORS.text,
   },
   heroSubtitle: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#f1f1f1',
+    ...TYPE.body,
+    color: COLORS.subtle,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -209,28 +214,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   badgeAlt: {
-    backgroundColor: '#d8f5dd',
+    backgroundColor: '#EAF8EE',
+    borderColor: '#D1EED8',
   },
   badgeText: {
     fontSize: 12,
     fontFamily: 'Nunito-SemiBold',
-    color: '#222222',
+    color: COLORS.text,
   },
   badgeTextAlt: {
-    color: '#2e8b57',
+    color: '#248A3D',
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#efefef',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.m,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -245,9 +253,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.title,
+    fontSize: 16,
+    color: COLORS.text,
   },
   renterRow: {
     flexDirection: 'row',
@@ -270,23 +278,25 @@ const styles = StyleSheet.create({
     borderColor: '#ededed',
   },
   renterName: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
   },
   renterBio: {
+    ...TYPE.body,
     fontSize: 13,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
     marginTop: 2,
   },
   iconButton: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#FFF4FA',
+    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   detailRow: {
     flexDirection: 'row',
@@ -298,23 +308,25 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#f3f3f3',
+    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   detailLabel: {
-    fontSize: 13,
-    fontFamily: 'Nunito-Regular',
-    color: '#777777',
+    ...TYPE.caption,
+    fontSize: 12,
+    color: COLORS.subtle,
   },
   detailValue: {
-    fontSize: 15,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: COLORS.text,
   },
   divider: {
     height: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.borderStrong,
     marginVertical: 6,
   },
   timelineRow: {
@@ -329,12 +341,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: COLORS.bg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   timelineText: {
+    ...TYPE.bodyStrong,
     fontSize: 13,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#444444',
+    color: COLORS.subtle,
   },
   rowBetween: {
     flexDirection: 'row',
@@ -343,30 +357,29 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   label: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    color: COLORS.subtle,
   },
   value: {
-    fontSize: 15,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: COLORS.text,
   },
   valueMuted: {
-    color: '#888888',
+    color: COLORS.subtle,
   },
   bold: {
     fontFamily: 'Nunito-Bold',
     fontSize: 16,
   },
   accent: {
-    color: '#111111',
+    color: COLORS.text,
   },
   actionsCard: {
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#FF1577',
+    backgroundColor: '#111111',
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: 'center',
@@ -377,17 +390,17 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   outlineButton: {
-    borderColor: '#d3d3d3',
-    borderWidth: 2,
+    borderColor: COLORS.borderStrong,
+    borderWidth: 1,
     paddingVertical: 13,
     borderRadius: 14,
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
   },
   outlineButtonText: {
     fontSize: 15,
     fontFamily: 'Nunito-Bold',
-    color: '#444444',
+    color: COLORS.text,
   },
   secondaryButton: {
     flexDirection: 'row',
@@ -396,14 +409,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: COLORS.bg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   secondaryButtonText: {
     fontSize: 14,
@@ -418,7 +426,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -426,5 +434,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
 });
