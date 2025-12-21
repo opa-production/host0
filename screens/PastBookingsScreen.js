@@ -25,26 +25,6 @@ export default function PastBookingsScreen({ navigation }) {
       totalAmount: 'KSh 14,000',
       location: 'Nakuru, Kenya',
     },
-    {
-      id: 'past-3',
-      vehicleName: 'Mercedes C200',
-      vehicleImage: require('../assets/images/bmw.jpg'),
-      startDate: '2023-10-17',
-      endDate: '2023-10-19',
-      status: 'completed',
-      totalAmount: 'KSh 22,000',
-      location: 'Nakuru, Kenya',
-    },
-    {
-      id: 'past-4',
-      vehicleName: 'Honda Fit',
-      vehicleImage: require('../assets/images/bm.jpg'),
-      startDate: '2023-09-06',
-      endDate: '2023-09-07',
-      status: 'completed',
-      totalAmount: 'KSh 7,000',
-      location: 'Nakuru, Kenya',
-    },
   ];
 
   const getStatusColor = (status) => {
@@ -101,31 +81,16 @@ export default function PastBookingsScreen({ navigation }) {
 
               <View style={styles.listMiddle}>
                 <View style={styles.rowTop}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
-                    {b.vehicleName}
-                  </Text>
+                  <Text style={styles.cardTitle} numberOfLines={1}>{b.vehicleName}</Text>
                   <View style={[styles.statusPill, { backgroundColor: getStatusColor(b.status) + '1A' }]}>
                     <Text style={[styles.statusPillText, { color: getStatusColor(b.status) }]}>
                       {getStatusText(b.status)}
                     </Text>
                   </View>
                 </View>
-
-                <Text style={styles.cardSub} numberOfLines={1}>
+                <Text style={styles.cardSub}>
                   {b.startDate} - {b.endDate}
                 </Text>
-
-                <View style={styles.metaRow}>
-                  <Ionicons name="location-outline" size={14} color={COLORS.subtle} />
-                  <Text style={styles.metaText} numberOfLines={1}>
-                    {b.location}
-                  </Text>
-                </View>
-
-                <View style={styles.bottomRow}>
-                  <Text style={styles.amount}>{b.totalAmount}</Text>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.subtle} />
-                </View>
               </View>
             </TouchableOpacity>
           ))}
