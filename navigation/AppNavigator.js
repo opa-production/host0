@@ -34,6 +34,7 @@ import AddPaymentMethodScreen from '../screens/AddPaymentMethodScreen';
 import FinanceScreen from '../screens/FinanceScreen';
 import ActiveBookingScreen from '../screens/ActiveBookingScreen';
 import PastBookingsScreen from '../screens/PastBookingsScreen';
+import WithdrawScreen from '../screens/WithdrawScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
 import OpaClientDownloadScreen from '../screens/OpaClientDownloadScreen';
 import SupaHostScreen from '../screens/SupaHostScreen';
@@ -151,6 +152,11 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="Finance" 
           component={FinanceScreen}
+        />
+
+        <Stack.Screen 
+          name="Withdraw" 
+          component={WithdrawScreen}
         />
 
         {/* Feedback Screen */}

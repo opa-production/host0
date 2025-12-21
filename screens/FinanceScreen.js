@@ -24,7 +24,7 @@ export default function FinanceScreen({ navigation }) {
     `KSh ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 
   const handleWithdraw = () => {
-    alert('Withdrawals are coming soon.');
+    navigation.navigate('Withdraw', { withdrawable: earnings.withdrawable });
   };
 
   const handleViewMoreTransactions = () => {
