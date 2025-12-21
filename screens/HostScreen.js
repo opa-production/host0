@@ -23,9 +23,9 @@ export default function HostScreen({ navigation }) {
               <Text style={styles.subtitle}>Add cars and services</Text>
             </View>
             <TouchableOpacity
-              style={styles.listButton}
               onPress={() => navigation.navigate('MyListings')}
-              activeOpacity={1}
+              style={styles.headerIconButton}
+              activeOpacity={0.7}
             >
               <Ionicons name="list-outline" size={24} color="#000000" />
             </TouchableOpacity>
@@ -68,23 +68,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  listButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+  headerIconButton: {
+    padding: 6,
   },
   title: {
     ...TYPE.largeTitle,

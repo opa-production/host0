@@ -186,11 +186,11 @@ export default function BookingsScreen({ navigation }) {
               <Text style={styles.subtitle}>Manage your bookings</Text>
             </View>
             <TouchableOpacity
-              style={styles.notificationButton}
-              onPress={() => navigation.navigate('Notifications')}
-              activeOpacity={1}
+              onPress={() => navigation.navigate('PastBookings')}
+              style={styles.headerIconButton}
+              activeOpacity={0.7}
             >
-              <Ionicons name="notifications-outline" size={24} color="#000000" />
+              <Ionicons name="albums-outline" size={24} color="#000000" />
             </TouchableOpacity>
           </View>
         </View>
@@ -244,23 +244,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  notificationButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+  headerIconButton: {
+    padding: 6,
   },
   title: {
     ...TYPE.largeTitle,

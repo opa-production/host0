@@ -127,11 +127,11 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.userName}>{userName}</Text>
             </View>
             <TouchableOpacity
-              style={styles.profileButton}
-              onPress={() => navigation.navigate('Host')} // Assuming Host profile is here
+              style={styles.headerIconButton}
+              onPress={() => navigation.navigate('Notifications')}
               activeOpacity={0.8}
             >
-              <Ionicons name="person-outline" size={24} color="#000000" />
+              <Ionicons name="notifications-outline" size={24} color="#000000" />
             </TouchableOpacity>
           </View>
         </View>
@@ -262,18 +262,8 @@ const styles = StyleSheet.create({
     color: '#000000',
     letterSpacing: 0.35,
   },
-  profileButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+  headerIconButton: {
+    padding: 6,
   },
   card: {
     backgroundColor: '#FFFFFF',
