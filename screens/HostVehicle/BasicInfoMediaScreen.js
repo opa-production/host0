@@ -111,7 +111,6 @@ export default function BasicInfoMediaScreen({ formData, updateFormData, onNext 
       formData.name.trim() !== '' &&
       formData.model.trim() !== '' &&
       formData.images.length >= 4 &&
-      formData.video !== null &&
       formData.description.trim() !== ''
     );
   };
@@ -188,8 +187,8 @@ export default function BasicInfoMediaScreen({ formData, updateFormData, onNext 
 
       {/* Video */}
       <View style={styles.section}>
-        <Text style={styles.label}>Video *</Text>
-        <Text style={styles.hint}>15 seconds video of your car</Text>
+        <Text style={styles.label}>Video</Text>
+        <Text style={styles.hint}>Optional (up to 15 seconds)</Text>
         
         {formData.video ? (
           <View style={styles.videoContainer}>

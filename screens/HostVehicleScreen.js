@@ -109,7 +109,7 @@ export default function HostVehicleScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       
       {/* Header with Progress */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingBottom: 16,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e8e8e8',
     backgroundColor: '#ffffff',
@@ -154,10 +154,10 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 6,
   },
   progressContainer: {
-    marginTop: 8,
+    marginTop: 4,
   },
   stepIndicator: {
     fontSize: 12,
@@ -169,10 +169,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Nunito-Bold',
     color: '#000000',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   progressBarContainer: {
-    height: 4,
+    height: 3,
     backgroundColor: '#e8e8e8',
     borderRadius: 2,
     overflow: 'hidden',
