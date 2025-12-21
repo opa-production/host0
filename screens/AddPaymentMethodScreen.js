@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function AddPaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -24,6 +25,20 @@ export default function AddPaymentMethodScreen({ navigation }) {
   });
   const [cardErrors, setCardErrors] = useState({});
   const [cardType, setCardType] = useState(null); // 'visa' or 'mastercard'
+
+  const selectMpesa = () => {
+    setSelectedType('mpesa');
+    setCardType(null);
+    setCardForm({ name: '', cardNumber: '', expiry: '', cvv: '' });
+    setCardErrors({});
+  };
+
+  const selectCard = () => {
+    setSelectedType('card');
+    setCardType(null);
+    setMpesaForm({ name: '', mobileNumber: '' });
+    setMpesaErrors({});
+  };
 
   // Format card number as XXXX XXXX XXXX XXXX
   const formatCardNumber = (text) => {
@@ -228,7 +243,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Back Button */}
       <TouchableOpacity
@@ -236,78 +251,62 @@ export default function AddPaymentMethodScreen({ navigation }) {
         onPress={() => navigation.goBack()}
         activeOpacity={1}
       >
-        <Ionicons name="arrow-back" size={24} color="#000000" />
+        <Ionicons name="arrow-back" size={22} color="#000000" />
       </TouchableOpacity>
 
       <ScrollView 
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 60 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 80 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <Text style={styles.title}>Payment Methods</Text>
-          <Text style={styles.subtitle}>Add and manage your payment methods</Text>
-        </View>
+          <Text style={styles.subtitle}>Add and manage payment methods</Text>
+        </View> */}
 
         {/* Payment Type Selection */}
-        {!selectedType && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Payment Method</Text>
-            <View style={styles.paymentTypeCards}>
-              {/* M-Pesa Card */}
-              <TouchableOpacity
-                style={styles.paymentTypeCard}
-                onPress={() => setSelectedType('mpesa')}
-                activeOpacity={1}
-              >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Select Payment Method</Text>
+          <View style={styles.paymentTypeCards}>
+            <TouchableOpacity
+              style={[styles.paymentTypeCard, selectedType === 'mpesa' && styles.paymentTypeCardActive]}
+              onPress={selectMpesa}
+              activeOpacity={0.9}
+            >
+              <Image 
+                source={require('../assets/images/mpesa.png')} 
+                style={styles.paymentTypeLogoSmall}
+                resizeMode="contain"
+              />
+              <Text style={styles.paymentTypeLabel}>Mobile money</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.paymentTypeCard, selectedType === 'card' && styles.paymentTypeCardActive]}
+              onPress={selectCard}
+              activeOpacity={0.9}
+            >
+              <View style={styles.cardLogosInline}>
                 <Image 
-                  source={require('../assets/images/mpesa.png')} 
-                  style={styles.paymentTypeLogo}
+                  source={require('../assets/images/visa.png')} 
+                  style={styles.cardLogoTiny}
                   resizeMode="contain"
                 />
-                <Text style={styles.paymentTypeName}>M-Pesa</Text>
-              </TouchableOpacity>
-
-              {/* Card Option */}
-              <TouchableOpacity
-                style={styles.paymentTypeCard}
-                onPress={() => setSelectedType('card')}
-                activeOpacity={1}
-              >
-                <View style={styles.cardLogosContainer}>
-                  <Image 
-                    source={require('../assets/images/visa.png')} 
-                    style={styles.cardLogoSmall}
-                    resizeMode="contain"
-                  />
-                  <Image 
-                    source={require('../assets/images/mastercard.png')} 
-                    style={styles.cardLogoSmall}
-                    resizeMode="contain"
-                  />
-                </View>
-                <Text style={styles.paymentTypeName}>Card</Text>
-              </TouchableOpacity>
-            </View>
+                <Image 
+                  source={require('../assets/images/mastercard.png')} 
+                  style={styles.cardLogoTiny}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={styles.paymentTypeLabel}>Card</Text>
+            </TouchableOpacity>
           </View>
-        )}
+        </View>
 
         {/* M-Pesa Form */}
         {selectedType === 'mpesa' && (
           <View style={styles.section}>
-            <TouchableOpacity
-              style={styles.backToSelection}
-              onPress={() => {
-                setSelectedType(null);
-                setMpesaForm({ name: '', mobileNumber: '' });
-                setMpesaErrors({});
-              }}
-            >
-              <Ionicons name="arrow-back" size={20} color="#666666" />
-              <Text style={styles.backToSelectionText}>Back to selection</Text>
-            </TouchableOpacity>
-
             <Text style={styles.sectionTitle}>Add M-Pesa</Text>
             
             <View style={styles.form}>
@@ -370,19 +369,6 @@ export default function AddPaymentMethodScreen({ navigation }) {
         {/* Card Form */}
         {selectedType === 'card' && (
           <View style={styles.section}>
-            <TouchableOpacity
-              style={styles.backToSelection}
-              onPress={() => {
-                setSelectedType(null);
-                setCardForm({ name: '', cardNumber: '', expiry: '', cvv: '' });
-                setCardErrors({});
-                setCardType(null);
-              }}
-            >
-              <Ionicons name="arrow-back" size={20} color="#666666" />
-              <Text style={styles.backToSelectionText}>Back to selection</Text>
-            </TouchableOpacity>
-
             <Text style={styles.sectionTitle}>Add Card</Text>
             
             <View style={styles.form}>
@@ -557,20 +543,20 @@ export default function AddPaymentMethodScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 24,
-    paddingBottom: 40,
+    padding: SPACING.l,
+    paddingBottom: 120,
   },
   backButton: {
     position: 'absolute',
     left: 16,
     zIndex: 10,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#ffffff',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
@@ -578,109 +564,100 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: 14,
   },
   title: {
-    fontSize: 32,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.title,
+    fontSize: 20,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    color: '#8E8E93',
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 14,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
-    marginBottom: 16,
+    ...TYPE.section,
+    fontSize: 15,
+    color: '#1C1C1E',
+    marginBottom: 10,
   },
   paymentTypeCards: {
-    flexDirection: 'row',
-    gap: 16,
+    flexDirection: 'column',
+    gap: 12,
   },
   paymentTypeCard: {
-    flex: 1,
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    justifyContent: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    minHeight: 140,
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
+    minHeight: 52,
   },
-  paymentTypeLogo: {
-    width: 80,
-    height: 50,
-    marginBottom: 12,
+  paymentTypeCardActive: {
+    borderColor: '#000000',
   },
-  cardLogosContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+  paymentTypeLabel: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
+    marginLeft: 12,
   },
-  cardLogoSmall: {
-    width: 50,
-    height: 30,
+  paymentTypeLogoSmall: {
+    width: 48,
+    height: 20,
   },
-  paymentTypeName: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
-  },
-  backToSelection: {
+  cardLogosInline: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
+    gap: 10,
   },
-  backToSelectionText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+  cardLogoTiny: {
+    width: 40,
+    height: 18,
   },
   form: {
-    gap: 20,
+    gap: 12,
   },
   inputGroup: {
     marginBottom: 4,
   },
   label: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
-    marginBottom: 8,
+    ...TYPE.micro,
+    color: '#8E8E93',
+    marginBottom: 6,
   },
   input: {
     width: '100%',
-    height: 52,
+    height: 48,
     paddingHorizontal: 16,
     backgroundColor: '#f8f8f8',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Nunito-Regular',
     color: '#000000',
   },
@@ -689,8 +666,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff5f8',
   },
   errorText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.caption,
+    fontSize: 11,
     color: '#FF1577',
     marginTop: 4,
   },
@@ -718,25 +695,25 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: '100%',
-    height: 52,
-    backgroundColor: '#FF1577',
-    borderRadius: 30,
+    height: 46,
+    backgroundColor: '#000000',
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#FF1577',
+    marginTop: 6,
+    shadowColor: '#000000',
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 3,
   },
   submitButtonText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Bold',
-    color: '#ffffff',
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: '#FFFFFF',
   },
   savedCard: {
     flexDirection: 'row',
