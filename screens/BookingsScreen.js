@@ -20,6 +20,8 @@ export default function BookingsScreen({ navigation }) {
     location: 'Nakuru, Kenya',
   };
 
+  const booking = { ...mockBooking, status: 'active' };
+
   useEffect(() => {
     // Simulate loading
     const timer = setTimeout(() => {
@@ -193,98 +195,28 @@ export default function BookingsScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Booking Card */}
-        <View style={styles.bookingCard}>
-          {/* Vehicle Image */}
-          <Image 
-            source={mockBooking.vehicleImage} 
-            style={styles.vehicleImage}
-            resizeMode="cover"
-          />
-
-          {/* Card Content */}
-          <View style={styles.cardContent}>
-            {/* Header Row */}
-            <View style={styles.cardHeader}>
-              <View style={styles.vehicleInfo}>
-                <Text style={styles.vehicleName}>{mockBooking.vehicleName}</Text>
-                <Text style={styles.location}>
-                  <Ionicons name="location-outline" size={14} color="#666666" /> {mockBooking.location}
-                </Text>
+        {/* Booking Grid */}
+        <View style={styles.grid}>
+          <View style={styles.gridCard}>
+            <View style={styles.gridHeaderRow}>
+              <Image source={booking.vehicleImage} style={styles.vehicleAvatar} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.gridTitle}>{booking.vehicleName}</Text>
+                <Text style={styles.gridSub}>{booking.startDate} - {booking.endDate}</Text>
               </View>
-              <View
-                style={[
-                  styles.statusBadge,
-                  {
-                    backgroundColor:
-                      mockBooking.status === 'active'
-                        ? '#ffffff'
-                        : getStatusColor(mockBooking.status) + '15',
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusText,
-                    {
-                      color:
-                        mockBooking.status === 'active'
-                          ? '#2e8b57'
-                          : getStatusColor(mockBooking.status),
-                    },
-                  ]}
-                >
-                  {getStatusText(mockBooking.status)}
-                </Text>
+              <View style={[styles.statusPill, { backgroundColor: getStatusColor(booking.status) + '1A' }]}>
+                <Text style={[styles.statusPillText, { color: getStatusColor(booking.status) }]}>{getStatusText(booking.status)}</Text>
               </View>
             </View>
 
-            {/* Renter Info */}
-            <View style={styles.renterInfo}>
-              <Ionicons name="person-outline" size={16} color="#666666" />
-              <Text style={styles.renterName}>{mockBooking.renterName}</Text>
-            </View>
-
-            {/* Date Range */}
-            <View style={styles.dateRange}>
-              <View style={styles.dateItem}>
-                <Ionicons name="calendar-outline" size={16} color="#666666" />
-                <View style={styles.dateTextContainer}>
-                  <Text style={styles.dateLabel}>Start Date</Text>
-                  <Text style={styles.dateValue}>{mockBooking.startDate}</Text>
-                </View>
-              </View>
-              <View style={styles.dateItem}>
-                <Ionicons name="calendar-outline" size={16} color="#666666" />
-                <View style={styles.dateTextContainer}>
-                  <Text style={styles.dateLabel}>End Date</Text>
-                  <Text style={styles.dateValue}>{mockBooking.endDate}</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Total Amount */}
-            <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Total Amount</Text>
-              <Text style={styles.amountValue}>{mockBooking.totalAmount}</Text>
-            </View>
-
-            {/* Actions */}
-            <View style={styles.actionsRow}>
+            <View style={styles.gridBottomRow}>
+              <Text style={styles.gridAmount}>{booking.totalAmount}</Text>
               <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => navigation.navigate('Messages')}
-                activeOpacity={0.9}
-              >
-                <Ionicons name="chatbubble-ellipses-outline" size={18} color="#111111" />
-                <Text style={styles.secondaryButtonText}>Message renter</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.primaryButton}
                 onPress={() => navigation.navigate('ActiveBooking')}
+                style={styles.viewPill}
                 activeOpacity={0.9}
               >
-                <Text style={styles.primaryButtonText}>View details</Text>
+                <Text style={styles.viewPillText}>View details</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -480,5 +412,67 @@ const styles = StyleSheet.create({
     color: '#111111',
     fontSize: 15,
     fontFamily: 'Nunito-SemiBold',
+  },
+  statusPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+  },
+  statusPillText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+  },
+  viewPill: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: '#111111',
+  },
+  viewPillText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FFFFFF',
+  },
+  grid: {
+    marginTop: 16,
+  },
+  gridCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  gridHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  vehicleAvatar: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#F2F2F7',
+  },
+  gridTitle: {
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: '#1C1C1E',
+  },
+  gridSub: {
+    ...TYPE.body,
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 3,
+  },
+  gridBottomRow: {
+    marginTop: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  gridAmount: {
+    ...TYPE.section,
+    color: '#1C1C1E',
   },
 });
