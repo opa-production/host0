@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function UploadDocsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -87,7 +88,7 @@ export default function UploadDocsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Back Button */}
       <TouchableOpacity
@@ -95,7 +96,7 @@ export default function UploadDocsScreen({ navigation }) {
         onPress={() => navigation.goBack()}
         activeOpacity={1}
       >
-        <Ionicons name="arrow-back" size={24} color="#000000" />
+        <Ionicons name="arrow-back" size={22} color="#000000" />
       </TouchableOpacity>
 
       <ScrollView 
@@ -245,20 +246,20 @@ export default function UploadDocsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 24,
-    paddingBottom: 40,
+    padding: SPACING.l,
+    paddingBottom: 120,
   },
   backButton: {
     position: 'absolute',
     left: 16,
     zIndex: 10,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#ffffff',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
@@ -266,59 +267,63 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 32,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.title,
+    fontSize: 20,
+    color: '#1C1C1E',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f8f8f8',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 32,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 999,
+    padding: 3,
+    marginBottom: SPACING.l,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   toggleOption: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
     gap: 8,
   },
   toggleOptionActive: {
-    backgroundColor: '#FF1577',
+    backgroundColor: '#000000',
   },
   toggleText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#666666',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   toggleTextActive: {
     color: '#ffffff',
   },
   uploadSection: {
-    marginBottom: 32,
+    marginBottom: SPACING.l,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.section,
+    fontSize: 15,
+    color: '#1C1C1E',
     marginBottom: 16,
   },
   uploadButton: {
@@ -334,14 +339,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   uploadButtonText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
   },
   uploadButtonSubtext: {
+    ...TYPE.caption,
     fontSize: 12,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: '#8E8E93',
   },
   imageContainer: {
     position: 'relative',
