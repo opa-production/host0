@@ -101,7 +101,7 @@ export default function GetBadgeScreen({ navigation }) {
           activeOpacity={0.9}
           disabled={count === 0}
         >
-          <Text style={styles.primaryButtonText}>Proceed to checkout</Text>
+          <Text style={styles.primaryButtonText}>initiate payment</Text>
         </TouchableOpacity>
 
         <View style={styles.noteCard}>
