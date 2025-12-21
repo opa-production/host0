@@ -322,6 +322,8 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     ...TYPE.section,
+    flex: 1,
+    marginRight: 12,
   },
   // Daily Operations (list links)
   opsList: {

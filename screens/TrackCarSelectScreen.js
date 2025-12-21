@@ -9,7 +9,6 @@ export default function TrackCarSelectScreen({ navigation }) {
       id: 'b1',
       vehicleName: 'BMW M3 Competition',
       plate: 'KDA 452M',
-      location: 'Nakuru, Kenya',
       image: require('../assets/images/bmw.jpg'),
       region: {
         latitude: -0.3031,
@@ -60,17 +59,7 @@ export default function TrackCarSelectScreen({ navigation }) {
                 <Image source={trip.image} style={styles.avatar} />
                 <View style={styles.info}>
                   <Text style={styles.name}>{trip.vehicleName}</Text>
-                  <View style={styles.metaRow}>
-                    <View style={styles.pill}>
-                      <Ionicons name="car-sport-outline" size={14} color={COLORS.text} />
-                      <Text style={styles.pillText}>{trip.plate}</Text>
-                    </View>
-                    <View style={[styles.pill, styles.pillAlt]}>
-                      <Ionicons name="radio-button-on-outline" size={14} color="#34C759" />
-                      <Text style={[styles.pillText, styles.pillTextAlt]}>Active</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.location}>{trip.location}</Text>
+                  <Text style={styles.plate}>{trip.plate}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
               </TouchableOpacity>
@@ -151,38 +140,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.text,
   },
-  metaRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-    marginBottom: 6,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.bg,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
-  pillAlt: {
-    backgroundColor: '#E8F5E9',
-    borderColor: '#D7F0DC',
-  },
-  pillText: {
-    ...TYPE.micro,
-    color: COLORS.text,
-  },
-  pillTextAlt: {
-    color: '#1F7A35',
-  },
-  location: {
+  plate: {
     ...TYPE.body,
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.subtle,
+    marginTop: 6,
   },
   emptyCard: {
     backgroundColor: COLORS.surface,
