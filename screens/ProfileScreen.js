@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function ProfileScreen({ navigation }) {
   // TODO: Replace with actual user data
@@ -45,17 +46,9 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Settings Button */}
-      <TouchableOpacity 
-        style={styles.settingsButton}
-        onPress={() => navigation.navigate('Settings')}
-      >
-        <View style={styles.settingsButtonCircle}>
-          <Ionicons name="settings-outline" size={22} color="#000000" />
-        </View>
-      </TouchableOpacity>
 
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
@@ -115,59 +108,82 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           
-          <TouchableOpacity 
-            style={styles.linkItem}
-            onPress={() => navigation.navigate('Finance')}
-          >
-            <Ionicons name="wallet-outline" size={22} color="#666666" style={styles.linkIcon} />
-            <Text style={styles.linkText}>Finances</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-          </TouchableOpacity>
+          <View style={styles.linkGroup}>
+            <TouchableOpacity 
+              style={styles.linkItem}
+              onPress={() => navigation.navigate('Settings')}
+            >
+              <Ionicons name="settings-outline" size={22} color="#666666" style={styles.linkIcon} />
+              <Text style={styles.linkText}>Settings</Text>
+              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.linkItem}
-            onPress={() => navigation.navigate('AddPaymentMethod')}
-          >
-            <Ionicons name="card-outline" size={22} color="#666666" style={styles.linkIcon} />
-            <Text style={styles.linkText}>Add Payment Method</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.linkItem}
+              onPress={() => navigation.navigate('Finance')}
+            >
+              <Ionicons name="wallet-outline" size={22} color="#666666" style={styles.linkIcon} />
+              <Text style={styles.linkText}>Finances</Text>
+              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.linkItem}
-            onPress={() => navigation.navigate('UploadDocs')}
-          >
-            <Ionicons name="document-text-outline" size={22} color="#666666" style={styles.linkIcon} />
-            <Text style={styles.linkText}>Upload Documents</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.linkItem}
+              onPress={() => navigation.navigate('AddPaymentMethod')}
+            >
+              <Ionicons name="card-outline" size={22} color="#666666" style={styles.linkIcon} />
+              <Text style={styles.linkText}>Add Payment Method</Text>
+              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.linkItem}
-            onPress={() => navigation.navigate('OpaClientDownload')}
-          >
-            <Ionicons name="download-outline" size={22} color="#666666" style={styles.linkIcon} />
-            <Text style={styles.linkText}>Download Opa Client</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.linkItem}
+              onPress={() => navigation.navigate('UploadDocs')}
+            >
+              <Ionicons name="document-text-outline" size={22} color="#666666" style={styles.linkIcon} />
+              <Text style={styles.linkText}>Upload Documents</Text>
+              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-          <TouchableOpacity 
-            style={styles.linkItem}
-            onPress={() => navigation.navigate('SupaHost')}
-          >
-            <Ionicons name="star-outline" size={22} color="#666666" style={styles.linkIcon} />
-            <Text style={styles.linkText}>Become a SupaHost</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-          </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Hosting</Text>
+          
+          <View style={styles.linkGroup}>
+            <TouchableOpacity 
+              style={styles.linkItem}
+              onPress={() => navigation.navigate('SupaHost')}
+            >
+              <Ionicons name="ribbon-outline" size={22} color="#666666" style={styles.linkIcon} />
+              <Text style={styles.linkText}>Become a SupaHost</Text>
+              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.linkItem}
-            onPress={() => navigation.navigate('Feedback')}
-          >
-            <Ionicons name="chatbox-ellipses-outline" size={22} color="#666666" style={styles.linkIcon} />
-            <Text style={styles.linkText}>Share Feedback</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.linkItem}
+              onPress={() => navigation.navigate('OpaClientDownload')}
+            >
+              <Ionicons name="download-outline" size={22} color="#666666" style={styles.linkIcon} />
+              <Text style={styles.linkText}>Download Opa Client</Text>
+              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          
+          <View style={styles.linkGroup}>
+            <TouchableOpacity 
+              style={styles.linkItem}
+              onPress={() => navigation.navigate('Feedback')}
+            >
+              <Ionicons name="chatbox-ellipses-outline" size={22} color="#666666" style={styles.linkIcon} />
+              <Text style={styles.linkText}>Share Feedback</Text>
+              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+            </TouchableOpacity>
+          </View>
         </View>
 
       </ScrollView>
@@ -178,7 +194,7 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   settingsButton: {
     position: 'absolute',
@@ -190,7 +206,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
@@ -198,18 +214,20 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   scrollContent: {
-    paddingTop: 100,
-    paddingBottom: 40,
+    paddingTop: 70,
+    paddingBottom: 120,
   },
   profileHeader: {
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.l,
   },
   profileImageContainer: {
     marginBottom: 16,
@@ -225,11 +243,11 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   cameraButton: {
     position: 'absolute',
@@ -238,31 +256,34 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   profileName: {
-    fontSize: 24,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
-    marginBottom: 8,
+    ...TYPE.title,
+    fontSize: 20,
+    color: '#1C1C1E',
+    marginBottom: 6,
   },
   profileEmail: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   section: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: SPACING.l,
+    marginBottom: SPACING.l,
+  },
+  linkGroup: {
+    backgroundColor: 'transparent',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -271,9 +292,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.section,
+    fontSize: 15,
+    color: '#1C1C1E',
   },
   editButton: {
     padding: 4,
@@ -283,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#E5E5EA',
   },
   infoIcon: {
     marginRight: 16,
@@ -292,30 +313,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoLabel: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#999999',
+    ...TYPE.micro,
+    color: '#8E8E93',
     marginBottom: 4,
   },
   infoValue: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
   },
   linkItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#E5E5EA',
   },
   linkIcon: {
     marginRight: 16,
   },
   linkText: {
     flex: 1,
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
   },
 });
