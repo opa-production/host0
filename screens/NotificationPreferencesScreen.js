@@ -2,6 +2,7 @@ import React, { useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, StatusBar, Switch, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 const NotificationPreferencesScreen = () => {
   const navigation = useNavigation();
@@ -18,7 +19,7 @@ const NotificationPreferencesScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Back Button */}
       <TouchableOpacity 
@@ -100,7 +101,7 @@ const NotificationPreferencesScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   floatingBackButton: {
     position: 'absolute',
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
@@ -120,56 +121,53 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
-    padding: 16,
+    padding: SPACING.l,
     paddingTop: 100,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
     marginBottom: 24,
-    paddingHorizontal: 8,
   },
   headerTitle: {
-    fontSize: 32,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.largeTitle,
   },
   section: {
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
-    overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#E5E5EA',
   },
   settingInfo: {
     flex: 1,
     marginRight: 16,
   },
   settingTitle: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
     marginBottom: 4,
-    color: '#000000',
+    color: '#1C1C1E',
   },
   settingDescription: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    lineHeight: 20,
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#8E8E93',
   },
 });
 

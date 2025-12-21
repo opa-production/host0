@@ -2,6 +2,7 @@ import React, { useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 const AboutScreen = () => {
   const navigation = useNavigation();
@@ -45,7 +46,7 @@ const AboutScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Back Button */}
       <TouchableOpacity 
@@ -125,7 +126,7 @@ const AboutScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   floatingBackButton: {
     position: 'absolute',
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
@@ -145,55 +146,56 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
-    padding: 24,
+    padding: SPACING.l,
     paddingTop: 100,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   headerSection: {
     alignItems: 'center',
     marginBottom: 32,
   },
   appTitle: {
-    fontSize: 42,
-    fontFamily: 'Nunito-Bold',
+    ...TYPE.largeTitle,
+    fontSize: 28,
     marginBottom: 8,
-    color: '#FF1577',
+    color: '#1C1C1E',
   },
   appTagline: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.body,
+    fontSize: 13,
     textAlign: 'center',
     marginBottom: 8,
-    lineHeight: 22,
-    color: '#666666',
+    lineHeight: 18,
+    color: '#8E8E93',
   },
   versionText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#999999',
+    ...TYPE.caption,
+    color: '#8E8E93',
   },
   section: {
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontFamily: 'Nunito-Bold',
+    ...TYPE.section,
+    fontSize: 15,
     marginBottom: 12,
-    color: '#000000',
+    color: '#1C1C1E',
   },
   sectionContent: {
-    fontSize: 15,
-    fontFamily: 'Nunito-Regular',
-    lineHeight: 24,
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#8E8E93',
   },
   itemsList: {
     gap: 12,
@@ -205,11 +207,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   itemText: {
-    fontSize: 15,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.body,
+    fontSize: 13,
     flex: 1,
-    lineHeight: 22,
-    color: '#666666',
+    lineHeight: 18,
+    color: '#8E8E93',
   },
   contactItem: {
     flexDirection: 'row',
@@ -217,21 +219,20 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     gap: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#E5E5EA',
   },
   contactInfo: {
     flex: 1,
   },
   contactLabel: {
-    fontSize: 12,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.micro,
     marginBottom: 4,
-    color: '#999999',
+    color: '#8E8E93',
   },
   contactValue: {
-    fontSize: 15,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
   },
   footerSection: {
     alignItems: 'center',

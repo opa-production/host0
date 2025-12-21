@@ -2,6 +2,7 @@ import React, { useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 const LegalScreen = () => {
   const navigation = useNavigation();
@@ -41,7 +42,7 @@ const LegalScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Back Button */}
       <TouchableOpacity 
@@ -124,7 +125,7 @@ const LegalScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   floatingBackButton: {
     position: 'absolute',
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
@@ -144,51 +145,51 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
-    padding: 24,
+    padding: SPACING.l,
     paddingTop: 100,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
     marginBottom: 24,
   },
   headerTitle: {
-    fontSize: 32,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.largeTitle,
   },
   section: {
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontFamily: 'Nunito-Bold',
+    ...TYPE.section,
+    fontSize: 15,
     marginBottom: 12,
-    color: '#000000',
+    color: '#1C1C1E',
   },
   sectionContent: {
-    fontSize: 15,
-    fontFamily: 'Nunito-Regular',
-    lineHeight: 24,
+    ...TYPE.body,
+    fontSize: 13,
+    lineHeight: 19,
     marginBottom: 12,
-    color: '#666666',
+    color: '#8E8E93',
   },
   readMoreButton: {
     marginTop: 8,
     alignSelf: 'flex-start',
   },
   readMoreText: {
-    fontSize: 15,
-    fontFamily: 'Nunito-SemiBold',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
     textDecorationLine: 'underline',
-    color: '#FF1577',
+    color: '#007AFF',
   },
   websiteButton: {
     flexDirection: 'row',
@@ -197,16 +198,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 14,
     paddingHorizontal: 18,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FF157750',
-    backgroundColor: '#FF157710',
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    backgroundColor: COLORS.surface,
     alignSelf: 'flex-start',
   },
   websiteButtonText: {
-    fontSize: 15,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#007AFF',
   },
   contactButton: {
     flexDirection: 'row',
@@ -215,15 +216,15 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FF157750',
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
     alignSelf: 'flex-start',
   },
   contactButtonText: {
-    fontSize: 15,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#007AFF',
   },
 });
 

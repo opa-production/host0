@@ -2,6 +2,7 @@ import React, { useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 const PrivacyScreen = () => {
   const navigation = useNavigation();
@@ -32,7 +33,7 @@ const PrivacyScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Floating Back Button */}
       <TouchableOpacity 
@@ -152,7 +153,7 @@ const PrivacyScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   floatingBackButton: {
     position: 'absolute',
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
@@ -172,41 +173,38 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
-    padding: 16,
+    padding: SPACING.l,
     paddingTop: 100,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
     marginBottom: 24,
-    paddingHorizontal: 8,
   },
   headerTitle: {
-    fontSize: 32,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.largeTitle,
   },
   section: {
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
-    overflow: 'hidden',
+    backgroundColor: 'transparent',
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E5EA',
   },
   actionButtonLeft: {
     flexDirection: 'row',
@@ -215,24 +213,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionButtonText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
   },
   infoSection: {
     paddingHorizontal: 4,
   },
   infoTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
+    ...TYPE.section,
+    fontSize: 15,
     marginBottom: 12,
-    color: '#000000',
+    color: '#1C1C1E',
   },
   infoText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    lineHeight: 22,
-    color: '#666666',
+    ...TYPE.body,
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#8E8E93',
   },
   modalOverlay: {
     flex: 1,
