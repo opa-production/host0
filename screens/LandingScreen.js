@@ -1,66 +1,25 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, Dimensions } from 'react-native';
-import { VideoView, useVideoPlayer } from 'expo-video';
-
-const { width, height } = Dimensions.get('window');
+import React from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar } from 'react-native';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import LandingIllustration from '../assets/icons/landing.svg';
 
 export default function LandingScreen({ navigation }) {
-  const [videoError, setVideoError] = useState(false);
-
-  // Create video player
-  const player = useVideoPlayer(require('../assets/images/landing.mp4'), (player) => {
-    player.loop = true;
-    player.muted = true;
-  });
-
-  useEffect(() => {
-    // Play video when component mounts
-    if (player) {
-      try {
-        player.play();
-        console.log('Video started playing');
-      } catch (error) {
-        console.log('Error playing video:', error);
-        setVideoError(true);
-      }
-    }
-  }, [player]);
-
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      {/* Video Background */}
-      {!videoError ? (
-        <VideoView
-          player={player}
-          style={styles.video}
-          contentFit="cover"
-          nativeControls={false}
-          allowsFullscreen={false}
-        />
-      ) : (
-        <View style={styles.videoFallback}>
-          <Text style={styles.errorText}>Video unavailable</Text>
-        </View>
-      )}
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      {/* Overlay for better button visibility */}
-      <View style={styles.overlay} />
+      <View style={styles.hero}>
+        <LandingIllustration width={260} height={210} />
+        <Text style={styles.title}>Opa Host</Text>
+        <Text style={styles.tagline}>Host smarter. Earn more. Stay in control.</Text>
+      </View>
 
-      {/* CTA Section */}
       <View style={styles.ctaSection}>
-        <TouchableOpacity 
-          style={styles.primaryButton}
-          onPress={() => navigation.navigate('SignUp')}
-        >
+        <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('SignUp')} activeOpacity={0.9}>
           <Text style={styles.primaryButtonText} numberOfLines={1}>Get Started</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate('Login')}
-        >
+
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Login')} activeOpacity={0.9}>
           <Text style={styles.secondaryButtonText} numberOfLines={1}>Login</Text>
         </TouchableOpacity>
       </View>
@@ -71,92 +30,58 @@ export default function LandingScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: COLORS.bg,
+    paddingHorizontal: SPACING.l,
   },
-  video: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
-  },
-  videoFallback: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
+  hero: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 30,
   },
-  errorText: {
-    color: '#ffffff',
-    fontFamily: 'Nunito-Regular',
-    fontSize: 16,
+  title: {
+    ...TYPE.largeTitle,
+    marginTop: 18,
   },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  tagline: {
+    ...TYPE.body,
+    color: COLORS.subtle,
+    textAlign: 'center',
+    marginTop: 8,
+    maxWidth: 300,
   },
   ctaSection: {
-    position: 'absolute',
-    bottom: 60,
-    left: 24,
-    right: 24,
-    gap: 16,
-    zIndex: 10,
+    paddingBottom: 40,
+    gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#FF1577',
-    borderRadius: 30,
-    paddingVertical: 18,
-    paddingHorizontal: 40,
+    backgroundColor: '#111111',
+    borderRadius: RADIUS.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 56,
-    shadowColor: '#FF1577',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
   },
   primaryButtonText: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
+    ...TYPE.section,
     color: '#ffffff',
     textAlign: 'center',
   },
   secondaryButton: {
-    backgroundColor: '#ffffff',
-    borderRadius: 30,
-    paddingVertical: 18,
-    paddingHorizontal: 40,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 56,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   secondaryButtonText: {
-    fontSize: 18,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    ...TYPE.section,
+    color: COLORS.text,
     textAlign: 'center',
   },
 });
