@@ -120,49 +120,20 @@ export default function BookingsScreen({ navigation }) {
           </View>
 
           {/* Booking Card Skeleton */}
-          <View style={styles.bookingCard}>
-            {/* Image Skeleton */}
-            <SkeletonBox width="100%" height={160} style={{ borderRadius: 0 }} />
-
-            {/* Content Skeleton */}
-            <View style={styles.cardContent}>
-              {/* Header Row Skeleton */}
-              <View style={styles.cardHeader}>
+          <View style={styles.grid}>
+            <View style={styles.gridCard}>
+              <View style={styles.gridHeaderRow}>
+                <SkeletonBox width={54} height={54} style={{ borderRadius: 27 }} />
                 <View style={{ flex: 1 }}>
-                  <SkeletonBox width={120} height={20} style={{ marginBottom: 8 }} />
-                  <SkeletonBox width={150} height={14} />
+                  <SkeletonBox width={120} height={16} style={{ marginBottom: 8 }} />
+                  <SkeletonBox width={150} height={12} />
                 </View>
-                <SkeletonBox width={80} height={24} style={{ borderRadius: 12 }} />
+                <SkeletonBox width={78} height={22} style={{ borderRadius: 999 }} />
               </View>
 
-              {/* Renter Info Skeleton */}
-              <View style={styles.renterInfo}>
-                <SkeletonBox width={16} height={16} style={{ borderRadius: 8 }} />
-                <SkeletonBox width={100} height={14} />
-              </View>
-
-              {/* Date Range Skeleton */}
-              <View style={styles.dateRange}>
-                <View style={styles.dateItem}>
-                  <SkeletonBox width={16} height={16} style={{ borderRadius: 8 }} />
-                  <View style={styles.dateTextContainer}>
-                    <SkeletonBox width={70} height={12} style={{ marginBottom: 4 }} />
-                    <SkeletonBox width={100} height={14} />
-                  </View>
-                </View>
-                <View style={styles.dateItem}>
-                  <SkeletonBox width={16} height={16} style={{ borderRadius: 8 }} />
-                  <View style={styles.dateTextContainer}>
-                    <SkeletonBox width={60} height={12} style={{ marginBottom: 4 }} />
-                    <SkeletonBox width={100} height={14} />
-                  </View>
-                </View>
-              </View>
-
-              {/* Amount Row Skeleton */}
-              <View style={styles.amountRow}>
-                <SkeletonBox width={100} height={14} />
-                <SkeletonBox width={120} height={20} />
+              <View style={styles.gridBottomRow}>
+                <SkeletonBox width={110} height={18} />
+                <SkeletonBox width={96} height={36} style={{ borderRadius: 999 }} />
               </View>
             </View>
           </View>
