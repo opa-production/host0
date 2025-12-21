@@ -25,9 +25,7 @@ export default function HostLearnMoreScreen({ navigation }) {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Why host on Opa?</Text>
           <View style={styles.featureRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="wallet-outline" size={18} color={COLORS.text} />
-            </View>
+            <Ionicons name="wallet-outline" size={22} color={COLORS.text} />
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>Extra income</Text>
               <Text style={styles.featureSub}>Get paid for days your car is on trip.</Text>
@@ -35,9 +33,7 @@ export default function HostLearnMoreScreen({ navigation }) {
           </View>
           <View style={styles.divider} />
           <View style={styles.featureRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="umbrella-outline" size={18} color={COLORS.text} />
-            </View>
+            <Ionicons name="umbrella-outline" size={22} color={COLORS.text} />
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>Peace of mind</Text>
               <Text style={styles.featureSub}>Identity checks, rules, and support when you need it.</Text>
@@ -45,9 +41,7 @@ export default function HostLearnMoreScreen({ navigation }) {
           </View>
           <View style={styles.divider} />
           <View style={styles.featureRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="options-outline" size={18} color={COLORS.text} />
-            </View>
+            <Ionicons name="options-outline" size={22} color={COLORS.text} />
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>You set the terms</Text>
               <Text style={styles.featureSub}>Choose pricing, availability, and trip requirements.</Text>
@@ -160,16 +154,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 12,
     paddingVertical: 10,
-  },
-  iconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: COLORS.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   featureText: {
     flex: 1,
