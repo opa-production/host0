@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
@@ -7,6 +7,7 @@ const carCounts = [1, 2, 3, 4, 5];
 
 export default function GetBadgeScreen({ navigation }) {
   const [selectedCount, setSelectedCount] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState('mobile_money');
 
   const pricePerCar = 4500;
   const total = selectedCount * pricePerCar;
@@ -47,6 +48,46 @@ export default function GetBadgeScreen({ navigation }) {
         <View style={styles.priceCard}>
           <Text style={styles.priceLabel}>Total</Text>
           <Text style={styles.priceValue}>{`KES ${total.toLocaleString()}`}</Text>
+        </View>
+
+        <View style={styles.paymentSection}>
+          <Text style={styles.sectionLabel}>Payment method</Text>
+          <View style={styles.paymentRow}>
+            <TouchableOpacity
+              style={[styles.paymentCard, paymentMethod === 'mobile_money' && styles.paymentCardActive]}
+              activeOpacity={0.9}
+              onPress={() => setPaymentMethod('mobile_money')}
+            >
+              <View style={styles.paymentTopRow}>
+                <Text style={styles.paymentTitle}>Mobile money</Text>
+                {paymentMethod === 'mobile_money' && (
+                  <Ionicons name="checkmark-circle" size={18} color="#1D1D1D" />
+                )}
+              </View>
+              <View style={styles.paymentLogoRow}>
+                <Image source={require('../assets/images/mpesa.png')} style={styles.paymentLogoMpesa} resizeMode="contain" />
+              </View>
+              <Text style={styles.paymentSub}>Pay with M-Pesa</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.paymentCard, paymentMethod === 'card' && styles.paymentCardActive]}
+              activeOpacity={0.9}
+              onPress={() => setPaymentMethod('card')}
+            >
+              <View style={styles.paymentTopRow}>
+                <Text style={styles.paymentTitle}>Card</Text>
+                {paymentMethod === 'card' && (
+                  <Ionicons name="checkmark-circle" size={18} color="#1D1D1D" />
+                )}
+              </View>
+              <View style={styles.paymentLogoRow}>
+                <Image source={require('../assets/images/visa.png')} style={styles.paymentLogo} resizeMode="contain" />
+                <Image source={require('../assets/images/mastercard.png')} style={styles.paymentLogo} resizeMode="contain" />
+              </View>
+              <Text style={styles.paymentSub}>Visa or Mastercard</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity style={styles.primaryButton} activeOpacity={0.9}>
@@ -155,6 +196,65 @@ const styles = StyleSheet.create({
     ...TYPE.largeTitle,
     fontSize: 32,
     color: '#1D1D1D',
+  },
+  paymentSection: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    padding: SPACING.m,
+    gap: 12,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  paymentCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: SPACING.m,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E5EA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  paymentCardActive: {
+    borderColor: '#1D1D1D',
+    shadowOpacity: 0.12,
+    elevation: 3,
+  },
+  paymentTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  paymentTitle: {
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: COLORS.text,
+  },
+  paymentLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 26,
+  },
+  paymentLogoMpesa: {
+    width: 70,
+    height: 22,
+  },
+  paymentLogo: {
+    width: 44,
+    height: 22,
+  },
+  paymentSub: {
+    ...TYPE.caption,
+    marginTop: 10,
   },
   primaryButton: {
     backgroundColor: '#FF1577',
