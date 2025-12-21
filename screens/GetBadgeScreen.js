@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
-const carCounts = [1, 2, 3, 4, 5];
-
 export default function GetBadgeScreen({ navigation }) {
-  const [selectedCount, setSelectedCount] = useState(1);
+  const [selectedCount, setSelectedCount] = useState('1');
   const [paymentMethod, setPaymentMethod] = useState('mobile_money');
 
   const pricePerCar = 4500;
-  const total = selectedCount * pricePerCar;
+  const count = parseInt(selectedCount) || 0;
+  const total = count * pricePerCar;
+
+  const handleCountChange = (text) => {
+    // Only allow numbers
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setSelectedCount(numericValue);
+  };
 
   return (
     <View style={styles.container}>
@@ -26,28 +31,29 @@ export default function GetBadgeScreen({ navigation }) {
 
         <View style={styles.selectorCard}>
           <Text style={styles.sectionLabel}>Number of cars</Text>
-          <View style={styles.selectorRow}>
-            {carCounts.map((count) => (
-              <TouchableOpacity
-                key={count}
-                style={[
-                  styles.selectorPill,
-                  selectedCount === count && styles.selectorPillActive,
-                ]}
-                onPress={() => setSelectedCount(count)}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.selectorText, selectedCount === count && styles.selectorTextActive]}>
-                  {count}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={selectedCount}
+              onChangeText={handleCountChange}
+              keyboardType="numeric"
+              placeholder="Enter number"
+              placeholderTextColor="#8E8E93"
+              maxLength={3}
+            />
+            <View style={styles.inputSuffix}>
+              <Text style={styles.inputSuffixText}>{count === 1 ? 'car' : 'cars'}</Text>
+            </View>
           </View>
+          <Text style={styles.helperText}>Enter the number of cars (1-999)</Text>
         </View>
 
         <View style={styles.priceCard}>
           <Text style={styles.priceLabel}>Total</Text>
           <Text style={styles.priceValue}>{`KES ${total.toLocaleString()}`}</Text>
+          <Text style={styles.priceBreakdown}>
+            {count > 0 ? `${count} ${count === 1 ? 'car' : 'cars'} × KES ${pricePerCar.toLocaleString()}` : 'Enter number of cars'}
+          </Text>
         </View>
 
         <View style={styles.paymentSection}>
@@ -90,7 +96,11 @@ export default function GetBadgeScreen({ navigation }) {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.9}>
+        <TouchableOpacity 
+          style={[styles.primaryButton, count === 0 && styles.primaryButtonDisabled]} 
+          activeOpacity={0.9}
+          disabled={count === 0}
+        >
           <Text style={styles.primaryButtonText}>Proceed to checkout</Text>
         </TouchableOpacity>
 
@@ -155,29 +165,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.subtle,
   },
-  selectorRow: {
+  inputContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  selectorPill: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#F5F5F7',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 56,
   },
-  selectorPillActive: {
-    backgroundColor: '#1D1D1D',
-  },
-  selectorText: {
+  input: {
+    flex: 1,
     ...TYPE.bodyStrong,
-    fontSize: 16,
-    color: '#8E8E93',
+    fontSize: 18,
+    color: '#1D1D1D',
+    padding: 0,
   },
-  selectorTextActive: {
-    color: '#FFFFFF',
+  inputSuffix: {
+    paddingLeft: 12,
+  },
+  inputSuffixText: {
+    ...TYPE.body,
+    color: COLORS.subtle,
+    fontSize: 15,
+  },
+  helperText: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
+    fontSize: 12,
   },
   priceCard: {
     backgroundColor: COLORS.surface,
@@ -196,6 +210,11 @@ const styles = StyleSheet.create({
     ...TYPE.largeTitle,
     fontSize: 32,
     color: '#1D1D1D',
+  },
+  priceBreakdown: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
+    marginTop: 4,
   },
   paymentSection: {
     backgroundColor: COLORS.surface,
@@ -264,6 +283,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 10,
+  },
+  primaryButtonDisabled: {
+    backgroundColor: '#E5E5EA',
   },
   primaryButtonText: {
     ...TYPE.bodyStrong,
