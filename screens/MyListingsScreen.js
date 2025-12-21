@@ -12,13 +12,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function MyListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
   // Mock data - TODO: Replace with actual API data
   const cars = [
@@ -60,41 +60,7 @@ export default function MyListingsScreen({ navigation }) {
     },
   ];
 
-  const services = [
-    {
-      id: 'service-1',
-      name: 'Chauffeur Service',
-      image: require('../assets/images/deon.jpg'),
-      type: 'chauffeur',
-      status: 'active',
-      available: true,
-      price: 'KSh 5,000/day',
-      location: 'Nakuru, Kenya',
-      activeBookings: 1,
-      totalBookings: 8,
-      description: 'Professional chauffeur service with experienced drivers. Available for events, airport transfers, and special occasions.',
-      totalRatings: 4.9,
-      ratingCount: 18,
-    },
-    {
-      id: 'service-2',
-      name: 'Road Trip Service',
-      image: require('../assets/images/jeep.jpg'),
-      type: 'roadtrip',
-      status: 'listed',
-      available: true,
-      price: 'KSh 12,000/trip',
-      location: 'Kenya-wide',
-      activeBookings: 0,
-      totalBookings: 3,
-      description: 'Plan and execute memorable road trips across Kenya. Customized itineraries and comfortable vehicles.',
-      totalRatings: 4.7,
-      ratingCount: 8,
-    },
-  ];
-
-  // Combine cars and services with unique keys
-  const allListings = [...cars, ...services];
+  const allListings = cars;
 
   const toggleAvailability = (id) => {
     // TODO: Update availability via API
@@ -104,13 +70,7 @@ export default function MyListingsScreen({ navigation }) {
   const handleUpdate = (item) => {
     // TODO: Navigate to update/edit screen
     console.log('Update:', item);
-    if (item.type) {
-      // It's a service
-      // navigation.navigate('UpdateService', { serviceId: item.id });
-    } else {
-      // It's a car
-      // navigation.navigate('UpdateCar', { carId: item.id });
-    }
+    // navigation.navigate('UpdateCar', { carId: item.id });
   };
 
   const getStatusText = (status) => {
@@ -126,220 +86,68 @@ export default function MyListingsScreen({ navigation }) {
     }
   };
 
-  const renderCarCard = ({ item, index }) => {
-    const isCar = !item.type;
-    
+  const renderCarCard = ({ item }) => {
     return (
-      <View style={styles.cardContainer}>
-        {/* Image Section */}
-        <View style={styles.imageSection}>
+      <View style={styles.listCard}>
+        <View style={styles.listLeft}>
           {item.image ? (
-            <Image source={item.image} style={styles.cardImage} resizeMode="cover" />
+            <Image source={item.image} style={styles.avatarImage} />
           ) : (
-            <View style={styles.imagePlaceholder}>
-              <Ionicons 
-                name={isCar ? "car-outline" : (item.type === 'chauffeur' ? "person-outline" : "map-outline")} 
-                size={64} 
-                color="#cccccc" 
-              />
+            <View style={styles.avatarPlaceholder}>
+              <Ionicons name="car-outline" size={22} color="#C7C7CC" />
             </View>
           )}
-          
-          {/* Bottom Indicators */}
-          <View style={styles.imageBottomBar}>
-            {/* Swipe Indicator - Centered */}
-            {index < allListings.length - 1 && (
-              <View style={styles.swipeIndicator}>
-                <Ionicons name="chevron-up" size={16} color="#ffffff" />
-                <Text style={styles.swipeText}>Swipe</Text>
-              </View>
-            )}
-          </View>
         </View>
 
-        {/* Content Section */}
-        <View style={styles.contentSection}>
-          {/* Header */}
-          <View style={styles.cardHeader}>
-            <View style={styles.titleSection}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
-              {isCar && item.model && (
-                <Text style={styles.cardSubtitle}>{item.model}</Text>
-              )}
-            </View>
-            <Ionicons 
-              name={isCar ? "car-outline" : (item.type === 'chauffeur' ? "person-outline" : "map-outline")} 
-              size={24} 
-              color="#000000" 
-            />
-          </View>
+        <View style={styles.listMiddle}>
+          <Text style={styles.listTitle}>{item.name}</Text>
+          <Text style={styles.listSubtitle}>{item.model ? item.model : item.location}</Text>
+          <Text style={styles.listMeta}>{item.price} • {item.location}</Text>
+        </View>
 
-          {/* Details - 2 Columns */}
-          <View style={styles.detailsSection}>
-            <View style={styles.detailsGrid}>
-              <View style={styles.detailColumn}>
-                <View style={styles.detailRow}>
-                  <Ionicons name="location-outline" size={16} color="#666666" />
-                  <Text style={styles.detailText}>{item.location}</Text>
-                </View>
-                
-                <View style={styles.detailRow}>
-                  <Ionicons name="cash-outline" size={16} color="#666666" />
-                  <Text style={styles.detailText}>{item.price}</Text>
-                </View>
-
-                {/* Ratings */}
-                <View style={styles.detailRow}>
-                  <Ionicons name="star" size={16} color="#666666" />
-                  <Text style={styles.detailText}>
-                    {item.totalRatings?.toFixed(1) || 'N/A'} ({item.ratingCount || 0})
-                  </Text>
-                </View>
-              </View>
-
-              {isCar && (
-                <View style={styles.detailColumn}>
-                  <View style={styles.detailRow}>
-                    <Ionicons name="people-outline" size={16} color="#666666" />
-                    <Text style={styles.detailText}>{item.seats} seats</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Ionicons name="flash-outline" size={16} color="#666666" />
-                    <Text style={styles.detailText}>{item.fuelType}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Ionicons name="settings-outline" size={16} color="#666666" />
-                    <Text style={styles.detailText}>{item.transmission}</Text>
-                  </View>
-                </View>
-              )}
-            </View>
-
-            {/* Description */}
-            {item.description && (
-              <View style={styles.descriptionContainer}>
-                <Text style={styles.descriptionText}>{item.description}</Text>
-              </View>
-            )}
-
-            {/* Image Repository */}
-            {isCar && (
-              <TouchableOpacity
-                style={styles.imageRepositorySection}
-                onPress={() => navigation.navigate('CarGallery', { carId: item.id, carName: item.name })}
-                activeOpacity={1}
-              >
-                <Ionicons name="images-outline" size={20} color="#000000" />
-                <Text style={styles.imageRepositoryText}>Image Repository</Text>
-                <Ionicons name="chevron-forward" size={18} color="#666666" />
-              </TouchableOpacity>
-            )}
-
-            <View style={styles.statsRow}>
-              <View style={styles.statBox}>
-                <Text style={styles.statValue}>
-                  {isCar ? item.activeRentals : item.activeBookings}
-                </Text>
-                <Text style={styles.statLabel}>
-                  {isCar ? 'Active Rentals' : 'Active Bookings'}
-                </Text>
-                <Text style={styles.statDetail}>
-                  {isCar 
-                    ? `${item.activeRentals} currently rented` 
-                    : `${item.activeBookings} ongoing bookings`}
-                </Text>
-              </View>
-              <View style={styles.statBox}>
-                <Text style={styles.statValue}>
-                  {isCar ? item.totalBookings : item.totalBookings}
-                </Text>
-                <Text style={styles.statLabel}>Total Bookings</Text>
-                <Text style={styles.statDetail}>
-                  {isCar 
-                    ? `${item.totalBookings} total rentals` 
-                    : `${item.totalBookings} completed`}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionsSection}>
-            <TouchableOpacity
-              style={[styles.availabilityButton, item.available && styles.availabilityButtonActive]}
-              onPress={() => toggleAvailability(item.id)}
-              activeOpacity={1}
-            >
-              <Ionicons 
-                name={item.available ? "checkmark-circle" : "close-circle"} 
-                size={18} 
-                color="#ffffff" 
-              />
-              <Text style={styles.availabilityButtonText}>
-                {item.available ? 'Available' : 'Unavailable'}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.updateButton}
-              onPress={() => handleUpdate(item)}
-              activeOpacity={1}
-            >
-              <Ionicons name="create-outline" size={18} color="#000000" />
-              <Text style={styles.updateButtonText}>Update</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.listRight}>
+          <Switch
+            value={!!item.available}
+            onValueChange={() => toggleAvailability(item.id)}
+            trackColor={{ false: '#E5E5EA', true: '#000000' }}
+            thumbColor={'#FFFFFF'}
+          />
+          <TouchableOpacity onPress={() => handleUpdate(item)} style={styles.editPill} activeOpacity={0.9}>
+            <Text style={styles.editPillText}>Edit</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
   };
 
-  const onViewableItemsChanged = useRef(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index || 0);
-    }
-  }).current;
-
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 50,
-  }).current;
-
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
-      {/* Floating Back Button and Status Badge */}
+      {/* Floating Back Button */}
       <View style={[styles.topBar, { top: insets.top + 16 }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           activeOpacity={1}
         >
-          <Ionicons name="arrow-back" size={24} color="#ffffff" />
+          <Ionicons name="arrow-back" size={22} color="#000000" />
         </TouchableOpacity>
-        
-        {allListings[currentIndex] && (
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>
-              {getStatusText(allListings[currentIndex].status)}
-            </Text>
-          </View>
-        )}
       </View>
 
-      {/* Swipeable Cards */}
+      <View style={[styles.headerArea, { paddingTop: insets.top + 70 }]}>
+        <Text style={styles.screenTitle}>My listings</Text>
+        <Text style={styles.screenSubtitle}>Your cars</Text>
+      </View>
+
+      {/* Listings */}
       <FlatList
         ref={flatListRef}
         data={allListings}
         renderItem={renderCarCard}
         keyExtractor={(item) => item.id}
-        pagingEnabled
         showsVerticalScrollIndicator={false}
-        snapToInterval={SCREEN_HEIGHT}
-        decelerationRate="fast"
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        scrollEventThrottle={16}
+        contentContainerStyle={styles.listContent}
       />
     </View>
   );
@@ -348,7 +156,7 @@ export default function MyListingsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: COLORS.bg,
   },
   topBar: {
     position: 'absolute',
@@ -360,224 +168,100 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  headerArea: {
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+  },
+  screenTitle: {
+    ...TYPE.title,
+    fontSize: 20,
+    color: '#1C1C1E',
+  },
+  screenSubtitle: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
+    marginTop: 6,
+  },
+  listContent: {
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 120,
+  },
+  listCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    marginBottom: 12,
+  },
+  listLeft: {
+    marginRight: 12,
+  },
+  avatarImage: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F2F2F7',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E5EA',
   },
-  statusBadge: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#ffffff',
-  },
-  imageBottomBar: {
-    position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardContainer: {
-    height: SCREEN_HEIGHT,
-    backgroundColor: '#ffffff',
-  },
-  imageSection: {
-    height: '40%',
-    position: 'relative',
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#000000',
-  },
-  imagePlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#1a1a1a',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  swipeIndicator: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    flexDirection: 'row',
-    gap: 6,
-  },
-  swipeText: {
-    fontSize: 11,
-    fontFamily: 'Nunito-Regular',
-    color: '#ffffff',
-  },
-  contentSection: {
-    height: '60%',
-    padding: 20,
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -24,
-    justifyContent: 'space-between',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  titleSection: {
+  listMiddle: {
     flex: 1,
   },
-  cardTitle: {
-    fontSize: 26,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 15,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
-  },
-  detailsSection: {
-    marginBottom: 12,
-  },
-  detailsGrid: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  detailColumn: {
-    flex: 1,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
-  detailText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
-    flex: 1,
-  },
-  descriptionContainer: {
-    marginTop: 8,
-    marginBottom: 12,
-    padding: 12,
-    backgroundColor: '#f8f8f8',
-    borderRadius: 12,
-  },
-  descriptionText: {
+  listTitle: {
+    ...TYPE.bodyStrong,
     fontSize: 13,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
-    lineHeight: 20,
+    color: '#1C1C1E',
   },
-  imageRepositorySection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-    padding: 14,
-    borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 12,
-    gap: 12,
+  listSubtitle: {
+    ...TYPE.body,
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 2,
   },
-  imageRepositoryText: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+  listMeta: {
+    ...TYPE.body,
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 2,
   },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e8e8e8',
-  },
-  statBox: {
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 20,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
-    marginBottom: 3,
-  },
-  statLabel: {
-    fontSize: 11,
-    fontFamily: 'Nunito-Regular',
-    color: '#666666',
-    marginBottom: 2,
-  },
-  statDetail: {
-    fontSize: 9,
-    fontFamily: 'Nunito-Regular',
-    color: '#999999',
-  },
-  actionsSection: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e8e8e8',
-    marginTop: 8,
-  },
-  availabilityButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000000',
-    paddingVertical: 14,
-    borderRadius: 16,
+  listRight: {
+    alignItems: 'flex-end',
     gap: 8,
   },
-  availabilityButtonActive: {
+  editPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
     backgroundColor: '#000000',
   },
-  availabilityButtonText: {
-    fontSize: 15,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#ffffff',
-  },
-  updateButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    paddingVertical: 14,
-    borderRadius: 16,
-    gap: 8,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#e8e8e8',
-  },
-  updateButtonText: {
-    fontSize: 15,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+  editPillText: {
+    ...TYPE.bodyStrong,
+    fontSize: 12,
+    color: '#FFFFFF',
   },
 });
