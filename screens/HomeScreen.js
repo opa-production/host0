@@ -1,37 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Switch, Animated, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [allCarsAvailable, setAllCarsAvailable] = useState(true);
 
-  // TODO: Replace with actual data from API/context
+  // Mock Data - Replace with actual API data
   const userName = 'Deon';
-  const upcomingBookings = [
-    {
-      id: '1',
-      carName: 'BMW M3',
-      startTime: '10:00 AM',
-      renterName: 'John Doe',
-      isToday: true,
-    },
-    {
-      id: '2',
-      carName: 'Mercedes C-Class',
-      startTime: '2:00 PM',
-      renterName: 'Jane Smith',
-      isToday: true,
-    },
-  ];
+  
+  const operationsData = {
+    activeRentals: 8,
+    pickups: 3,
+    returns: 2,
+    pendingRequests: 4,
+  };
 
-  const quickStats = {
-    activeBookings: 3,
-    totalCars: 5,
-    unreadMessages: 2,
+  const financialData = {
+    currentEarnings: 4250,
+    previousEarnings: 3800,
+    utilization: 82,
+    nextPayout: { amount: 1250, date: 'Friday' }
   };
 
   useEffect(() => {
@@ -104,13 +96,21 @@ export default function HomeScreen({ navigation }) {
           <View style={{ marginTop: 20 }}>
             <SkeletonBox width={150} height={20} style={{ marginBottom: 8 }} />
             <SkeletonBox width={250} height={40} style={{ marginBottom: 32 }} />
-            <SkeletonBox width="100%" height={100} style={{ marginBottom: 24, borderRadius: 16 }} />
-            <SkeletonBox width="100%" height={140} style={{ marginBottom: 24, borderRadius: 16 }} />
+            <SkeletonBox width="100%" height={200} style={{ marginBottom: 24, borderRadius: 16 }} />
+            <SkeletonBox width="100%" height={200} style={{ marginBottom: 24, borderRadius: 16 }} />
           </View>
         </ScrollView>
       </View>
     );
   }
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
@@ -127,150 +127,110 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.userName}>{userName}</Text>
             </View>
             <TouchableOpacity
-              style={styles.mapButton}
-              onPress={() => navigation.navigate('Map')}
+              style={styles.profileButton}
+              onPress={() => navigation.navigate('Host')} // Assuming Host profile is here
               activeOpacity={0.8}
             >
-              <Ionicons name="map-outline" size={24} color="#000000" />
+              <Ionicons name="person-outline" size={24} color="#000000" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Availability Toggle */}
+        {/* Card 1: Daily Operations */}
         <View style={styles.card}>
-          <View style={styles.cardContentRow}>
-            <View style={styles.availabilityInfo}>
-              <View style={[styles.iconContainer, { backgroundColor: allCarsAvailable ? '#34C759' : '#FF9500' }]}>
-                <Ionicons 
-                  name={allCarsAvailable ? "checkmark" : "alert"} 
-                  size={20} 
-                  color="#FFFFFF" 
-                />
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Daily Operations</Text>
+            <TouchableOpacity>
+              <Ionicons name="ellipsis-horizontal" size={20} color="#8E8E93" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.gridContainer}>
+            {/* Active Rentals */}
+            <View style={styles.gridItem}>
+              <View style={styles.iconBadge}>
+                <Ionicons name="car-outline" size={22} color={styles.iconMono.color} />
               </View>
-              <View style={styles.availabilityText}>
-                <Text style={styles.cardTitle}>
-                  {allCarsAvailable ? 'All Systems Go' : 'Status Update'}
-                </Text>
-                <Text style={styles.cardSubtitle}>
-                  {allCarsAvailable 
-                    ? 'All cars available for booking' 
-                    : 'Some cars are currently rented'}
-                </Text>
+              <Text style={styles.gridValue}>{operationsData.activeRentals}</Text>
+              <Text style={styles.gridLabel}>Rentals</Text>
+            </View>
+
+            {/* Today's Pickups */}
+            <View style={styles.gridItem}>
+              <View style={styles.iconBadge}>
+                <Ionicons name="key-outline" size={22} color={styles.iconMono.color} />
+              </View>
+              <Text style={styles.gridValue}>{operationsData.pickups}</Text>
+              <Text style={styles.gridLabel}>Pickups</Text>
+            </View>
+
+            {/* Today's Returns */}
+            <View style={styles.gridItem}>
+              <View style={styles.iconBadge}>
+                <Ionicons name="return-down-back-outline" size={22} color={styles.iconMono.color} />
+              </View>
+              <Text style={styles.gridValue}>{operationsData.returns}</Text>
+              <Text style={styles.gridLabel}>Returns</Text>
+            </View>
+
+            {/* Pending Requests */}
+            <View style={styles.gridItem}>
+              <View style={styles.iconBadge}>
+                <Ionicons name="time-outline" size={22} color={styles.iconMono.color} />
+              </View>
+              <Text style={styles.gridValue}>{operationsData.pendingRequests}</Text>
+              <Text style={styles.gridLabel}>Pending</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Card 2: Financial Performance */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Performance & Analytics</Text>
+            <TouchableOpacity>
+              <Ionicons name="arrow-forward" size={20} color="#8E8E93" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Earnings Summary */}
+          <View style={styles.earningsSection}>
+            <Text style={styles.sectionLabel}>Earnings Summary</Text>
+            <View style={styles.earningsRow}>
+              <Text style={styles.earningsValue}>{formatCurrency(financialData.currentEarnings)}</Text>
+              <View style={styles.trendBadge}>
+                <Ionicons name="trending-up" size={14} color="#34C759" />
+                <Text style={styles.trendText}>+12% vs last mo</Text>
               </View>
             </View>
-            <Switch
-              value={allCarsAvailable}
-              onValueChange={setAllCarsAvailable}
-              trackColor={{ false: '#E5E5EA', true: '#34C759' }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor="#E5E5EA"
-            />
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Utilization Rate */}
+          <View style={styles.utilizationSection}>
+            <View style={styles.utilizationHeader}>
+              <Text style={styles.sectionLabel}>Utilization Rate</Text>
+              <Text style={styles.utilizationValue}>{financialData.utilization}%</Text>
+            </View>
+            <View style={styles.progressBarBackground}>
+              <View style={[styles.progressBarFill, { width: `${financialData.utilization}%` }]} />
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Payout Status */}
+          <View style={styles.payoutContainer}>
+            <View style={styles.payoutIcon}>
+              <Ionicons name="cash-outline" size={20} color="#007AFF" />
+            </View>
+            <Text style={styles.payoutText}>
+              Next payout of <Text style={styles.payoutAmount}>{formatCurrency(financialData.nextPayout.amount)}</Text> scheduled for {financialData.nextPayout.date}.
+            </Text>
           </View>
         </View>
 
-        {/* Upcoming Bookings */}
-        {upcomingBookings.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's Bookings</Text>
-            {upcomingBookings.map((booking) => (
-              <TouchableOpacity
-                key={booking.id}
-                style={styles.bookingCard}
-                onPress={() => navigation.navigate('Bookings')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.bookingTimeContainer}>
-                  <Text style={styles.bookingTime}>{booking.startTime}</Text>
-                  <View style={styles.bookingTimeLine} />
-                </View>
-                <View style={styles.bookingDetails}>
-                  <Text style={styles.bookingCarName}>{booking.carName}</Text>
-                  <Text style={styles.bookingRenter}>{booking.renterName}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => navigation.navigate('Bookings')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.actionIconContainer}>
-                <Ionicons name="calendar-outline" size={24} color="#007AFF" />
-              </View>
-              <Text style={styles.actionTitle}>Bookings</Text>
-              {quickStats.activeBookings > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{quickStats.activeBookings}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => navigation.navigate('MyListings')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.actionIconContainer}>
-                <Ionicons name="car-outline" size={24} color="#007AFF" />
-              </View>
-              <Text style={styles.actionTitle}>My Cars</Text>
-              <Text style={styles.actionSubtitle}>{quickStats.totalCars}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => navigation.navigate('Messages')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.actionIconContainer}>
-                <Ionicons name="chatbubbles-outline" size={24} color="#007AFF" />
-              </View>
-              <Text style={styles.actionTitle}>Messages</Text>
-              {quickStats.unreadMessages > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{quickStats.unreadMessages}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => navigation.navigate('Host')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.actionIconContainer}>
-                <Ionicons name="add" size={24} color="#007AFF" />
-              </View>
-              <Text style={styles.actionTitle}>Add Car</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Quick Stats Summary */}
-        <View style={styles.statsCard}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{quickStats.activeBookings}</Text>
-            <Text style={styles.statLabel}>Active</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{quickStats.totalCars}</Text>
-            <Text style={styles.statLabel}>Cars</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{quickStats.unreadMessages}</Text>
-            <Text style={styles.statLabel}>Unread</Text>
-          </View>
-        </View>
       </ScrollView>
     </Animated.View>
   );
@@ -279,10 +239,10 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 20,
+    padding: SPACING.l,
     paddingTop: 60,
     paddingBottom: 100,
   },
@@ -298,20 +258,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 13,
+    fontFamily: 'Nunito-SemiBold',
     color: '#8E8E93',
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   userName: {
-    fontSize: 34,
-    fontWeight: '700',
+    fontSize: 28,
+    fontFamily: 'Nunito-Bold',
     color: '#000000',
     letterSpacing: 0.35,
   },
-  mapButton: {
+  profileButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -326,8 +286,8 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
     marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -335,172 +295,139 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardContentRow: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  availabilityInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 16,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  availabilityText: {
-    flex: 1,
+    marginBottom: 20,
   },
   cardTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 2,
+    ...TYPE.section,
   },
-  cardSubtitle: {
-    fontSize: 13,
-    color: '#8E8E93',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#000000',
-    marginBottom: 16,
-    letterSpacing: 0.35,
-  },
-  bookingCard: {
+  // Grid Styles for Operations Card
+  gridContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  bookingTimeContainer: {
-    alignItems: 'center',
-    marginRight: 16,
-    width: 60,
-  },
-  bookingTime: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  bookingTimeLine: {
-    width: 2,
-    height: 20,
-    backgroundColor: '#E5E5EA',
-    borderRadius: 1,
-  },
-  bookingDetails: {
-    flex: 1,
-  },
-  bookingCarName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 2,
-  },
-  bookingRenter: {
-    fontSize: 15,
-    color: '#8E8E93',
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'space-between',
   },
-  actionCard: {
-    width: (width - 56) / 2, // 2 columns with padding
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+  gridItem: {
+    width: '23%',
+    backgroundColor: '#F9F9F9', // Subtle background for items
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    marginBottom: 0,
+    alignItems: 'center',
   },
-  actionIconContainer: {
+  iconBadge: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
+    backgroundColor: '#F2F2F7',
   },
-  actionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+  iconMono: {
+    color: '#1C1C1E',
+  },
+  gridValue: {
+    fontSize: 20,
+    fontFamily: 'Nunito-Bold',
     color: '#000000',
     marginBottom: 4,
   },
-  actionSubtitle: {
-    fontSize: 13,
+  gridLabel: {
+    fontSize: 11,
+    fontFamily: 'Nunito-Regular',
     color: '#8E8E93',
+    textAlign: 'center',
   },
-  badge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: '#FF3B30',
+  // Financial Card Styles
+  earningsSection: {
+    marginBottom: 16,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#8E8E93',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  earningsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  earningsValue: {
+    fontSize: 32,
+    fontFamily: 'Nunito-Bold',
+    color: '#000000',
+  },
+  trendBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  badgeText: {
-    color: '#FFFFFF',
+  trendText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Nunito-Bold',
+    color: '#34C759',
+    marginLeft: 4,
   },
-  statsCard: {
+  divider: {
+    height: 1,
+    backgroundColor: '#E5E5EA',
+    marginVertical: 16,
+  },
+  utilizationSection: {
+    marginBottom: 8,
+  },
+  utilizationHeader: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: 8,
   },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
+  utilizationValue: {
+    fontSize: 17,
+    fontFamily: 'Nunito-Bold',
     color: '#000000',
-    marginBottom: 4,
   },
-  statLabel: {
-    fontSize: 13,
-    color: '#8E8E93',
-    fontWeight: '500',
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 4,
+    overflow: 'hidden',
   },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#E5E5EA',
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#007AFF',
+    borderRadius: 4,
+  },
+  payoutContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F8FF',
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  payoutIcon: {
+    marginRight: 12,
+  },
+  payoutText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    color: '#000000',
+    lineHeight: 20,
+  },
+  payoutAmount: {
+    fontFamily: 'Nunito-Bold',
+    color: '#007AFF',
   },
 });

@@ -13,6 +13,7 @@ import {
   Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE } from '../ui/tokens';
 
 const { width } = Dimensions.get('window');
 
@@ -156,7 +157,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7', // iOS System Background
+    backgroundColor: COLORS.bg, // iOS System Background
   },
   floatingBackButton: {
     position: 'absolute',
@@ -187,17 +188,12 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    fontSize: 34,
-    fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    ...TYPE.largeTitle,
     marginBottom: 8,
-    letterSpacing: 0.35,
   },
   subtitle: {
-    fontSize: 17,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.body,
     color: '#8E8E93', // iOS System Gray
-    letterSpacing: -0.4,
   },
   form: {
     flex: 1,
@@ -238,7 +234,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#007AFF', // iOS Blue
     fontFamily: 'Nunito-SemiBold',
   },
@@ -256,7 +252,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   loginButtonText: {
-    fontSize: 17,
+    fontSize: 15,
     fontFamily: 'Nunito-Bold',
     color: '#FFFFFF',
   },
@@ -300,7 +296,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   socialButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Nunito-SemiBold',
     color: '#000000',
   },
@@ -310,12 +306,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signUpText: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#8E8E93',
     fontFamily: 'Nunito-Regular',
   },
   signUpLinkText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Nunito-Bold',
     color: '#007AFF',
   },
