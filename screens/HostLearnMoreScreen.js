@@ -26,7 +26,7 @@ export default function HostLearnMoreScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Why host on Opa?</Text>
           <View style={styles.featureRow}>
             <View style={styles.iconCircle}>
-              <Ionicons name="cash-outline" size={18} color={COLORS.text} />
+              <Ionicons name="wallet-outline" size={18} color={COLORS.text} />
             </View>
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>Extra income</Text>
@@ -36,7 +36,7 @@ export default function HostLearnMoreScreen({ navigation }) {
           <View style={styles.divider} />
           <View style={styles.featureRow}>
             <View style={styles.iconCircle}>
-              <Ionicons name="shield-checkmark-outline" size={18} color={COLORS.text} />
+              <Ionicons name="umbrella-outline" size={18} color={COLORS.text} />
             </View>
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>Peace of mind</Text>
