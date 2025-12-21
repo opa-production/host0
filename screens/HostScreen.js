@@ -39,7 +39,7 @@ export default function HostScreen({ navigation }) {
             activeOpacity={0.85}
           >
             <View style={styles.actionLeft}>
-              <Ionicons name="car-sport-outline" size={20} color={styles.iconMono.color} />
+              <Ionicons name="car-sport-outline" size={24} color={styles.iconMono.color} />
               <Text style={styles.actionText}>Host vehicle</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
@@ -90,17 +90,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
   },
   actionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   actionText: {
     ...TYPE.bodyStrong,
-    fontSize: 13,
+    fontSize: 15,
     color: '#1C1C1E',
   },
   iconMono: {
