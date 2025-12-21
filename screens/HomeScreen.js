@@ -110,12 +110,13 @@ export default function HomeScreen({ navigation }) {
   };
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" />
-      <ScrollView 
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+      <Animated.View style={{ opacity: fadeAnim }}>
+        <ScrollView 
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
         {/* Header with Greeting */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
@@ -196,10 +197,10 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* Card 2: Financial Performance */}
-        <View style={styles.card}>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Finance')} activeOpacity={1}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Performance & Analytics</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Finance')} activeOpacity={1}>
               <Ionicons name="arrow-forward" size={20} color="#8E8E93" />
             </TouchableOpacity>
           </View>
@@ -217,10 +218,11 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.metricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
-      </ScrollView>
-    </Animated.View>
+        </ScrollView>
+      </Animated.View>
+    </View>
   );
 }
 
