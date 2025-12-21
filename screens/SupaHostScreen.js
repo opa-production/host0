@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   price: {
     ...TYPE.section,
-    fontSize: 15,
+    fontSize: 20,
     color: '#1C1C1E',
   },
   note: {
