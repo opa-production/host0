@@ -37,6 +37,7 @@ import PastBookingsScreen from '../screens/PastBookingsScreen';
 import WithdrawScreen from '../screens/WithdrawScreen';
 import AllTransactionsScreen from '../screens/AllTransactionsScreen';
 import TrackCarSelectScreen from '../screens/TrackCarSelectScreen';
+import HostLearnMoreScreen from '../screens/HostLearnMoreScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
 import OpaClientDownloadScreen from '../screens/OpaClientDownloadScreen';
 import SupaHostScreen from '../screens/SupaHostScreen';
@@ -71,7 +72,7 @@ function MainTabs() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#FF1577',
+        tabBarActiveTintColor: '#1D1D1D',
         tabBarInactiveTintColor: '#999999',
         headerShown: false,
         tabBarBackground: () => (
@@ -169,6 +170,11 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="TrackCarSelect" 
           component={TrackCarSelectScreen}
+        />
+
+        <Stack.Screen 
+          name="HostLearnMore" 
+          component={HostLearnMoreScreen}
         />
 
         {/* Feedback Screen */}
