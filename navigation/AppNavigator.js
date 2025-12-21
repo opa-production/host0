@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 
 // Main Screens
 import LandingScreen from '../screens/LandingScreen';
@@ -70,14 +71,20 @@ function MainTabs() {
         tabBarActiveTintColor: '#FF1577',
         tabBarInactiveTintColor: '#999999',
         headerShown: false,
+        tabBarBackground: () => (
+          <BlurView intensity={35} tint="light" style={{ flex: 1 }} />
+        ),
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopWidth: 1,
-          borderTopColor: '#e0e0e0',
-          paddingBottom: 12,
-          paddingTop: 8,
-          height: 70,
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
           position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 68,
+          paddingTop: 8,
+          paddingBottom: 12,
         },
         tabBarLabelStyle: {
           fontSize: 12,
