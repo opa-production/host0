@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { COLORS, SPACING } from '../../ui/tokens';
 
 export default function BasicInfoMediaScreen({ formData, updateFormData, onNext }) {
   const insets = useSafeAreaInsets();
@@ -252,10 +253,10 @@ export default function BasicInfoMediaScreen({ formData, updateFormData, onNext 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 24,
+    padding: SPACING.l,
   },
   section: {
     marginBottom: 32,
@@ -263,7 +264,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    color: COLORS.text,
     marginBottom: 8,
   },
   labelRow: {
@@ -275,23 +276,23 @@ const styles = StyleSheet.create({
   counter: {
     fontSize: 14,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
   },
   hint: {
     fontSize: 13,
     fontFamily: 'Nunito-Regular',
-    color: '#999999',
+    color: '#8E8E93',
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: COLORS.borderStrong,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
-    color: '#000000',
-    backgroundColor: '#ffffff',
+    color: COLORS.text,
+    backgroundColor: COLORS.surface,
   },
   textArea: {
     height: 120,
@@ -311,38 +312,38 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 12,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.border,
   },
   removeButton: {
     position: 'absolute',
     top: -8,
     right: -8,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
   },
   addImageButton: {
     width: '30%',
     aspectRatio: 1,
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: COLORS.borderStrong,
     borderStyle: 'dashed',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.bg,
   },
   addImageText: {
     fontSize: 12,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
     marginTop: 4,
   },
   videoContainer: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: COLORS.borderStrong,
     borderRadius: 12,
     padding: 16,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.bg,
   },
   videoPlaceholder: {
     alignItems: 'center',
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
   videoText: {
     fontSize: 14,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
     marginTop: 8,
   },
   removeVideoButton: {
@@ -362,7 +363,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: COLORS.borderStrong,
   },
   removeVideoText: {
     fontSize: 14,
@@ -372,18 +373,18 @@ const styles = StyleSheet.create({
   },
   addVideoButton: {
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: COLORS.borderStrong,
     borderStyle: 'dashed',
     borderRadius: 12,
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.bg,
   },
   addVideoText: {
     fontSize: 14,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
     marginTop: 8,
   },
   nextButton: {

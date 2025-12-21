@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, StatusBar, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPE, SPACING } from '../ui/tokens';
 import BasicInfoMediaScreen from './HostVehicle/BasicInfoMediaScreen';
 import CarSpecsScreen from './HostVehicle/CarSpecsScreen';
 import RentalInfoScreen from './HostVehicle/RentalInfoScreen';
@@ -106,7 +107,7 @@ export default function HostVehicleScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
       {/* Header with Progress */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
@@ -140,14 +141,14 @@ export default function HostVehicleScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   header: {
-    paddingHorizontal: 24,
+    paddingHorizontal: SPACING.l,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
-    backgroundColor: '#ffffff',
+    borderBottomColor: COLORS.borderStrong,
+    backgroundColor: COLORS.surface,
   },
   backButton: {
     width: 40,
@@ -162,18 +163,18 @@ const styles = StyleSheet.create({
   stepIndicator: {
     fontSize: 12,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
     marginBottom: 4,
   },
   stepTitle: {
     fontSize: 20,
     fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    color: COLORS.text,
     marginBottom: 8,
   },
   progressBarContainer: {
     height: 3,
-    backgroundColor: '#e8e8e8',
+    backgroundColor: COLORS.borderStrong,
     borderRadius: 2,
     overflow: 'hidden',
   },

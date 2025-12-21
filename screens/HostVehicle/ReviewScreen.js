@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SPACING, RADIUS } from '../../ui/tokens';
 
 export default function ReviewScreen({ formData, onBack, onSubmit }) {
   const insets = useSafeAreaInsets();
@@ -153,21 +154,21 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 24,
+    padding: SPACING.l,
   },
   reviewSection: {
     marginBottom: 32,
     paddingBottom: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
+    borderBottomColor: COLORS.borderStrong,
   },
   reviewSectionTitle: {
     fontSize: 18,
     fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    color: COLORS.text,
     marginBottom: 16,
   },
   reviewItem: {
@@ -176,13 +177,13 @@ const styles = StyleSheet.create({
   reviewLabel: {
     fontSize: 13,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
     marginBottom: 4,
   },
   reviewValue: {
     fontSize: 16,
     fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    color: COLORS.text,
   },
   imagesPreview: {
     marginTop: 12,
@@ -195,20 +196,20 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 8,
     marginRight: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.border,
   },
   moreImages: {
     width: 80,
     height: 80,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   moreImagesText: {
     fontSize: 14,
     fontFamily: 'Nunito-Bold',
-    color: '#666666',
+    color: COLORS.subtle,
   },
   videoPreview: {
     flexDirection: 'row',
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   featureTag: {
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.bg,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
   featureTagText: {
     fontSize: 12,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
   },
   switchItem: {
     flexDirection: 'row',
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF157715',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: RADIUS.card,
     borderWidth: 1,
     borderColor: '#FF1577',
   },
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.bg,
     borderRadius: 12,
     padding: 18,
     gap: 8,
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    color: COLORS.text,
   },
   submitButton: {
     flex: 2,

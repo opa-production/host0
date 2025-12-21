@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SPACING, RADIUS } from '../../ui/tokens';
 
 const COUNTRIES = [
   'Kenya', 'Tanzania', 'Uganda', 'Rwanda', 'Ethiopia', 'South Sudan',
@@ -293,10 +294,10 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 24,
+    padding: SPACING.l,
   },
   section: {
     marginBottom: 32,
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    color: COLORS.text,
     marginBottom: 16,
   },
   inputGroup: {
@@ -313,24 +314,24 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    color: COLORS.text,
     marginBottom: 8,
   },
   hint: {
     fontSize: 13,
     fontFamily: 'Nunito-Regular',
-    color: '#999999',
+    color: '#8E8E93',
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: COLORS.borderStrong,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
-    color: '#000000',
-    backgroundColor: '#ffffff',
+    color: COLORS.text,
+    backgroundColor: COLORS.surface,
   },
   textArea: {
     height: 100,
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.bg,
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
@@ -366,12 +367,12 @@ const styles = StyleSheet.create({
   customPriceLabel: {
     fontSize: 14,
     fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    color: COLORS.text,
   },
   customPriceValue: {
     fontSize: 14,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
     flex: 1,
   },
   switchRow: {
@@ -399,8 +400,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    backgroundColor: '#ffffff',
+    borderColor: COLORS.borderStrong,
+    backgroundColor: COLORS.surface,
   },
   countryChipSelected: {
     borderColor: '#FF1577',
@@ -409,7 +410,7 @@ const styles = StyleSheet.create({
   countryChipText: {
     fontSize: 13,
     fontFamily: 'Nunito-Regular',
-    color: '#666666',
+    color: COLORS.subtle,
   },
   countryChipTextSelected: {
     color: '#FF1577',
@@ -422,8 +423,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
     width: '85%',
     maxHeight: '70%',
   },
@@ -433,12 +434,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: COLORS.borderStrong,
   },
   modalTitle: {
     fontSize: 18,
     fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    color: COLORS.text,
   },
   modalBody: {
     padding: 20,
@@ -465,7 +466,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.bg,
     borderRadius: 12,
     padding: 18,
     gap: 8,
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     fontFamily: 'Nunito-Bold',
-    color: '#000000',
+    color: COLORS.text,
   },
   nextButton: {
     flex: 2,
