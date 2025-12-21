@@ -47,57 +47,88 @@ export default function HomeScreen({ navigation }) {
     return 'Good evening';
   };
 
-  const SkeletonBox = ({ width, height, style }) => {
-    const [pulseAnim] = useState(new Animated.Value(0.3));
-
-    useEffect(() => {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 0.7,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 0.3,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      pulse.start();
-      return () => pulse.stop();
-    }, []);
-
-    return (
-      <Animated.View
-        style={[
-          {
-            width,
-            height,
-            backgroundColor: '#E5E5EA',
-            borderRadius: 8,
-            opacity: pulseAnim,
-          },
-          style,
-        ]}
-      />
-    );
-  };
+  const SkeletonBox = ({ width, height, style }) => (
+    <View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: '#E5E5EA',
+          borderRadius: 8,
+        },
+        style,
+      ]}
+    />
+  );
 
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" />
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
         <ScrollView 
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
           <View style={{ marginTop: 20 }}>
-            <SkeletonBox width={150} height={20} style={{ marginBottom: 8 }} />
-            <SkeletonBox width={250} height={40} style={{ marginBottom: 32 }} />
-            <SkeletonBox width="100%" height={200} style={{ marginBottom: 24, borderRadius: 16 }} />
-            <SkeletonBox width="100%" height={200} style={{ marginBottom: 24, borderRadius: 16 }} />
+            <SkeletonBox width={150} height={14} style={{ marginBottom: 10, borderRadius: 6 }} />
+            <SkeletonBox width={200} height={34} style={{ marginBottom: 24, borderRadius: 10 }} />
+
+            <View style={[styles.card, { paddingBottom: 12 }]}>
+              <View style={styles.cardHeader}>
+                <SkeletonBox width={160} height={16} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={26} height={16} style={{ borderRadius: 8 }} />
+              </View>
+              <View style={{ paddingTop: 8 }}>
+                <View style={styles.skelRow}>
+                  <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
+                  <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
+                </View>
+                <View style={styles.opsDivider} />
+                <View style={styles.skelRow}>
+                  <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
+                  <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
+                </View>
+                <View style={styles.opsDivider} />
+                <View style={styles.skelRow}>
+                  <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
+                  <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
+                </View>
+                <View style={styles.opsDivider} />
+                <View style={styles.skelRow}>
+                  <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
+                  <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
+                </View>
+              </View>
+            </View>
+
+            <View style={[styles.card, { marginTop: 24 }]}>
+              <View style={styles.cardHeader}>
+                <SkeletonBox width={180} height={16} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={22} height={16} style={{ borderRadius: 8 }} />
+              </View>
+              <View style={{ marginTop: 8 }}>
+                <View style={styles.skelRow}>
+                  <SkeletonBox width={110} height={12} style={{ borderRadius: 8 }} />
+                  <SkeletonBox width={90} height={12} style={{ borderRadius: 8 }} />
+                </View>
+                <View style={styles.metricsDivider} />
+                <View style={styles.skelRow}>
+                  <SkeletonBox width={110} height={12} style={{ borderRadius: 8 }} />
+                  <SkeletonBox width={90} height={12} style={{ borderRadius: 8 }} />
+                </View>
+              </View>
+            </View>
+
+            <View style={[styles.card, { marginTop: 24 }]}
+            >
+              <View style={styles.cardHeader}>
+                <SkeletonBox width={150} height={16} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={22} height={16} style={{ borderRadius: 8 }} />
+              </View>
+              <View style={{ marginTop: 10 }}>
+                <SkeletonBox width={220} height={12} style={{ borderRadius: 8 }} />
+              </View>
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -218,6 +249,14 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.metricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
             </View>
           </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Map')} activeOpacity={1}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Track your car</Text>
+            <Ionicons name="location-outline" size={20} color="#8E8E93" />
+          </View>
+          <Text style={styles.trackSub}>Open the map to view your vehicle location.</Text>
         </TouchableOpacity>
 
         </ScrollView>
@@ -350,22 +389,19 @@ const styles = StyleSheet.create({
   metricsDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#E5E5EA',
-    marginLeft: 12,
+    marginLeft: 44,
   },
-  earningsSection: {
-    marginBottom: 16,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#8E8E93',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  earningsRow: {
+  skelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 14,
+  },
+  trackSub: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
+    marginTop: 10,
   },
   earningsValue: {
     fontSize: 32,
