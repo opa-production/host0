@@ -56,7 +56,7 @@ export default function FinanceScreen({ navigation }) {
 
           <View style={styles.breakdownRow}>
             <Text style={styles.breakdownLabel}>Platform commission</Text>
-            <Text style={styles.breakdownValueMuted}>- {formattedCurrency(earnings.commission)}</Text>
+            <Text style={styles.breakdownValueCommission}>- {formattedCurrency(earnings.commission)}</Text>
           </View>
         </View>
 
@@ -73,6 +73,14 @@ export default function FinanceScreen({ navigation }) {
             {recentTransactions.map((t, idx) => {
               const isNegative = t.amount < 0;
               const amountText = `${isNegative ? '-' : ''}${formattedCurrency(Math.abs(t.amount))}`;
+              const amountStyle =
+                t.title === 'Commission'
+                  ? styles.transactionAmountCommission
+                  : t.title === 'Withdrawal'
+                    ? styles.transactionAmountWithdrawal
+                    : t.amount > 0
+                      ? styles.transactionAmountIncoming
+                      : styles.transactionAmount;
 
               return (
                 <View key={t.id}>
@@ -81,7 +89,7 @@ export default function FinanceScreen({ navigation }) {
                       <Text style={styles.transactionTitle}>{t.title}</Text>
                       <Text style={styles.transactionSubtitle}>{t.subtitle}</Text>
                     </View>
-                    <Text style={[styles.transactionAmount, isNegative && styles.transactionAmountMuted]}>
+                    <Text style={amountStyle}>
                       {amountText}
                     </Text>
                   </View>
@@ -157,6 +165,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8E8E93',
   },
+  breakdownValueCommission: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#FF3B30',
+  },
   breakdownValueStrong: {
     ...TYPE.bodyStrong,
     fontSize: 13,
@@ -225,8 +238,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#1C1C1E',
   },
-  transactionAmountMuted: {
-    color: '#8E8E93',
+  transactionAmountIncoming: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#34C759',
+  },
+  transactionAmountCommission: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#FF3B30',
+  },
+  transactionAmountWithdrawal: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#FF9500',
   },
   viewMoreRow: {
     flexDirection: 'row',
