@@ -15,6 +15,7 @@ import BookingsScreen from '../screens/BookingsScreen';
 import HostScreen from '../screens/HostScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import LegalComplianceScreen from '../screens/LegalComplianceScreen';
 
 // Settings and Related Screens
 import SettingsScreen from '../screens/SettingsScreen';
@@ -177,6 +178,23 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="HostLearnMore" 
           component={HostLearnMoreScreen}
+        />
+
+        <Stack.Screen 
+          name="LegalCompliance" 
+          component={LegalComplianceScreen}
+          options={{
+            headerShown: true,
+            headerTitle: 'Legal Compliance',
+            headerBackTitle: 'Back',
+            headerTitleStyle: {
+              fontFamily: 'Nunito-Bold',
+              fontSize: 18,
+            },
+            headerBackTitleStyle: {
+              fontFamily: 'Nunito-Regular',
+            },
+          }}
         />
 
         {/* Feedback Screen */}

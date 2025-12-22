@@ -4,6 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function HostScreen({ navigation }) {
+  const handleLegalCompliance = () => {
+    navigation.navigate('LegalCompliance');
+  };
+
   const handleHostVehicle = () => {
     navigation.navigate('HostVehicle');
   };
@@ -50,6 +54,18 @@ export default function HostScreen({ navigation }) {
         </View>
 
         <View style={styles.actionsList}>
+          <TouchableOpacity 
+            style={[styles.actionRow, { marginBottom: 12 }]}
+            onPress={handleLegalCompliance}
+            activeOpacity={0.85}
+          >
+            <View style={styles.actionLeft}>
+              <Ionicons name="document-text-outline" size={24} color={styles.iconMono.color} />
+              <Text style={styles.actionText}>Legal Compliance Setup</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+          </TouchableOpacity>
+          
           <TouchableOpacity 
             style={styles.actionRow}
             onPress={handleHostVehicle}
