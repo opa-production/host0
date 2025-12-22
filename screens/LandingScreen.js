@@ -11,7 +11,7 @@ export default function LandingScreen({ navigation }) {
       <View style={styles.hero}>
         <LandingIllustration width={260} height={210} />
         <Text style={styles.title}>Opa Host</Text>
-        <Text style={styles.tagline}>Host smarter. Earn more. Stay in control.</Text>
+        <Text style={styles.tagline}>Keep your fleet safe and your schedule full</Text>
       </View>
 
       <View style={styles.ctaSection}>
