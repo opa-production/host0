@@ -1,9 +1,14 @@
-import React from 'react';
-import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, Image, Alert, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function PastBookingDetailScreen({ navigation, route }) {
+  const [rateOpen, setRateOpen] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [note, setNote] = useState('');
+
   const booking = route?.params?.booking || {
     vehicleName: 'BMW M3',
     vehicleImage: require('../assets/images/bmw.jpg'),
@@ -19,6 +24,28 @@ export default function PastBookingDetailScreen({ navigation, route }) {
       trips: 12,
       avatar: null,
     },
+  };
+
+  const ratingLabel = useMemo(() => {
+    if (!rating) return 'Tap a star';
+    if (rating >= 5) return 'Excellent';
+    if (rating === 4) return 'Great';
+    if (rating === 3) return 'Okay';
+    if (rating === 2) return 'Not great';
+    return 'Poor';
+  }, [rating]);
+
+  const submitRating = () => {
+    if (!rating) {
+      Alert.alert('Select a rating', 'Please tap a star to rate your renter.');
+      return;
+    }
+
+    lightHaptic();
+    Alert.alert('Thanks!', `You rated ${booking?.renter?.name || 'the renter'} ${rating}★.`);
+    setRateOpen(false);
+    setRating(0);
+    setNote('');
   };
 
   return (
@@ -53,7 +80,10 @@ export default function PastBookingDetailScreen({ navigation, route }) {
             <Text style={styles.sectionTitle}>Renter</Text>
             <TouchableOpacity
               style={styles.rateButton}
-              onPress={() => Alert.alert('Rate renter', 'Rating flow coming soon.')}
+              onPress={() => {
+                lightHaptic();
+                setRateOpen(true);
+              }}
               activeOpacity={0.9}
             >
               <Text style={styles.rateButtonText}>Rate</Text>
@@ -103,6 +133,95 @@ export default function PastBookingDetailScreen({ navigation, route }) {
           <Ionicons name="chevron-forward" size={18} color={COLORS.subtle} />
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={rateOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRateOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setRateOpen(false)} />
+
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalCenter}
+          >
+            <View style={styles.modalCard}>
+              <View style={styles.modalTopRow}>
+                <Text style={styles.modalTitle}>Rate renter</Text>
+                <TouchableOpacity
+                  style={styles.modalClose}
+                  onPress={() => {
+                    lightHaptic();
+                    setRateOpen(false);
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="close" size={18} color={COLORS.subtle} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.modalSub} numberOfLines={1}>
+                {booking?.renter?.name || 'Renter'} · {ratingLabel}
+              </Text>
+
+              <View style={styles.starsRow}>
+                {[1, 2, 3, 4, 5].map((n) => {
+                  const on = rating >= n;
+                  return (
+                    <TouchableOpacity
+                      key={`star-${n}`}
+                      style={styles.starButton}
+                      onPress={() => {
+                        lightHaptic();
+                        setRating(n);
+                      }}
+                      activeOpacity={0.85}
+                    >
+                      <Ionicons name={on ? 'star' : 'star-outline'} size={26} color={on ? '#FFCC00' : '#C7C7CC'} />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={styles.noteWrap}>
+                <Text style={styles.noteLabel}>Add a note (optional)</Text>
+                <TextInput
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Short feedback"
+                  placeholderTextColor={COLORS.subtle}
+                  style={styles.noteInput}
+                  multiline
+                  maxLength={220}
+                />
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalSecondary]}
+                  onPress={() => {
+                    lightHaptic();
+                    setRateOpen(false);
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.modalSecondaryText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalPrimary]}
+                  onPress={submitRating}
+                  activeOpacity={0.9}
+                >
+                  <Text style={styles.modalPrimaryText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -299,5 +418,112 @@ const styles = StyleSheet.create({
   secondaryActionText: {
     ...TYPE.bodyStrong,
     color: COLORS.text,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    padding: SPACING.l,
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  modalCenter: {
+    justifyContent: 'center',
+  },
+  modalCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  modalTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.s,
+  },
+  modalTitle: {
+    ...TYPE.section,
+  },
+  modalClose: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.bg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  modalSub: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
+    marginBottom: SPACING.m,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.m,
+  },
+  starButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.bg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  noteWrap: {
+    marginBottom: SPACING.l,
+  },
+  noteLabel: {
+    ...TYPE.micro,
+    color: COLORS.subtle,
+    marginBottom: 8,
+  },
+  noteInput: {
+    minHeight: 88,
+    borderRadius: RADIUS.card,
+    padding: 12,
+    backgroundColor: COLORS.bg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.text,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: SPACING.s,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: RADIUS.button,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalSecondary: {
+    backgroundColor: COLORS.bg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  modalSecondaryText: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: COLORS.text,
+  },
+  modalPrimary: {
+    backgroundColor: COLORS.text,
+  },
+  modalPrimaryText: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#ffffff',
   },
 });
