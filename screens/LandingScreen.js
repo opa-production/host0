@@ -78,6 +78,11 @@ const styles = StyleSheet.create({
     minHeight: 56,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   secondaryButtonText: {
     ...TYPE.section,
