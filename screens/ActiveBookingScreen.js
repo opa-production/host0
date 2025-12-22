@@ -152,7 +152,11 @@ export default function ActiveBookingScreen({ navigation }) {
           <TouchableOpacity style={styles.primaryButton} activeOpacity={0.9}>
             <Text style={styles.primaryButtonText}>Extend booking</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.outlineButton} activeOpacity={0.9}>
+          <TouchableOpacity
+            style={styles.outlineButton}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('ReportIssue', { bookingRef: `${booking.vehicleName} • ${booking.plate}` })}
+          >
             <Text style={styles.outlineButtonText}>Report issue</Text>
           </TouchableOpacity>
         </View>

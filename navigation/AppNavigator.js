@@ -50,6 +50,8 @@ import MyListingsScreen from '../screens/MyListingsScreen';
 import HostVehicleScreen from '../screens/HostVehicleScreen';
 import CarGalleryScreen from '../screens/CarGalleryScreen';
 import SmartCalendarScreen from '../screens/SmartCalendarScreen';
+import PastBookingDetailScreen from '../screens/PastBookingDetailScreen';
+import ReportIssueScreen from '../screens/ReportIssueScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -149,10 +151,20 @@ export default function AppNavigator() {
           component={ActiveBookingScreen}
         />
 
+        <Stack.Screen
+          name="ReportIssue"
+          component={ReportIssueScreen}
+        />
+
         {/* Past Bookings Screen */}
         <Stack.Screen 
           name="PastBookings" 
           component={PastBookingsScreen}
+        />
+
+        <Stack.Screen
+          name="PastBookingDetail"
+          component={PastBookingDetailScreen}
         />
         
         {/* Finance Screen */}

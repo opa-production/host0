@@ -73,7 +73,16 @@ export default function PastBookingsScreen({ navigation }) {
               key={b.id}
               style={styles.listCard}
               activeOpacity={0.9}
-              onPress={() => navigation.navigate('ActiveBooking')}
+              onPress={() => navigation.navigate('PastBookingDetail', { booking: {
+                vehicleName: b.vehicleName,
+                vehicleImage: b.vehicleImage,
+                location: b.location,
+                startDate: b.startDate,
+                endDate: b.endDate,
+                status: getStatusText(b.status),
+                totalPaid: b.totalAmount,
+                payout: 'KSh 0',
+              } })}
             >
               <View style={styles.listLeft}>
                 <Image source={b.vehicleImage} style={styles.avatar} resizeMode="cover" />
