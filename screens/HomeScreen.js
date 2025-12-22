@@ -140,6 +140,8 @@ export default function HomeScreen({ navigation }) {
     return `KSh ${numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
   };
 
+  const pendingAmount = Math.max(0, (Number(financialData.currentEarnings) || 0) - (Number(financialData.nextPayout.amount) || 0));
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
@@ -228,27 +230,40 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* Card 2: Financial Performance */}
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Finance')} activeOpacity={1}>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Finance')} activeOpacity={0.95}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Financial Performance</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Finance')} activeOpacity={1}>
+            <TouchableOpacity onPress={() => navigation.navigate('Finance')} activeOpacity={0.8}>
               <Ionicons name="arrow-forward" size={20} color="#8E8E93" />
             </TouchableOpacity>
           </View>
 
+          <Text style={styles.finHeadline}>
+            This month {formatCurrency(financialData.currentEarnings)} earned
+          </Text>
+
           <View style={styles.metricsList}>
             <View style={styles.metricsRow}>
-              <Text style={styles.metricsLabel}>Gross income</Text>
-              <Text style={styles.metricsValue}>{formatCurrency(financialData.currentEarnings)}</Text>
+              <Text style={styles.metricsLabel}>Withdrawable</Text>
+              <Text style={styles.metricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
             </View>
 
             <View style={styles.metricsDivider} />
 
             <View style={styles.metricsRow}>
-              <Text style={styles.metricsLabel}>Withdrawable</Text>
-              <Text style={styles.metricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
+              <Text style={styles.metricsLabel}>Pending</Text>
+              <Text style={styles.metricsValue}>{formatCurrency(pendingAmount)}</Text>
             </View>
           </View>
+
+          <TouchableOpacity
+            style={styles.softCta}
+            onPress={() => navigation.navigate('Withdraw')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.softCtaText}>Withdraw</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.subtle} />
+          </TouchableOpacity>
         </TouchableOpacity>
 
         <TouchableOpacity style={[styles.card, styles.trackCard]} onPress={() => navigation.navigate('TrackCarSelect')} activeOpacity={1}>
@@ -256,7 +271,7 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.cardTitle}>Track your car</Text>
             <Ionicons name="location-outline" size={20} color="#8E8E93" />
           </View>
-          <Text style={styles.trackSub}>Open the map to view your vehicle location.</Text>
+          <Text style={styles.trackSub}>Last seen 12 minutes ago · Nakuru CBD</Text>
         </TouchableOpacity>
 
         </ScrollView>
@@ -397,6 +412,28 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#E5E5EA',
     marginLeft: 44,
+  },
+  finHeadline: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontFamily: 'Nunito-Bold',
+    color: COLORS.text,
+    marginBottom: 14,
+  },
+  softCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#F2F2F7',
+  },
+  softCtaText: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: COLORS.text,
   },
   skelRow: {
     flexDirection: 'row',
