@@ -15,7 +15,6 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 const DocumentUpload = ({ 
   title, 
-  description, 
   onPress, 
   fileName, 
   isRequired = true,
@@ -24,26 +23,33 @@ const DocumentUpload = ({
   <View style={styles.uploadContainer}>
     <View style={styles.uploadHeader}>
       <View style={styles.uploadTitleContainer}>
-        <Ionicons name={icon} size={20} color={COLORS.primary} style={styles.uploadIcon} />
-        <Text style={styles.uploadTitle}>
-          {title}
-          {isRequired && <Text style={styles.required}> *</Text>}
-        </Text>
-      </View>
-      {fileName ? (
-        <View style={styles.fileInfo}>
-          <Ionicons name="checkmark-circle" size={16} color="#34C759" />
-          <Text style={styles.fileName} numberOfLines={1}>
-            {fileName}
+        <Ionicons name={icon} size={20} color={COLORS.brand} style={styles.uploadIcon} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.uploadTitle} numberOfLines={1}>
+            {title}
+            {isRequired && <Text style={styles.required}> *</Text>}
+          </Text>
+          <Text style={styles.uploadMeta} numberOfLines={1}>
+            {fileName ? `Uploaded • ${fileName}` : 'PDF or image'}
           </Text>
         </View>
-      ) : (
-        <TouchableOpacity style={styles.uploadButton} onPress={onPress}>
-          <Text style={styles.uploadButtonText}>Upload</Text>
-        </TouchableOpacity>
-      )}
+      </View>
+
+      <TouchableOpacity
+        style={[styles.uploadButton, fileName && styles.uploadButtonSecondary]}
+        onPress={onPress}
+        activeOpacity={0.9}
+      >
+        {fileName ? (
+          <Ionicons name="checkmark" size={16} color="#34C759" />
+        ) : (
+          <Ionicons name="cloud-upload-outline" size={16} color={COLORS.brand} />
+        )}
+        <Text style={[styles.uploadButtonText, fileName && styles.uploadButtonTextSecondary]}>
+          {fileName ? 'Replace' : 'Upload'}
+        </Text>
+      </TouchableOpacity>
     </View>
-    <Text style={styles.uploadDescription}>{description}</Text>
   </View>
 );
 
@@ -70,16 +76,21 @@ export default function LegalComplianceScreen({ navigation }) {
         copyToCacheDirectory: true,
       });
 
-      if (result.type === 'success') {
-        setDocuments(prev => ({
-          ...prev,
-          [type]: {
-            name: result.name,
-            uri: result.uri,
-            type: result.mimeType,
-          }
-        }));
-      }
+      if (result?.canceled) return;
+
+      const asset = result?.assets?.[0];
+      if (!asset) return;
+
+      setDocuments(prev => ({
+        ...prev,
+        [type]: {
+          name: asset.name,
+          uri: asset.uri,
+          type: asset.mimeType,
+        }
+      }));
+
+      Alert.alert('Uploaded', `${asset.name}`);
     } catch (err) {
       Alert.alert('Error', 'Failed to pick document');
       console.error('Error picking document:', err);
@@ -94,6 +105,8 @@ export default function LegalComplianceScreen({ navigation }) {
 
   const isSubmitDisabled = !documents.logbook || !documents.insurance || !documents.inspection;
 
+  const requiredUploadedCount = Number(!!documents.logbook) + Number(!!documents.insurance) + Number(!!documents.inspection);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
@@ -103,35 +116,39 @@ export default function LegalComplianceScreen({ navigation }) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Legal Compliance</Text>
-        <Text style={styles.description}>
-          Please upload the following documents to ensure your vehicle meets all legal requirements.
-        </Text>
+        <Text style={styles.title}>Legal compliance</Text>
+        <Text style={styles.description}>Upload the required documents.</Text>
+
+        <View style={styles.progressRow}>
+          <Text style={styles.progressText}>{requiredUploadedCount}/3 required uploaded</Text>
+          {!isSubmitDisabled && (
+            <View style={styles.progressBadge}>
+              <Ionicons name="checkmark-circle" size={16} color="#34C759" />
+              <Text style={styles.progressBadgeText}>Ready</Text>
+            </View>
+          )}
+        </View>
 
         <DocumentUpload
           title="Vehicle Logbook"
-          description="Official document showing vehicle ownership and registration details"
           onPress={() => pickDocument('logbook')}
           fileName={documents.logbook?.name}
         />
 
         <DocumentUpload
           title="Valid Insurance Cover"
-          description="Current insurance certificate with coverage details"
           onPress={() => pickDocument('insurance')}
           fileName={documents.insurance?.name}
         />
 
         <DocumentUpload
           title="Inspection Certificate"
-          description="Recent vehicle inspection report from an authorized center"
           onPress={() => pickDocument('inspection')}
           fileName={documents.inspection?.name}
         />
 
         <DocumentUpload
           title="Car Manual (Optional)"
-          description="Vehicle manual for reference (PDF or images)"
           onPress={() => pickDocument('manual')}
           fileName={documents.manual?.name}
           isRequired={false}
@@ -141,8 +158,7 @@ export default function LegalComplianceScreen({ navigation }) {
         <View style={styles.noteContainer}>
           <Ionicons name="information-circle-outline" size={20} color="#8E8E93" />
           <Text style={styles.noteText}>
-            Your documents will be securely stored and only used for verification purposes.
-            We'll notify you once your documents are approved.
+            Documents are used only for verification.
           </Text>
         </View>
 
@@ -173,38 +189,59 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: SPACING.m,
+    padding: SPACING.l,
     paddingBottom: SPACING.xl,
   },
   title: {
     ...TYPE.title,
-    fontFamily: 'Nunito-Bold',
     marginBottom: SPACING.s,
   },
   description: {
     ...TYPE.body,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.muted,
-    marginBottom: SPACING.xl,
-    lineHeight: 22,
+    color: COLORS.subtle,
+    marginBottom: SPACING.m,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.l,
+  },
+  progressText: {
+    ...TYPE.caption,
+  },
+  progressBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  progressBadgeText: {
+    ...TYPE.caption,
+    color: COLORS.text,
   },
   uploadContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     padding: SPACING.m,
     marginBottom: SPACING.m,
-    borderWidth: 0,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
   },
   uploadHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.xs,
   },
   uploadTitleContainer: {
     flexDirection: 'row',
@@ -215,61 +252,55 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   uploadTitle: {
-    ...TYPE.subhead,
-    fontFamily: 'Nunito-SemiBold',
+    ...TYPE.bodyStrong,
     color: COLORS.text,
+  },
+  uploadMeta: {
+    ...TYPE.caption,
+    marginTop: 2,
   },
   required: {
     color: '#FF3B30',
   },
-  fileInfo: {
+  uploadButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    marginLeft: SPACING.m,
-    justifyContent: 'flex-end',
-  },
-  fileName: {
-    ...TYPE.footnote,
-    fontFamily: 'Nunito-Regular',
-    color: '#8E8E93',
-    marginLeft: 4,
-    maxWidth: 150,
-  },
-  uploadButton: {
-    backgroundColor: COLORS.primary + '10',
+    gap: 6,
+    backgroundColor: 'rgba(0, 122, 255, 0.10)',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingVertical: 8,
+    borderRadius: RADIUS.button,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(0, 122, 255, 0.18)',
+  },
+  uploadButtonSecondary: {
+    backgroundColor: COLORS.bg,
+    borderColor: COLORS.borderStrong,
   },
   uploadButtonText: {
-    ...TYPE.subhead,
-    fontFamily: 'Nunito-SemiBold',
-    color: COLORS.primary,
+    ...TYPE.caption,
+    color: COLORS.brand,
   },
-  uploadDescription: {
-    ...TYPE.footnote,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.muted,
-    marginTop: 2,
+  uploadButtonTextSecondary: {
+    color: COLORS.text,
   },
   noteContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: COLORS.bg,
     padding: SPACING.m,
-    borderRadius: RADIUS.m,
+    borderRadius: RADIUS.card,
     marginTop: SPACING.s,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
   },
   noteText: {
-    ...TYPE.footnote,
-    fontFamily: 'Nunito-Regular',
-    color: '#8E8E93',
+    ...TYPE.caption,
     marginLeft: 8,
     flex: 1,
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.l,
+    backgroundColor: COLORS.text,
+    borderRadius: RADIUS.button,
     padding: SPACING.m,
     alignItems: 'center',
     justifyContent: 'center',
@@ -278,8 +309,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   submitButtonText: {
-    ...TYPE.headline,
-    fontFamily: 'Nunito-Bold',
+    ...TYPE.section,
     color: '#FFFFFF',
   },
 });
