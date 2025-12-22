@@ -190,11 +190,15 @@ const styles = StyleSheet.create({
   },
   uploadContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.m,
+    borderRadius: RADIUS.card,
     padding: SPACING.m,
     marginBottom: SPACING.m,
-    borderWidth: 1,
-    borderColor: '#F2F2F7',
+    borderWidth: 0,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
   },
   uploadHeader: {
     flexDirection: 'row',
