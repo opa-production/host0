@@ -289,12 +289,13 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFFFFF',
     borderRadius: 999,
     padding: 3,
     marginBottom: SPACING.l,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
+    alignSelf: 'center',
   },
   toggleOption: {
     flex: 1,
