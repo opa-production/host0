@@ -34,19 +34,18 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   const handleLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log out',
-        style: 'destructive',
-        onPress: () =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Landing' }],
-          }),
-      },
-    ]);
+    setShowLogoutConfirm(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Landing' }],
+    });
   };
 
   const handleEditProfile = () => {
@@ -201,6 +200,23 @@ export default function ProfileScreen({ navigation }) {
         </TouchableOpacity>
 
       </ScrollView>
+
+      {showLogoutConfirm && (
+        <View style={styles.overlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Log out?</Text>
+            <Text style={styles.modalBody}>You’ll need to sign in again to access your account.</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={[styles.modalButton, styles.modalCancel]} onPress={() => setShowLogoutConfirm(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, styles.modalConfirm]} onPress={handleConfirmLogout}>
+                <Text style={styles.modalConfirmText}>Log out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -353,20 +369,71 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
   },
   logoutButton: {
-    marginTop: SPACING.l,
-    marginHorizontal: SPACING.l,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    justifyContent: 'center',
+    marginTop: SPACING.xl,
+    borderBottomColor: '#E5E5EA',
   },
   logoutText: {
-    ...TYPE.bodyStrong,
+    ...TYPE.subhead,
     color: '#FF1577',
-    marginLeft: 10,
+    fontFamily: 'Nunito-Bold',
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.l,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  modalTitle: {
+    ...TYPE.title,
+    marginBottom: SPACING.s,
+  },
+  modalBody: {
+    ...TYPE.body,
+    color: COLORS.muted,
+    marginBottom: SPACING.l,
+    lineHeight: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: SPACING.s,
+  },
+  modalButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: RADIUS.button,
+  },
+  modalCancel: {
+    backgroundColor: '#F2F2F7',
+  },
+  modalConfirm: {
+    backgroundColor: COLORS.brand,
+  },
+  modalCancelText: {
+    ...TYPE.subhead,
+    color: COLORS.text,
+  },
+  modalConfirmText: {
+    ...TYPE.subhead,
+    color: '#FFFFFF',
   },
 });
