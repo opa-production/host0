@@ -425,15 +425,17 @@ const styles = StyleSheet.create({
   modalCancel: {
     backgroundColor: '#F2F2F7',
   },
-  modalConfirm: {
-    backgroundColor: COLORS.brand,
-  },
   modalCancelText: {
     ...TYPE.subhead,
+    fontFamily: 'Nunito-SemiBold',
     color: COLORS.text,
   },
   modalConfirmText: {
     ...TYPE.subhead,
+    fontFamily: 'Nunito-Bold',
     color: '#FFFFFF',
+  },
+  modalConfirm: {
+    backgroundColor: '#FF1577',
   },
 });
