@@ -114,6 +114,7 @@ export default function ProfileScreen({ navigation }) {
 
         {/* Links Section */}
         <View style={styles.section}>
+          <View style={styles.sectionDivider} />
           <Text style={styles.sectionTitle}>Account</Text>
           
           <View style={styles.linkGroup}>
@@ -156,6 +157,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         <View style={styles.section}>
+          <View style={styles.sectionDivider} />
           <Text style={styles.sectionTitle}>Hosting</Text>
           
           <View style={styles.linkGroup}>
@@ -180,6 +182,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         <View style={styles.section}>
+          <View style={styles.sectionDivider} />
           <Text style={styles.sectionTitle}>Support</Text>
           
           <View style={styles.linkGroup}>
@@ -363,6 +366,11 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#1C1C1E',
+  },
+  sectionDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E5EA',
+    marginBottom: SPACING.s,
   },
   logoutButton: {
     flexDirection: 'row',
