@@ -1,14 +1,23 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, Dimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
-export default function MessagesScreen() {
+export default function MessagesScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Messages</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Messages</Text>
+          <TouchableOpacity
+            style={styles.headerIconButton}
+            onPress={() => navigation.navigate('Notifications')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="notifications-outline" size={24} color="#000000" />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.subtitle}>Your conversations</Text>
         <View style={styles.emptyStateContainer}>
           <View style={styles.iconContainer}>
@@ -33,6 +42,11 @@ const styles = StyleSheet.create({
     padding: SPACING.l,
     paddingTop: 60,
     paddingBottom: 100,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
     ...TYPE.largeTitle,
@@ -75,5 +89,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     maxWidth: 300,
+  },
+  headerIconButton: {
+    padding: 8,
+    borderRadius: 16,
   },
 });

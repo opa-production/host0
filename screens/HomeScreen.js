@@ -155,13 +155,6 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.greeting}>{getGreeting()},</Text>
               <Text style={styles.userName}>{userName}</Text>
             </View>
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={() => navigation.navigate('Notifications')}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="notifications-outline" size={24} color="#000000" />
-            </TouchableOpacity>
           </View>
         </View>
 
