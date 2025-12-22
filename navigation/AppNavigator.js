@@ -9,6 +9,7 @@ import { BlurView } from 'expo-blur';
 import LandingScreen from '../screens/LandingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 import HomeScreen from '../screens/HomeScreen';
 import BookingsScreen from '../screens/BookingsScreen';
 import HostScreen from '../screens/HostScreen';
@@ -113,7 +114,8 @@ export default function AppNavigator() {
           headerShown: false,
         }}
       >
-        {/* Auth Flow */}
+        {/* Onboarding + Auth Flow */}
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
