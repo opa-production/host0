@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image,
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function ProfileScreen({ navigation }) {
   // TODO: Replace with actual user data
@@ -37,6 +38,7 @@ export default function ProfileScreen({ navigation }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
+    lightHaptic();
     setShowLogoutConfirm(true);
   };
 
@@ -75,7 +77,7 @@ export default function ProfileScreen({ navigation }) {
                 <Ionicons name="person" size={40} color="#999999" />
               </View>
             )}
-            <TouchableOpacity style={styles.cameraButton} onPress={pickImage} activeOpacity={0.85}>
+            <TouchableOpacity style={styles.cameraButton} onPress={() => { lightHaptic(); pickImage(); }} activeOpacity={0.85}>
               <Ionicons name="camera" size={18} color="#111111" />
             </TouchableOpacity>
           </View>
@@ -88,7 +90,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Personal Information</Text>
             <TouchableOpacity 
-              onPress={handleEditProfile}
+              onPress={() => { lightHaptic(); handleEditProfile(); }}
               style={styles.editButton}
             >
               <Ionicons name="create-outline" size={20} color="#666666" />
@@ -120,7 +122,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.linkGroup}>
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => navigation.navigate('Settings')}
+              onPress={() => { lightHaptic(); navigation.navigate('Settings'); }}
             >
               <Ionicons name="settings-outline" size={22} color="#666666" style={styles.linkIcon} />
               <Text style={styles.linkText}>Settings</Text>
@@ -129,7 +131,7 @@ export default function ProfileScreen({ navigation }) {
 
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => navigation.navigate('Finance')}
+              onPress={() => { lightHaptic(); navigation.navigate('Finance'); }}
             >
               <Ionicons name="wallet-outline" size={22} color="#666666" style={styles.linkIcon} />
               <Text style={styles.linkText}>Finances</Text>
@@ -138,7 +140,7 @@ export default function ProfileScreen({ navigation }) {
 
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => navigation.navigate('AddPaymentMethod')}
+              onPress={() => { lightHaptic(); navigation.navigate('AddPaymentMethod'); }}
             >
               <Ionicons name="card-outline" size={22} color="#666666" style={styles.linkIcon} />
               <Text style={styles.linkText}>Add Payment Method</Text>
@@ -147,7 +149,7 @@ export default function ProfileScreen({ navigation }) {
 
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => navigation.navigate('UploadDocs')}
+              onPress={() => { lightHaptic(); navigation.navigate('UploadDocs'); }}
             >
               <Ionicons name="document-text-outline" size={22} color="#666666" style={styles.linkIcon} />
               <Text style={styles.linkText}>Upload Documents</Text>
@@ -163,7 +165,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.linkGroup}>
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => navigation.navigate('SupaHost')}
+              onPress={() => { lightHaptic(); navigation.navigate('SupaHost'); }}
             >
               <Ionicons name="ribbon-outline" size={22} color="#666666" style={styles.linkIcon} />
               <Text style={styles.linkText}>Become a SupaHost</Text>
@@ -172,7 +174,7 @@ export default function ProfileScreen({ navigation }) {
 
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => navigation.navigate('OpaClientDownload')}
+              onPress={() => { lightHaptic(); navigation.navigate('OpaClientDownload'); }}
             >
               <Ionicons name="download-outline" size={22} color="#666666" style={styles.linkIcon} />
               <Text style={styles.linkText}>Download Opa Client</Text>
@@ -188,7 +190,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.linkGroup}>
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => navigation.navigate('Feedback')}
+              onPress={() => { lightHaptic(); navigation.navigate('Feedback'); }}
             >
               <Ionicons name="chatbox-ellipses-outline" size={22} color="#666666" style={styles.linkIcon} />
               <Text style={styles.linkText}>Share Feedback</Text>

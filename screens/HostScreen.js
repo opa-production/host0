@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function HostScreen({ navigation }) {
   const handleLegalCompliance = () => {
@@ -31,7 +32,10 @@ export default function HostScreen({ navigation }) {
               <Text style={styles.subtitle}>Add cars and services</Text>
             </View>
             <TouchableOpacity
-              onPress={() => navigation.navigate('MyListings')}
+              onPress={() => {
+                lightHaptic();
+                navigation.navigate('MyListings');
+              }}
               style={styles.headerIconButton}
               activeOpacity={0.7}
             >

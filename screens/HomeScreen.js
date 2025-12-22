@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 const { width } = Dimensions.get('window');
 
@@ -159,7 +160,10 @@ export default function HomeScreen({ navigation }) {
             </View>
             <TouchableOpacity
               style={styles.headerIconButton}
-              onPress={() => navigation.navigate('SmartCalendar')}
+              onPress={() => {
+                lightHaptic();
+                navigation.navigate('SmartCalendar');
+              }}
               activeOpacity={0.8}
             >
               <Ionicons name="calendar-number-outline" size={24} color="#000000" />

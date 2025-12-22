@@ -13,6 +13,12 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     status: 'Completed',
     payout: 'KSh 30,500',
     totalPaid: 'KSh 38,000',
+    renter: {
+      name: 'John Doe',
+      rating: 4.9,
+      trips: 12,
+      avatar: null,
+    },
   };
 
   return (
@@ -38,6 +44,36 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                 <Ionicons name="checkmark-circle" size={14} color="#34C759" />
                 <Text style={[styles.pillText, styles.pillOkText]}>{booking.status}</Text>
               </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Renter</Text>
+            <TouchableOpacity
+              style={styles.rateButton}
+              onPress={() => Alert.alert('Rate renter', 'Rating flow coming soon.')}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.rateButtonText}>Rate</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.renterRow}>
+            {booking?.renter?.avatar ? (
+              <Image source={{ uri: booking.renter.avatar }} style={styles.renterAvatar} />
+            ) : (
+              <View style={styles.renterAvatarPlaceholder}>
+                <Ionicons name="person" size={22} color={COLORS.subtle} />
+              </View>
+            )}
+
+            <View style={{ flex: 1 }}>
+              <Text style={styles.renterName} numberOfLines={1}>{booking?.renter?.name || 'Renter'}</Text>
+              <Text style={styles.renterMeta} numberOfLines={1}>
+                {booking?.renter?.rating ? `${booking.renter.rating}★` : '—'} · {booking?.renter?.trips ?? 0} trips
+              </Text>
             </View>
           </View>
         </View>
@@ -164,9 +200,58 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: SPACING.m,
+  },
   sectionTitle: {
     ...TYPE.section,
     marginBottom: SPACING.m,
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.text,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.button,
+  },
+  rateButtonText: {
+    ...TYPE.caption,
+    color: '#ffffff',
+  },
+  renterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  renterAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.bg,
+  },
+  renterAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  renterName: {
+    ...TYPE.bodyStrong,
+    color: COLORS.text,
+  },
+  renterMeta: {
+    ...TYPE.caption,
+    marginTop: 2,
   },
   amountRow: {
     flexDirection: 'row',

@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, Dimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function MessagesScreen({ navigation }) {
   return (
@@ -12,7 +13,10 @@ export default function MessagesScreen({ navigation }) {
           <Text style={styles.title}>Messages</Text>
           <TouchableOpacity
             style={styles.headerIconButton}
-            onPress={() => navigation.navigate('Notifications')}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('Notifications');
+            }}
             activeOpacity={0.8}
           >
             <Ionicons name="notifications-outline" size={24} color="#000000" />

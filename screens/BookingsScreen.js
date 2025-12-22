@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function BookingsScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -157,7 +158,10 @@ export default function BookingsScreen({ navigation }) {
               <Text style={styles.subtitle}>Manage your bookings</Text>
             </View>
             <TouchableOpacity
-              onPress={() => navigation.navigate('PastBookings')}
+              onPress={() => {
+                lightHaptic();
+                navigation.navigate('PastBookings');
+              }}
               style={styles.headerIconButton}
               activeOpacity={0.7}
             >
