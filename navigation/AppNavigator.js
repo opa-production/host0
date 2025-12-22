@@ -54,6 +54,7 @@ import SmartCalendarScreen from '../screens/SmartCalendarScreen';
 import PastBookingDetailScreen from '../screens/PastBookingDetailScreen';
 import ReportIssueScreen from '../screens/ReportIssueScreen';
 import ExtendBookingScreen from '../screens/ExtendBookingScreen';
+import ChatScreen from '../screens/ChatScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -159,6 +160,11 @@ export default function AppNavigator() {
           options={{
             tabBarStyle: { display: 'none' },
           }}
+        />
+
+        <Stack.Screen
+          name="Chat"
+          component={ChatScreen}
         />
         
         {/* Add Payment Method Screen */}

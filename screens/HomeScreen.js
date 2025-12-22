@@ -74,7 +74,7 @@ export default function HomeScreen({ navigation }) {
             <SkeletonBox width={150} height={14} style={{ marginBottom: 10, borderRadius: 6 }} />
             <SkeletonBox width={200} height={34} style={{ marginBottom: 24, borderRadius: 10 }} />
 
-            <View style={[styles.card, { paddingBottom: 12 }]}>
+            <View style={[styles.skeletonCard, { paddingBottom: 12 }]}>
               <View style={styles.cardHeader}>
                 <SkeletonBox width={160} height={16} style={{ borderRadius: 8 }} />
                 <SkeletonBox width={26} height={16} style={{ borderRadius: 8 }} />
@@ -102,7 +102,7 @@ export default function HomeScreen({ navigation }) {
               </View>
             </View>
 
-            <View style={[styles.card, { marginTop: 24 }]}>
+            <View style={[styles.skeletonCard, { marginTop: 24 }]}>
               <View style={styles.cardHeader}>
                 <SkeletonBox width={180} height={16} style={{ borderRadius: 8 }} />
                 <SkeletonBox width={22} height={16} style={{ borderRadius: 8 }} />
@@ -120,7 +120,7 @@ export default function HomeScreen({ navigation }) {
               </View>
             </View>
 
-            <View style={[styles.card, { marginTop: 24 }]}
+            <View style={[styles.skeletonCard, { marginTop: 24 }]}
             >
               <View style={styles.cardHeader}>
                 <SkeletonBox width={150} height={16} style={{ borderRadius: 8 }} />
@@ -332,6 +332,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+  },
+  skeletonCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    marginBottom: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
   },
   cardHeader: {
     flexDirection: 'row',
