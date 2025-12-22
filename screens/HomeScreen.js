@@ -157,7 +157,7 @@ export default function HomeScreen({ navigation }) {
             </View>
             <TouchableOpacity
               style={styles.headerIconButton}
-              onPress={() => {}}
+              onPress={() => navigation.navigate('SmartCalendar')}
               activeOpacity={0.8}
             >
               <Ionicons name="calendar-number-outline" size={24} color="#000000" />

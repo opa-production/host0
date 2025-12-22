@@ -49,6 +49,7 @@ import UploadDocsScreen from '../screens/UploadDocsScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
 import HostVehicleScreen from '../screens/HostVehicleScreen';
 import CarGalleryScreen from '../screens/CarGalleryScreen';
+import SmartCalendarScreen from '../screens/SmartCalendarScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -223,6 +224,11 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="ResetPassword" 
           component={ResetPasswordScreen}
+        />
+
+        <Stack.Screen 
+          name="SmartCalendar" 
+          component={SmartCalendarScreen}
         />
         
         {/* Update Profile Screen */}
