@@ -116,8 +116,7 @@ export default function MyListingsScreen({ navigation }) {
         <View style={styles.listRight}>
           <Switch
             value={!!item.available}
-            onValueChange={(e) => {
-              e.stopPropagation();
+            onValueChange={(value) => {
               toggleAvailability(item.id);
             }}
             trackColor={{ false: '#E5E5EA', true: COLORS.brand }}
