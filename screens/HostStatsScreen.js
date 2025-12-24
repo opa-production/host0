@@ -1,111 +1,135 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, StatusBar } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
-const hostStats = {
-  rating: 4.86,
+// Mock data - Replace with actual API data
+const statsData = {
+  totalCars: 5,
+  totalRentals: 87,
+  bestPerformingCar: {
+    name: 'BMW M3',
+    model: '2023 G80',
+    totalBookings: 42,
+    earnings: 630000,
+  },
+  averageRating: 4.86,
+  totalReviews: 38,
   responseRate: 98,
-  acceptanceRate: 99,
-  avgResponseTime: '5 min',
-  totalTrips: 42,
-  repeatGuests: 64,
-  cancellations: 0.8,
   memberSince: 'Feb 2024',
 };
 
-const trendHighlights = [
-  { label: 'Week', change: '+6%', detail: 'Booking requests' },
-  { label: 'Month', change: '+12%', detail: 'Earned revenue' },
-  { label: 'Quarter', change: '+3%', detail: '5-star reviews' },
-];
+export default function HostStatsScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
 
-const qualitySignals = [
-  { icon: 'chatbubbles-outline', label: 'Response rate', value: `${hostStats.responseRate}%`, caption: 'Last 30 days' },
-  { icon: 'thumbs-up-outline', label: 'Acceptance rate', value: `${hostStats.acceptanceRate}%`, caption: 'Trips accepted' },
-  { icon: 'hourglass-outline', label: 'Avg response time', value: hostStats.avgResponseTime, caption: 'New inquiries' },
-];
+  const formatCurrency = (amount) => {
+    return `KSh ${amount.toLocaleString()}`;
+  };
 
-export default function HostStatsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <LinearGradient
-          colors={['#1B1B1F', '#2E2E33']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.heroCard}
+      
+      {/* Header with Back Button */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
         >
-          <View style={styles.heroTopRow}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Host Stats</Text>
+        <View style={styles.backButton} />
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + SPACING.xl },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Stats Bar */}
+        <View style={styles.topStatsBar}>
+          <View style={styles.topStatItem}>
+            <Text style={styles.topStatValue}>{statsData.totalCars}</Text>
+            <Text style={styles.topStatLabel}>Total Cars</Text>
+          </View>
+          <View style={styles.topStatDivider} />
+          <View style={styles.topStatItem}>
+            <Text style={styles.topStatValue}>{statsData.totalRentals}</Text>
+            <Text style={styles.topStatLabel}>Rentals</Text>
+          </View>
+          <View style={styles.topStatDivider} />
+          <View style={styles.topStatItem}>
+            <Text style={styles.topStatCarName} numberOfLines={1}>
+              {statsData.bestPerformingCar.name}
+            </Text>
+            <Text style={styles.topStatLabel}>Best Performing</Text>
+          </View>
+        </View>
+
+        {/* Best Performing Car Details */}
+        <View style={styles.bestCarCard}>
+          <View style={styles.bestCarHeader}>
             <View>
-              <Text style={styles.heroEyebrow}>Host stats</Text>
-              <Text style={styles.heroTitle}>4.86</Text>
-              <View style={styles.ratingRow}>
-                <Ionicons name="star" size={16} color="#FFD166" />
-                <Text style={styles.ratingLabel}>Average rating</Text>
-              </View>
-            </View>
-            <View style={styles.heroBadge}>
-              <Text style={styles.heroBadgeLabel}>Member since</Text>
-              <Text style={styles.heroBadgeValue}>{hostStats.memberSince}</Text>
+              <Text style={styles.bestCarTitle}>Best Performing Car</Text>
+              <Text style={styles.bestCarSubtitle}>
+                {statsData.bestPerformingCar.name} {statsData.bestPerformingCar.model}
+              </Text>
             </View>
           </View>
-          <Text style={styles.heroSubtitle}>
-            Guests consistently highlight your clean rides, punctuality, and quick responses.
+          <View style={styles.bestCarStats}>
+            <View style={styles.bestCarStatItem}>
+              <Text style={styles.bestCarStatValue}>
+                {statsData.bestPerformingCar.totalBookings}
+              </Text>
+              <Text style={styles.bestCarStatLabel}>Bookings</Text>
+            </View>
+            <View style={styles.bestCarStatItem}>
+              <Text style={styles.bestCarStatValue}>
+                {formatCurrency(statsData.bestPerformingCar.earnings)}
+              </Text>
+              <Text style={styles.bestCarStatLabel}>Total Earnings</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Rating Card */}
+        <View style={styles.ratingCard}>
+          <View style={styles.ratingHeader}>
+            <Ionicons name="star" size={24} color="#FFD166" />
+            <View style={styles.ratingContent}>
+              <Text style={styles.ratingValue}>{statsData.averageRating}</Text>
+              <Text style={styles.ratingLabel}>Average Rating</Text>
+            </View>
+          </View>
+          <Text style={styles.ratingSubtext}>
+            Based on {statsData.totalReviews} reviews
           </Text>
-        </LinearGradient>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Quality signals</Text>
-          <View style={styles.signalList}>
-            {qualitySignals.map((signal) => (
-              <View key={signal.label} style={styles.signalItem}>
-                <View style={styles.signalIconWrapper}>
-                  <Ionicons name={signal.icon} size={20} color="#1D1D1D" />
-                </View>
-                <View style={styles.signalText}>
-                  <Text style={styles.signalLabel}>{signal.label}</Text>
-                  <Text style={styles.signalValue}>{signal.value}</Text>
-                  <Text style={styles.signalCaption}>{signal.caption}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
         </View>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Performance snapshots</Text>
-          <View style={styles.snapshotsList}>
-            <View style={styles.snapshotItem}>
-              <Text style={styles.snapshotLabel}>Trips hosted</Text>
-              <Text style={styles.snapshotValue}>{hostStats.totalTrips}</Text>
-              <Text style={styles.snapshotCaption}>Completed rides</Text>
-            </View>
-            <View style={styles.snapshotItem}>
-              <Text style={styles.snapshotLabel}>Repeat guests</Text>
-              <Text style={styles.snapshotValue}>{hostStats.repeatGuests}%</Text>
-              <Text style={styles.snapshotCaption}>Returning riders</Text>
-            </View>
-            <View style={styles.snapshotItem}>
-              <Text style={styles.snapshotLabel}>Cancellations</Text>
-              <Text style={styles.snapshotValue}>{hostStats.cancellations}%</Text>
-              <Text style={styles.snapshotCaption}>Last quarter</Text>
-            </View>
+        {/* Performance Metric */}
+        <View style={styles.performanceCard}>
+          <View style={styles.performanceHeader}>
+            <Text style={styles.performanceTitle}>Response Rate</Text>
+            <Text style={styles.performanceValue}>{statsData.responseRate}%</Text>
           </View>
-        </View>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Momentum</Text>
-          <View style={styles.momentumList}>
-            {trendHighlights.map((trend) => (
-              <View key={trend.label} style={styles.momentumItem}>
-                <Text style={styles.momentumLabel}>{trend.label}</Text>
-                <Text style={styles.momentumChange}>{trend.change}</Text>
-                <Text style={styles.momentumCaption}>{trend.detail}</Text>
-              </View>
-            ))}
+          <Text style={styles.performanceSubtext}>
+            Percentage of messages answered within 24 hours
+          </Text>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${statsData.responseRate}%` }]} />
           </View>
         </View>
       </ScrollView>
@@ -118,165 +142,173 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  scrollContent: {
-    padding: SPACING.l,
-    paddingTop: SPACING.xl * 2,
-    paddingBottom: SPACING.xl * 2,
-    gap: SPACING.l,
-  },
-  heroCard: {
-    borderRadius: RADIUS.lg,
-    padding: SPACING.l,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-  heroTopRow: {
+  header: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: SPACING.m,
-  },
-  heroEyebrow: {
-    ...TYPE.caption,
-    color: 'rgba(255,255,255,0.7)',
-    marginBottom: 6,
-  },
-  heroTitle: {
-    ...TYPE.largeTitle,
-    fontSize: 46,
-    color: '#FFFFFF',
-    marginBottom: 6,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  ratingLabel: {
-    ...TYPE.bodyStrong,
-    color: '#FFFFFF',
-  },
-  heroBadge: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: RADIUS.card,
-    paddingHorizontal: SPACING.m,
-    paddingVertical: SPACING.s,
-    alignItems: 'flex-start',
-  },
-  heroBadgeLabel: {
-    ...TYPE.caption,
-    color: 'rgba(255,255,255,0.7)',
-    marginBottom: 4,
-  },
-  heroBadgeValue: {
-    ...TYPE.bodyStrong,
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  heroSubtitle: {
-    ...TYPE.body,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 4,
-    lineHeight: 20,
-  },
-  sectionCard: {
+    paddingHorizontal: SPACING.l,
+    paddingBottom: SPACING.m,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderStrong,
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.l,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    gap: SPACING.m,
   },
-  sectionTitle: {
-    ...TYPE.section,
-    color: '#1D1D1D',
-  },
-  signalList: {
-    gap: SPACING.m,
-  },
-  signalItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.m,
-    paddingVertical: SPACING.s,
-  },
-  signalIconWrapper: {
-    width: 24,
-    height: 24,
+  backButton: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  signalText: {
+  headerTitle: {
+    ...TYPE.title,
+    fontSize: 20,
+    color: COLORS.text,
+  },
+  scrollView: {
     flex: 1,
   },
-  signalLabel: {
-    ...TYPE.caption,
-    color: '#1D1D1D',
-    opacity: 0.6,
-    marginBottom: 2,
+  scrollContent: {
+    padding: SPACING.l,
+    gap: SPACING.l,
   },
-  signalValue: {
-    ...TYPE.bodyStrong,
-    fontSize: 18,
-    color: '#1D1D1D',
-    marginBottom: 2,
+  topStatsBar: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    alignItems: 'center',
   },
-  signalCaption: {
-    ...TYPE.micro,
-    color: '#1D1D1D',
-    opacity: 0.5,
+  topStatItem: {
+    flex: 1,
+    alignItems: 'center',
   },
-  snapshotsList: {
-    gap: SPACING.m,
-  },
-  snapshotItem: {
-    paddingVertical: SPACING.s,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
-  },
-  snapshotLabel: {
-    ...TYPE.caption,
-    color: '#1D1D1D',
-    opacity: 0.6,
-    marginBottom: 4,
-  },
-  snapshotValue: {
+  topStatValue: {
     ...TYPE.title,
-    fontSize: 22,
-    color: '#1D1D1D',
+    fontSize: 28,
+    color: COLORS.text,
     marginBottom: 4,
   },
-  snapshotCaption: {
-    ...TYPE.micro,
-    color: '#1D1D1D',
-    opacity: 0.5,
+  topStatCarName: {
+    ...TYPE.title,
+    fontSize: 16,
+    color: COLORS.text,
+    marginBottom: 4,
+    textAlign: 'center',
   },
-  momentumList: {
-    gap: SPACING.m,
-  },
-  momentumItem: {
-    paddingVertical: SPACING.s,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
-  },
-  momentumLabel: {
+  topStatLabel: {
     ...TYPE.caption,
-    color: '#1D1D1D',
-    opacity: 0.6,
-    marginBottom: 6,
+    color: COLORS.subtle,
+    textAlign: 'center',
   },
-  momentumChange: {
+  topStatDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: COLORS.borderStrong,
+    marginHorizontal: SPACING.m,
+  },
+  bestCarCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+  },
+  bestCarHeader: {
+    marginBottom: SPACING.m,
+  },
+  bestCarTitle: {
+    ...TYPE.section,
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  bestCarSubtitle: {
+    ...TYPE.body,
+    color: COLORS.subtle,
+  },
+  bestCarStats: {
+    flexDirection: 'row',
+    gap: SPACING.l,
+  },
+  bestCarStatItem: {
+    flex: 1,
+  },
+  bestCarStatValue: {
+    ...TYPE.title,
+    fontSize: 20,
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  bestCarStatLabel: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
+  },
+  ratingCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+  },
+  ratingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.m,
+    marginBottom: SPACING.s,
+  },
+  ratingContent: {
+    flex: 1,
+  },
+  ratingValue: {
+    ...TYPE.largeTitle,
+    fontSize: 32,
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  ratingLabel: {
+    ...TYPE.body,
+    color: COLORS.subtle,
+  },
+  ratingSubtext: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
+  },
+  performanceCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+  },
+  performanceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.s,
+  },
+  performanceTitle: {
+    ...TYPE.section,
+    color: COLORS.text,
+  },
+  performanceValue: {
     ...TYPE.title,
     fontSize: 24,
-    color: '#1D1D1D',
-    marginBottom: 2,
+    color: COLORS.brand,
   },
-  momentumCaption: {
-    ...TYPE.micro,
-    color: '#1D1D1D',
-    opacity: 0.5,
+  performanceSubtext: {
+    ...TYPE.body,
+    color: COLORS.subtle,
+    marginBottom: SPACING.m,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: COLORS.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.brand,
+    borderRadius: 4,
   },
 });
