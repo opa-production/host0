@@ -38,7 +38,19 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
       <ReviewSection title="Basic Information">
         <ReviewItem label="Car Name" value={formData.name} />
         <ReviewItem label="Model" value={formData.model} />
+        <ReviewItem label="Body Type" value={formData.body} />
+        <ReviewItem label="Year" value={formData.year} />
         <ReviewItem label="Description" value={formData.description} />
+      </ReviewSection>
+
+      {/* Media */}
+      <ReviewSection title="Media">
+        {formData.coverPhoto && (
+          <View style={styles.coverPhotoPreview}>
+            <Text style={styles.reviewLabel}>Cover Photo</Text>
+            <Image source={{ uri: formData.coverPhoto }} style={styles.coverPreviewImage} />
+          </View>
+        )}
         <View style={styles.imagesPreview}>
           <Text style={styles.reviewLabel}>Photos ({formData.images.length})</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
@@ -95,8 +107,34 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
             value={`KSh ${formData.customPrice}`}
           />
         )}
+        <ReviewItem 
+          label="Payment Type" 
+          value={formData.paymentType === 'deposit' ? 'Security Deposit' : 'Full Payment'} 
+        />
+        {formData.paymentType === 'deposit' && (
+          <>
+            {formData.carValue && (
+              <ReviewItem label="Car Value" value={`KSh ${parseFloat(formData.carValue).toLocaleString()}`} />
+            )}
+            {formData.securityDepositAmount && (
+              <ReviewItem 
+                label="Security Deposit" 
+                value={`KSh ${parseFloat(formData.securityDepositAmount).toLocaleString()}`} 
+              />
+            )}
+          </>
+        )}
         <ReviewItem label="Minimum Rental Days" value={formData.minimumRentalDays} />
+        {formData.maxRentalDays && (
+          <ReviewItem label="Maximum Rental Days" value={formData.maxRentalDays} />
+        )}
         <ReviewItem label="Pickup Location" value={formData.pickupLocation} />
+        {formData.pickupLat && formData.pickupLong && (
+          <ReviewItem 
+            label="Coordinates" 
+            value={`${formData.pickupLat.toFixed(6)}, ${formData.pickupLong.toFixed(6)}`} 
+          />
+        )}
         <ReviewItem label="Age Restriction" value={formData.ageRestriction} />
         {formData.carRules && (
           <ReviewItem label="Car Rules" value={formData.carRules} />
@@ -210,6 +248,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Nunito-Bold',
     color: COLORS.subtle,
+  },
+  coverPhotoPreview: {
+    marginBottom: 16,
+  },
+  coverPreviewImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginTop: 8,
+    backgroundColor: COLORS.border,
   },
   videoPreview: {
     flexDirection: 'row',

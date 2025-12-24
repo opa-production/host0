@@ -3,7 +3,8 @@ import { StyleSheet, View, Text, StatusBar, TouchableOpacity } from 'react-nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING } from '../ui/tokens';
-import BasicInfoMediaScreen from './HostVehicle/BasicInfoMediaScreen';
+import BasicInfoScreen from './HostVehicle/BasicInfoMediaScreen';
+import MediaUploadScreen from './HostVehicle/MediaUploadScreen';
 import CarSpecsScreen from './HostVehicle/CarSpecsScreen';
 import RentalInfoScreen from './HostVehicle/RentalInfoScreen';
 import ReviewScreen from './HostVehicle/ReviewScreen';
@@ -12,32 +13,43 @@ export default function HostVehicleScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    // Step 1: Basic Info & Media
+    // Step 1: Basic Info
     name: '',
     model: '',
-    images: [],
-    video: null,
+    body: '',
+    year: '',
     description: '',
     
-    // Step 2: Car Specifications
+    // Step 2: Media
+    coverPhoto: null,
+    images: [],
+    video: null,
+    
+    // Step 3: Car Specifications
     seats: '',
     fuelType: '',
     transmission: '',
     colour: '',
     features: [],
     
-    // Step 3: Rental Info
+    // Step 4: Rental Info & Pricing
     pricePerDay: '',
     pricePerWeek: '',
     pricePerMonth: '',
     customPrice: '',
     customPriceLabel: '',
     minimumRentalDays: '',
+    maxRentalDays: '',
     pickupLocation: '',
+    pickupLat: null,
+    pickupLong: null,
     carRules: '',
     crossCountryAllowed: false,
     allowedCountries: [],
     ageRestriction: '',
+    carValue: '',
+    paymentType: 'full', // 'full' or 'deposit'
+    securityDepositAmount: '',
   });
 
   const updateFormData = (data) => {
@@ -45,7 +57,7 @@ export default function HostVehicleScreen({ navigation }) {
   };
 
   const nextStep = () => {
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -66,7 +78,7 @@ export default function HostVehicleScreen({ navigation }) {
     switch (currentStep) {
       case 1:
         return (
-          <BasicInfoMediaScreen
+          <BasicInfoScreen
             formData={formData}
             updateFormData={updateFormData}
             onNext={nextStep}
@@ -74,7 +86,7 @@ export default function HostVehicleScreen({ navigation }) {
         );
       case 2:
         return (
-          <CarSpecsScreen
+          <MediaUploadScreen
             formData={formData}
             updateFormData={updateFormData}
             onNext={nextStep}
@@ -83,7 +95,7 @@ export default function HostVehicleScreen({ navigation }) {
         );
       case 3:
         return (
-          <RentalInfoScreen
+          <CarSpecsScreen
             formData={formData}
             updateFormData={updateFormData}
             onNext={nextStep}
@@ -91,6 +103,15 @@ export default function HostVehicleScreen({ navigation }) {
           />
         );
       case 4:
+        return (
+          <RentalInfoScreen
+            formData={formData}
+            updateFormData={updateFormData}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        );
+      case 5:
         return (
           <ReviewScreen
             formData={formData}
@@ -103,7 +124,7 @@ export default function HostVehicleScreen({ navigation }) {
     }
   };
 
-  const stepTitles = ['Basic Info', 'Specifications', 'Rental Info', 'Review'];
+  const stepTitles = ['Basic Info', 'Upload Media', 'Specifications', 'Rental Info', 'Review'];
 
   return (
     <View style={styles.container}>
@@ -121,13 +142,13 @@ export default function HostVehicleScreen({ navigation }) {
         
         <View style={styles.progressContainer}>
           <Text style={styles.stepIndicator}>
-            Step {currentStep} of 4
+            Step {currentStep} of 5
           </Text>
           <Text style={styles.stepTitle}>{stepTitles[currentStep - 1]}</Text>
           
           {/* Progress Bar */}
           <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBar, { width: `${(currentStep / 4) * 100}%` }]} />
+            <View style={[styles.progressBar, { width: `${(currentStep / 5) * 100}%` }]} />
           </View>
         </View>
       </View>

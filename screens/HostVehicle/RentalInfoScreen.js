@@ -9,10 +9,12 @@ import {
   Switch,
   Modal,
   FlatList,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS } from '../../ui/tokens';
+import * as Location from 'expo-location';
+import { COLORS, SPACING, RADIUS, calculateMinSecurityDeposit } from '../../ui/tokens';
 
 const COUNTRIES = [
   'Kenya', 'Tanzania', 'Uganda', 'Rwanda', 'Ethiopia', 'South Sudan',
@@ -33,13 +35,55 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
     }
   };
 
+  const handleUseCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant location permissions to use current location');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      updateFormData({
+        pickupLat: location.coords.latitude,
+        pickupLong: location.coords.longitude,
+        pickupLocation: `${location.coords.latitude.toFixed(6)}, ${location.coords.longitude.toFixed(6)}`,
+      });
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert('Error', 'Failed to get current location. Please try again.');
+    }
+  };
+
+  const getMinDepositAmount = () => {
+    if (!formData.carValue || formData.carValue === '') return 0;
+    return calculateMinSecurityDeposit(formData.carValue);
+  };
+
+  const validateDepositAmount = (amount) => {
+    if (!amount || amount === '') return true; // Empty is okay if not required
+    const depositValue = parseFloat(amount);
+    const minDeposit = getMinDepositAmount();
+    return !isNaN(depositValue) && depositValue >= minDeposit;
+  };
+
   const canProceed = () => {
-    return (
+    const basicFields = (
       formData.pricePerDay !== '' &&
       formData.minimumRentalDays !== '' &&
       formData.pickupLocation !== '' &&
       formData.ageRestriction !== ''
     );
+
+    // If payment type is deposit, validate deposit amount
+    if (formData.paymentType === 'deposit') {
+      return basicFields && 
+             formData.carValue !== '' && 
+             formData.securityDepositAmount !== '' &&
+             validateDepositAmount(formData.securityDepositAmount);
+    }
+
+    return basicFields;
   };
 
   return (
@@ -88,6 +132,109 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
           />
         </View>
 
+        {/* Payment Type */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Payment Type *</Text>
+          <View style={styles.paymentTypeContainer}>
+            <TouchableOpacity
+              style={[
+                styles.paymentTypeOption,
+                formData.paymentType === 'full' && styles.paymentTypeOptionSelected,
+              ]}
+              onPress={() => updateFormData({ paymentType: 'full', securityDepositAmount: '' })}
+              activeOpacity={1}
+            >
+              <Ionicons
+                name={formData.paymentType === 'full' ? 'radio-button-on' : 'radio-button-off'}
+                size={20}
+                color={formData.paymentType === 'full' ? '#FF1577' : COLORS.subtle}
+              />
+              <Text
+                style={[
+                  styles.paymentTypeText,
+                  formData.paymentType === 'full' && styles.paymentTypeTextSelected,
+                ]}
+              >
+                Full Payment
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.paymentTypeOption,
+                formData.paymentType === 'deposit' && styles.paymentTypeOptionSelected,
+              ]}
+              onPress={() => updateFormData({ paymentType: 'deposit' })}
+              activeOpacity={1}
+            >
+              <Ionicons
+                name={formData.paymentType === 'deposit' ? 'radio-button-on' : 'radio-button-off'}
+                size={20}
+                color={formData.paymentType === 'deposit' ? '#FF1577' : COLORS.subtle}
+              />
+              <Text
+                style={[
+                  styles.paymentTypeText,
+                  formData.paymentType === 'deposit' && styles.paymentTypeTextSelected,
+                ]}
+              >
+                Accept Security Deposit
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Car Value (required if deposit is selected) */}
+        {formData.paymentType === 'deposit' && (
+          <>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Car Value (KSh) *</Text>
+              <Text style={styles.hint}>Enter the estimated value of your car</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="0"
+                value={formData.carValue}
+                onChangeText={(text) => {
+                  updateFormData({ carValue: text });
+                  // Clear deposit amount if car value changes
+                  if (formData.securityDepositAmount) {
+                    updateFormData({ securityDepositAmount: '' });
+                  }
+                }}
+                keyboardType="numeric"
+                placeholderTextColor="#999999"
+              />
+            </View>
+
+            {/* Security Deposit Amount */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Security Deposit Amount (KSh) *</Text>
+              <Text style={styles.hint}>
+                Minimum: KSh {getMinDepositAmount().toLocaleString()} (45% higher than car value)
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  formData.securityDepositAmount &&
+                    !validateDepositAmount(formData.securityDepositAmount) &&
+                    styles.inputError,
+                ]}
+                placeholder={getMinDepositAmount().toString()}
+                value={formData.securityDepositAmount}
+                onChangeText={(text) => updateFormData({ securityDepositAmount: text })}
+                keyboardType="numeric"
+                placeholderTextColor="#999999"
+              />
+              {formData.securityDepositAmount &&
+                !validateDepositAmount(formData.securityDepositAmount) && (
+                  <Text style={styles.errorText}>
+                    Deposit must be at least KSh {getMinDepositAmount().toLocaleString()}
+                  </Text>
+                )}
+            </View>
+          </>
+        )}
+
         <TouchableOpacity
           style={styles.customPriceButton}
           onPress={() => setShowCustomPriceModal(true)}
@@ -128,6 +275,19 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
         </View>
 
         <View style={styles.inputGroup}>
+          <Text style={styles.label}>Maximum Rental Days</Text>
+          <Text style={styles.hint}>Optional - Leave blank for no maximum</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., 30"
+            value={formData.maxRentalDays}
+            onChangeText={(text) => updateFormData({ maxRentalDays: text })}
+            keyboardType="numeric"
+            placeholderTextColor="#999999"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
           <Text style={styles.label}>Pickup Location *</Text>
           <TextInput
             style={styles.input}
@@ -136,6 +296,19 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             onChangeText={(text) => updateFormData({ pickupLocation: text })}
             placeholderTextColor="#999999"
           />
+          <TouchableOpacity
+            style={styles.locationButton}
+            onPress={handleUseCurrentLocation}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="location" size={20} color="#FF1577" />
+            <Text style={styles.locationButtonText}>Use Current Location</Text>
+          </TouchableOpacity>
+          {formData.pickupLat && formData.pickupLong && (
+            <Text style={styles.hint}>
+              Coordinates: {formData.pickupLat.toFixed(6)}, {formData.pickupLong.toFixed(6)}
+            </Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -493,6 +666,60 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-Bold',
     color: '#ffffff',
+  },
+  paymentTypeContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  paymentTypeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 12,
+    padding: 16,
+    gap: 8,
+    backgroundColor: COLORS.surface,
+  },
+  paymentTypeOptionSelected: {
+    borderColor: '#FF1577',
+    backgroundColor: '#FF157715',
+  },
+  paymentTypeText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.subtle,
+  },
+  paymentTypeTextSelected: {
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FF1577',
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FF1577',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
+    gap: 8,
+    backgroundColor: COLORS.surface,
+  },
+  locationButtonText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FF1577',
+  },
+  inputError: {
+    borderColor: COLORS.danger,
+  },
+  errorText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.danger,
+    marginTop: 4,
   },
 });
 

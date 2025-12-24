@@ -69,3 +69,15 @@ export const TYPE = {
     color: COLORS.subtle,
   },
 };
+
+// Platform fee percentage (apples fee)
+export const PLATFORM_FEE_PERCENTAGE = 0.15; // 15% platform fee
+
+// Calculate minimum security deposit (at least 45% higher than car value including fees)
+export const calculateMinSecurityDeposit = (carValue) => {
+  if (!carValue || carValue === '') return 0;
+  const value = parseFloat(carValue);
+  if (isNaN(value)) return 0;
+  // 45% higher means 1.45x the car value
+  return Math.ceil(value * 1.45);
+};
