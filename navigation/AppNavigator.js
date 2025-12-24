@@ -41,6 +41,7 @@ import WithdrawScreen from '../screens/WithdrawScreen';
 import AllTransactionsScreen from '../screens/AllTransactionsScreen';
 import TrackCarSelectScreen from '../screens/TrackCarSelectScreen';
 import HostLearnMoreScreen from '../screens/HostLearnMoreScreen';
+import HostStatsScreen from '../screens/HostStatsScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
 import OpaClientDownloadScreen from '../screens/OpaClientDownloadScreen';
 import SupaHostScreen from '../screens/SupaHostScreen';
@@ -224,6 +225,10 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="HostLearnMore" 
           component={HostLearnMoreScreen}
+        />
+        <Stack.Screen 
+          name="HostStats" 
+          component={HostStatsScreen}
         />
 
         <Stack.Screen 

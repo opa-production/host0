@@ -15,12 +15,6 @@ export default function ProfileScreen({ navigation }) {
     profileImage: null, // Will be replaced with actual image
   });
 
-  const hostStats = {
-    rating: 4.86,
-    totalRentals: 42,
-    memberSince: 'Feb 2024',
-  };
-
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permission.status !== 'granted') {
@@ -93,30 +87,22 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.section}>
           <View style={styles.sectionDivider} />
-          <Text style={styles.sectionTitle}>Host stats</Text>
-
-          <View style={styles.statsCard}>
-            <View style={styles.statsInlineRow}>
-              <View style={styles.statInlineItem}>
-                <Text style={styles.statInlineLabel}>Rating</Text>
-                <Text style={styles.statInlineValue}>{hostStats.rating.toFixed(2)}</Text>
-              </View>
-
-              <View style={styles.statsInlineDivider} />
-
-              <View style={styles.statInlineItem}>
-                <Text style={styles.statInlineLabel}>Rentals</Text>
-                <Text style={styles.statInlineValue}>{hostStats.totalRentals}</Text>
-              </View>
-
-              <View style={styles.statsInlineDivider} />
-
-              <View style={styles.statInlineItem}>
-                <Text style={styles.statInlineLabel}>Member since</Text>
-                <Text style={styles.statInlineValue}>{hostStats.memberSince}</Text>
-              </View>
-            </View>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Host stats</Text>
+            <Text style={styles.sectionSubtitle}>See detailed performance</Text>
           </View>
+
+          <TouchableOpacity
+            style={styles.linkItem}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('HostStats');
+            }}
+          >
+            <Ionicons name="stats-chart-outline" size={22} color="#666666" style={styles.linkIcon} />
+            <Text style={styles.linkText}>View hosting performance</Text>
+            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+          </TouchableOpacity>
         </View>
 
         {/* Personal Info Section */}
@@ -351,41 +337,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.l,
     marginBottom: SPACING.l,
   },
-  statsCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    paddingVertical: SPACING.m,
-    paddingHorizontal: SPACING.m,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    marginTop: SPACING.s,
-  },
-  statsInlineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statInlineItem: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  statInlineValue: {
-    ...TYPE.bodyStrong,
-    fontSize: 15,
-    color: COLORS.text,
-  },
-  statInlineLabel: {
-    ...TYPE.micro,
-    color: COLORS.subtle,
-  },
-  statsInlineDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 34,
-    backgroundColor: COLORS.borderStrong,
-  },
   linkGroup: {
     backgroundColor: 'transparent',
   },
@@ -399,6 +350,10 @@ const styles = StyleSheet.create({
     ...TYPE.section,
     fontSize: 15,
     color: '#1C1C1E',
+  },
+  sectionSubtitle: {
+    ...TYPE.caption,
+    color: '#8E8E93',
   },
   editButton: {
     padding: 4,
