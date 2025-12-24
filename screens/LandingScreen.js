@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#111111',
+    backgroundColor: COLORS.brand,
     borderRadius: RADIUS.button,
     paddingVertical: 14,
     paddingHorizontal: 16,

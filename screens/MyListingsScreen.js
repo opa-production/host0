@@ -136,8 +136,8 @@ export default function MyListingsScreen({ navigation }) {
       </View>
 
       <View style={[styles.headerArea, { paddingTop: insets.top + 70 }]}>
-        <Text style={styles.screenTitle}>My listings</Text>
-        <Text style={styles.screenSubtitle}>Your cars</Text>
+        <Text style={styles.screenTitle}>My Cars</Text>
+        <Text style={styles.screenSubtitle}>Manage your listings</Text>
       </View>
 
       {/* Listings */}
