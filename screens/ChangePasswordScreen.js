@@ -93,7 +93,7 @@ const ChangePasswordScreen = () => {
 
           {/* Info Card */}
           <View style={styles.infoCard}>
-            <Ionicons name="information-circle-outline" size={24} color="#FF1577" />
+            <Ionicons name="information-circle-outline" size={24} color="#007AFF" />
             <Text style={styles.infoText}>
               Your new password must be at least 8 characters long and different from your current password.
             </Text>

@@ -81,7 +81,7 @@ const LanguageScreen = () => {
                 </View>
               </View>
               {isSelected && (
-                <Ionicons name="checkmark-circle" size={24} color="#FF1577" />
+                <Ionicons name="checkmark-circle" size={24} color="#007AFF" />
               )}
             </TouchableOpacity>
           );

@@ -147,7 +147,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
               <Ionicons
                 name={formData.paymentType === 'full' ? 'radio-button-on' : 'radio-button-off'}
                 size={20}
-                color={formData.paymentType === 'full' ? '#FF1577' : COLORS.subtle}
+                color={formData.paymentType === 'full' ? '#007AFF' : COLORS.subtle}
               />
               <Text
                 style={[
@@ -170,7 +170,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
               <Ionicons
                 name={formData.paymentType === 'deposit' ? 'radio-button-on' : 'radio-button-off'}
                 size={20}
-                color={formData.paymentType === 'deposit' ? '#FF1577' : COLORS.subtle}
+                color={formData.paymentType === 'deposit' ? '#007AFF' : COLORS.subtle}
               />
               <Text
                 style={[
@@ -240,7 +240,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
           onPress={() => setShowCustomPriceModal(true)}
           activeOpacity={1}
         >
-          <Ionicons name="add-circle-outline" size={20} color="#FF1577" />
+          <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
           <Text style={styles.customPriceButtonText}>Add Custom Price Option</Text>
         </TouchableOpacity>
 
@@ -252,7 +252,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
               onPress={() => updateFormData({ customPrice: '', customPriceLabel: '' })}
               activeOpacity={1}
             >
-              <Ionicons name="close-circle" size={20} color="#FF1577" />
+              <Ionicons name="close-circle" size={20} color="#007AFF" />
             </TouchableOpacity>
           </View>
         )}
@@ -301,7 +301,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             onPress={handleUseCurrentLocation}
             activeOpacity={0.7}
           >
-            <Ionicons name="location" size={20} color="#FF1577" />
+            <Ionicons name="location" size={20} color="#007AFF" />
             <Text style={styles.locationButtonText}>Use Current Location</Text>
           </TouchableOpacity>
           {formData.pickupLat && formData.pickupLong && (
@@ -349,7 +349,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
           <Switch
             value={formData.crossCountryAllowed}
             onValueChange={(value) => updateFormData({ crossCountryAllowed: value })}
-            trackColor={{ false: '#e0e0e0', true: '#FF1577' }}
+            trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
             thumbColor="#ffffff"
           />
         </View>
@@ -377,7 +377,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
                       {country}
                     </Text>
                     {isSelected && (
-                      <Ionicons name="checkmark-circle" size={16} color="#FF1577" style={{ marginLeft: 6 }} />
+                      <Ionicons name="checkmark-circle" size={16} color="#007AFF" style={{ marginLeft: 6 }} />
                     )}
                   </TouchableOpacity>
                 );
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FF1577',
+    borderColor: '#007AFF',
     borderStyle: 'dashed',
     borderRadius: 12,
     padding: 16,
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   customPriceButtonText: {
     fontSize: 14,
     fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
+    color: '#007AFF',
   },
   customPriceDisplay: {
     flexDirection: 'row',
@@ -577,8 +577,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
   },
   countryChipSelected: {
-    borderColor: '#FF1577',
-    backgroundColor: '#FF157715',
+    borderColor: '#007AFF',
+    backgroundColor: '#007AFF15',
   },
   countryChipText: {
     fontSize: 13,
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
     color: COLORS.subtle,
   },
   countryChipTextSelected: {
-    color: '#FF1577',
+    color: '#007AFF',
     fontFamily: 'Nunito-SemiBold',
   },
   modalOverlay: {
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalSaveButton: {
-    backgroundColor: '#FF1577',
+    backgroundColor: '#007AFF',
     borderRadius: 12,
     padding: 18,
     margin: 20,
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FF1577',
+    backgroundColor: '#007AFF',
     borderRadius: 12,
     padding: 18,
     gap: 8,
@@ -683,8 +683,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
   },
   paymentTypeOptionSelected: {
-    borderColor: '#FF1577',
-    backgroundColor: '#FF157715',
+    borderColor: '#007AFF',
+    backgroundColor: '#007AFF15',
   },
   paymentTypeText: {
     fontSize: 14,
@@ -693,14 +693,14 @@ const styles = StyleSheet.create({
   },
   paymentTypeTextSelected: {
     fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
+    color: '#007AFF',
   },
   locationButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#FF1577',
+    borderColor: '#007AFF',
     borderRadius: 12,
     padding: 12,
     marginTop: 8,
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
   locationButtonText: {
     fontSize: 14,
     fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
+    color: '#007AFF',
   },
   inputError: {
     borderColor: COLORS.danger,

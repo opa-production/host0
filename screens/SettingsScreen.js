@@ -10,7 +10,7 @@ const Toggle = ({ value, onValueChange, disabled = false }) => (
     value={value}
     onValueChange={onValueChange}
     disabled={disabled}
-    trackColor={{ false: '#e0e0e0', true: '#FF1577' }}
+    trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
     thumbColor={value ? '#ffffff' : '#f4f3f4'}
   />
 );
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
-    backgroundColor: '#FF157720',
+    backgroundColor: '#007AFF20',
   },
   modalTitle: {
     fontSize: 24,
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   modalButtonLogout: {
-    backgroundColor: '#FF1577',
+    backgroundColor: '#007AFF',
   },
   modalButtonDelete: {
     backgroundColor: '#F44336',

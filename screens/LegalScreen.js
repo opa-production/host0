@@ -96,9 +96,9 @@ const LegalScreen = () => {
             onPress={() => handleLinkPress('https://opa.deonhq.xyz')}
             activeOpacity={1}
           >
-            <Ionicons name="globe-outline" size={20} color="#FF1577" />
+            <Ionicons name="globe-outline" size={20} color="#007AFF" />
             <Text style={styles.websiteButtonText}>opa.deonhq.xyz</Text>
-            <Ionicons name="open-outline" size={16} color="#FF1577" />
+            <Ionicons name="open-outline" size={16} color="#007AFF" />
           </TouchableOpacity>
         </View>
 
@@ -113,7 +113,7 @@ const LegalScreen = () => {
             onPress={() => handleLinkPress('mailto:legal@opahost.com')}
             activeOpacity={1}
           >
-            <Ionicons name="mail-outline" size={20} color="#FF1577" />
+            <Ionicons name="mail-outline" size={20} color="#007AFF" />
             <Text style={styles.contactButtonText}>legal@opahost.com</Text>
           </TouchableOpacity>
         </View>

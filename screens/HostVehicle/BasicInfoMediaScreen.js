@@ -81,7 +81,7 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext }) {
                 >
                   <Text style={styles.modalItemText}>{item}</Text>
                   {value === item && (
-                    <Ionicons name="checkmark" size={20} color="#FF1577" />
+                    <Ionicons name="checkmark" size={20} color="#007AFF" />
                   )}
                 </TouchableOpacity>
               )}
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FF1577',
+    backgroundColor: '#007AFF',
     borderRadius: 12,
     padding: 18,
     marginTop: 8,

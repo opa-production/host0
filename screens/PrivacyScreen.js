@@ -61,7 +61,7 @@ const PrivacyScreen = () => {
             activeOpacity={1}
           >
             <View style={styles.actionButtonLeft}>
-              <Ionicons name="download-outline" size={22} color="#FF1577" />
+              <Ionicons name="download-outline" size={22} color="#007AFF" />
               <Text style={styles.actionButtonText}>Download My Data</Text>
             </View>
             <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
@@ -85,7 +85,7 @@ const PrivacyScreen = () => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalIconContainer}>
-                <Ionicons name="download-outline" size={40} color="#FF1577" />
+                <Ionicons name="download-outline" size={40} color="#007AFF" />
               </View>
               <Text style={styles.modalTitle}>Download My Data</Text>
               <Text style={styles.modalMessage}>
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    backgroundColor: '#FF157715',
+    backgroundColor: '#007AFF15',
   },
   successIconCircle: {
     width: 80,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   modalButtonPrimary: {
-    backgroundColor: '#FF1577',
+    backgroundColor: '#007AFF',
   },
   modalButtonTextCancel: {
     fontSize: 16,

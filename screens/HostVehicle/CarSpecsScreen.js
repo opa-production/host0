@@ -98,7 +98,7 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
                 >
                   <Text style={styles.modalItemText}>{item}</Text>
                   {value === item && (
-                    <Ionicons name="checkmark" size={20} color="#FF1577" />
+                    <Ionicons name="checkmark" size={20} color="#007AFF" />
                   )}
                 </TouchableOpacity>
               )}
@@ -178,7 +178,7 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
                   {feature}
                 </Text>
                 {isSelected && (
-                  <Ionicons name="checkmark-circle" size={18} color="#FF1577" style={{ marginLeft: 6 }} />
+                  <Ionicons name="checkmark-circle" size={18} color="#007AFF" style={{ marginLeft: 6 }} />
                 )}
               </TouchableOpacity>
             );
@@ -308,8 +308,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
   },
   featureChipSelected: {
-    borderColor: '#FF1577',
-    backgroundColor: '#FF157715',
+    borderColor: '#007AFF',
+    backgroundColor: '#007AFF15',
   },
   featureChipText: {
     fontSize: 14,
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     color: COLORS.subtle,
   },
   featureChipTextSelected: {
-    color: '#FF1577',
+    color: '#007AFF',
     fontFamily: 'Nunito-SemiBold',
   },
   buttonRow: {
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FF1577',
+    backgroundColor: '#007AFF',
     borderRadius: 12,
     padding: 18,
     gap: 8,

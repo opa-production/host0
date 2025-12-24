@@ -49,7 +49,7 @@ const NotificationPreferencesScreen = () => {
             <Switch
               value={emailNotifications}
               onValueChange={setEmailNotifications}
-              trackColor={{ false: '#e0e0e0', true: '#FF1577' }}
+              trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
               thumbColor={emailNotifications ? '#ffffff' : '#f4f3f4'}
             />
           </View>
@@ -62,7 +62,7 @@ const NotificationPreferencesScreen = () => {
             <Switch
               value={smsNotifications}
               onValueChange={setSmsNotifications}
-              trackColor={{ false: '#e0e0e0', true: '#FF1577' }}
+              trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
               thumbColor={smsNotifications ? '#ffffff' : '#f4f3f4'}
             />
           </View>
@@ -75,7 +75,7 @@ const NotificationPreferencesScreen = () => {
             <Switch
               value={inAppNotifications}
               onValueChange={setInAppNotifications}
-              trackColor={{ false: '#e0e0e0', true: '#FF1577' }}
+              trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
               thumbColor={inAppNotifications ? '#ffffff' : '#f4f3f4'}
             />
           </View>
@@ -88,7 +88,7 @@ const NotificationPreferencesScreen = () => {
             <Switch
               value={marketingNotifications}
               onValueChange={setMarketingNotifications}
-              trackColor={{ false: '#e0e0e0', true: '#FF1577' }}
+              trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
               thumbColor={marketingNotifications ? '#ffffff' : '#f4f3f4'}
             />
           </View>

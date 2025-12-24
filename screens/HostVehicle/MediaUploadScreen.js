@@ -143,7 +143,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
               onPress={() => updateFormData({ coverPhoto: null })}
               activeOpacity={1}
             >
-              <Ionicons name="close-circle" size={28} color="#FF1577" />
+              <Ionicons name="close-circle" size={28} color="#007AFF" />
             </TouchableOpacity>
           </View>
         ) : (
@@ -177,7 +177,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
                 onPress={() => removeImage(index)}
                 activeOpacity={1}
               >
-                <Ionicons name="close-circle" size={24} color="#FF1577" />
+                <Ionicons name="close-circle" size={24} color="#007AFF" />
               </TouchableOpacity>
             </View>
           ))}
@@ -211,7 +211,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
               onPress={removeVideo}
               activeOpacity={1}
             >
-              <Ionicons name="trash-outline" size={20} color="#FF1577" />
+              <Ionicons name="trash-outline" size={20} color="#007AFF" />
               <Text style={styles.removeVideoText}>Remove</Text>
             </TouchableOpacity>
           </View>
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   removeVideoText: {
     fontSize: 14,
     fontFamily: 'Nunito-SemiBold',
-    color: '#FF1577',
+    color: '#007AFF',
     marginLeft: 6,
   },
   addVideoButton: {
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FF1577',
+    backgroundColor: '#007AFF',
     borderRadius: 12,
     padding: 18,
     gap: 8,

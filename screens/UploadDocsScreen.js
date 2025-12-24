@@ -155,7 +155,7 @@ export default function UploadDocsScreen({ navigation }) {
                     onPress={handleRemoveImage}
                     activeOpacity={1}
                   >
-                    <Ionicons name="close-circle" size={32} color="#FF1577" />
+                    <Ionicons name="close-circle" size={32} color="#007AFF" />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -181,7 +181,7 @@ export default function UploadDocsScreen({ navigation }) {
                     onPress={handleRemoveImage}
                     activeOpacity={1}
                   >
-                    <Ionicons name="close-circle" size={32} color="#FF1577" />
+                    <Ionicons name="close-circle" size={32} color="#007AFF" />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -372,12 +372,12 @@ const styles = StyleSheet.create({
   saveButton: {
     width: '100%',
     height: 52,
-    backgroundColor: '#FF1577',
+    backgroundColor: '#007AFF',
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
-    shadowColor: '#FF1577',
+    shadowColor: '#007AFF',
     shadowOffset: {
       width: 0,
       height: 4,

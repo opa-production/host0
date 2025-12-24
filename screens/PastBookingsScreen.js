@@ -30,7 +30,7 @@ export default function PastBookingsScreen({ navigation }) {
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return '#FF1577';
+        return '#007AFF';
       case 'completed':
         return '#34C759';
       case 'upcoming':

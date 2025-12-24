@@ -220,7 +220,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
-          <Ionicons name="log-out-outline" size={22} color="#FF1577" style={styles.linkIcon} />
+          <Ionicons name="log-out-outline" size={22} color="#007AFF" style={styles.linkIcon} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
 
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     ...TYPE.subhead,
-    color: '#FF1577',
+    color: '#007AFF',
     fontFamily: 'Nunito-Bold',
   },
   overlay: {
@@ -466,6 +466,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   modalConfirm: {
-    backgroundColor: '#FF1577',
+    backgroundColor: '#007AFF',
   },
 });

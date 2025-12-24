@@ -518,7 +518,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
                   onPress={() => handleRemoveMethod(method.id)}
                   activeOpacity={1}
                 >
-                  <Ionicons name="trash-outline" size={20} color="#FF1577" />
+                  <Ionicons name="trash-outline" size={20} color="#007AFF" />
                 </TouchableOpacity>
               </View>
             ))}
@@ -662,13 +662,13 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   inputError: {
-    borderColor: '#FF1577',
+    borderColor: '#007AFF',
     backgroundColor: '#fff5f8',
   },
   errorText: {
     ...TYPE.caption,
     fontSize: 11,
-    color: '#FF1577',
+    color: '#007AFF',
     marginTop: 4,
   },
   cardNumberContainer: {

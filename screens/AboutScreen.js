@@ -83,7 +83,7 @@ const AboutScreen = () => {
               <View style={styles.itemsList}>
                 {section.items.map((item, itemIndex) => (
                   <View key={itemIndex} style={styles.itemRow}>
-                    <Ionicons name="checkmark-circle-outline" size={18} color="#FF1577" />
+                    <Ionicons name="checkmark-circle-outline" size={18} color="#007AFF" />
                     <Text style={styles.itemText}>{item}</Text>
                   </View>
                 ))}
@@ -102,7 +102,7 @@ const AboutScreen = () => {
               onPress={contact.action}
               activeOpacity={1}
             >
-              <Ionicons name={contact.icon} size={22} color="#FF1577" />
+              <Ionicons name={contact.icon} size={22} color="#007AFF" />
               <View style={styles.contactInfo}>
                 <Text style={styles.contactLabel}>{contact.label}</Text>
                 <Text style={styles.contactValue}>{contact.value}</Text>

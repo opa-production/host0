@@ -50,7 +50,7 @@ A React Native app built with Expo for managing car rental hosting.
 ## Features
 
 - Clean, modern UI design
-- Brand color (#FF1577) for CTAs and active states
+- Brand color (#007AFF) for CTAs and active states
 - Black Chocolate font for headings (with system fallback)
 - White background throughout
 - Email/password authentication forms
