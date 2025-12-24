@@ -86,9 +86,17 @@ export default function MyListingsScreen({ navigation }) {
     }
   };
 
+  const handleCardPress = (item) => {
+    navigation.navigate('CarDetails', { car: item });
+  };
+
   const renderCarCard = ({ item }) => {
     return (
-      <View style={styles.listCard}>
+      <TouchableOpacity 
+        style={styles.listCard}
+        onPress={() => handleCardPress(item)}
+        activeOpacity={0.7}
+      >
         <View style={styles.listLeft}>
           {item.image ? (
             <Image source={item.image} style={styles.avatarImage} />
@@ -108,15 +116,25 @@ export default function MyListingsScreen({ navigation }) {
         <View style={styles.listRight}>
           <Switch
             value={!!item.available}
-            onValueChange={() => toggleAvailability(item.id)}
-            trackColor={{ false: '#E5E5EA', true: '#000000' }}
-            thumbColor={'#FFFFFF'}
+            onValueChange={(e) => {
+              e.stopPropagation();
+              toggleAvailability(item.id);
+            }}
+            trackColor={{ false: '#E5E5EA', true: COLORS.brand }}
+            thumbColor="#FFFFFF"
           />
-          <TouchableOpacity onPress={() => handleUpdate(item)} style={styles.editPill} activeOpacity={0.9}>
-            <Text style={styles.editPillText}>Edit</Text>
+          <TouchableOpacity 
+            onPress={(e) => {
+              e.stopPropagation();
+              navigation.navigate('CarDetails', { car: item });
+            }} 
+            style={styles.editPill} 
+            activeOpacity={0.9}
+          >
+            <Text style={styles.editPillText}>View</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -257,7 +275,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: '#000000',
+    backgroundColor: COLORS.brand,
   },
   editPillText: {
     ...TYPE.bodyStrong,
