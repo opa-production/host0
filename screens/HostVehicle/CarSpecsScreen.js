@@ -155,6 +155,20 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
         onToggle={() => setShowColourDropdown(!showColourDropdown)}
       />
 
+      {/* Mileage */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Mileage</Text>
+        <Text style={styles.hint}>Current odometer reading in kilometers</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g., 15000"
+          value={formData.mileage}
+          onChangeText={(text) => updateFormData({ mileage: text })}
+          keyboardType="numeric"
+          placeholderTextColor="#999999"
+        />
+      </View>
+
       {/* Features */}
       <View style={styles.section}>
         <Text style={styles.label}>Features</Text>
@@ -232,6 +246,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Regular',
     color: '#8E8E93',
     marginBottom: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.text,
+    backgroundColor: COLORS.surface,
   },
   dropdown: {
     flexDirection: 'row',

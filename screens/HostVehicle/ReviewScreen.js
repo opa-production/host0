@@ -78,6 +78,9 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
         <ReviewItem label="Fuel Type" value={formData.fuelType} />
         <ReviewItem label="Transmission" value={formData.transmission} />
         <ReviewItem label="Colour" value={formData.colour} />
+        {formData.mileage && (
+          <ReviewItem label="Mileage" value={`${formData.mileage} km`} />
+        )}
         {formData.features && formData.features.length > 0 && (
           <View style={styles.featuresList}>
             <Text style={styles.reviewLabel}>Features</Text>

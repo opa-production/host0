@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -93,11 +95,17 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext }) {
   );
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView
+      style={styles.keyboardView}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 200 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
       {/* Car Name */}
       <View style={styles.section}>
         <Text style={styles.label}>Car Name *</Text>
@@ -166,11 +174,16 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext }) {
       >
         <Text style={styles.nextButtonText}>Next: Upload Media</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.bg,

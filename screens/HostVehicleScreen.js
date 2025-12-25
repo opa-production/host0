@@ -30,6 +30,7 @@ export default function HostVehicleScreen({ navigation }) {
     fuelType: '',
     transmission: '',
     colour: '',
+    mileage: '',
     features: [],
     
     // Step 4: Rental Info & Pricing
