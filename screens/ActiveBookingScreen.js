@@ -48,7 +48,7 @@ export default function ActiveBookingScreen({ navigation }) {
                 <Text style={styles.badgeText}>{booking.plate}</Text>
               </View>
               <View style={[styles.badge, styles.badgeAlt]}>
-                <Ionicons name="radio-button-on-outline" size={14} color="#34C759" />
+                <Ionicons name="radio-button-on-outline" size={14} color={COLORS.text} />
                 <Text style={[styles.badgeText, styles.badgeTextAlt]}>{booking.status}</Text>
               </View>
             </View>
@@ -114,10 +114,6 @@ export default function ActiveBookingScreen({ navigation }) {
               <Ionicons name="location-outline" size={16} color="#666" />
               <Text style={styles.timelineText}>{booking.location}</Text>
             </View>
-            <View style={styles.timelineChip}>
-              <Ionicons name="time-outline" size={16} color="#666" />
-              <Text style={styles.timelineText}>On trip</Text>
-            </View>
           </View>
         </View>
 
@@ -149,6 +145,23 @@ export default function ActiveBookingScreen({ navigation }) {
 
         {/* Actions */}
         <View style={[styles.card, styles.actionsCard]}>
+          <TouchableOpacity
+            style={styles.trackButton}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('Map', {
+              title: booking.vehicleName,
+              plate: booking.plate,
+              initialRegion: {
+                latitude: -0.3031,
+                longitude: 36.08,
+                latitudeDelta: 0.06,
+                longitudeDelta: 0.06,
+              }
+            })}
+          >
+            <Ionicons name="location-outline" size={20} color="#ffffff" />
+            <Text style={styles.trackButtonText}>Track car</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.primaryButton}
             activeOpacity={0.9}
@@ -186,13 +199,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     padding: SPACING.m,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
   heroAvatar: {
     width: 64,
@@ -222,16 +228,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: COLORS.bg,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   badgeAlt: {
-    backgroundColor: '#EAF8EE',
-    borderColor: '#D1EED8',
   },
   badgeText: {
     fontSize: 12,
@@ -239,19 +239,12 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   badgeTextAlt: {
-    color: '#248A3D',
+    color: COLORS.text,
   },
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     padding: SPACING.m,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -299,12 +292,8 @@ const styles = StyleSheet.create({
   iconButton: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   detailRow: {
     flexDirection: 'row',
@@ -320,7 +309,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    borderColor: COLORS.border,
   },
   detailLabel: {
     ...TYPE.caption,
@@ -333,8 +322,8 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   divider: {
-    height: 1,
-    backgroundColor: COLORS.borderStrong,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.border,
     marginVertical: 6,
   },
   timelineRow: {
@@ -348,10 +337,6 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: COLORS.bg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   timelineText: {
     ...TYPE.bodyStrong,
@@ -386,6 +371,20 @@ const styles = StyleSheet.create({
   actionsCard: {
     gap: 12,
   },
+  trackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.brand,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  trackButtonText: {
+    fontSize: 16,
+    fontFamily: 'Nunito-Bold',
+    color: '#ffffff',
+  },
   primaryButton: {
     backgroundColor: '#111111',
     paddingVertical: 14,
@@ -398,8 +397,8 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   outlineButton: {
-    borderColor: COLORS.borderStrong,
-    borderWidth: 1,
+    borderColor: COLORS.text,
+    borderWidth: 1.5,
     paddingVertical: 13,
     borderRadius: 14,
     alignItems: 'center',
@@ -416,10 +415,6 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: COLORS.bg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   secondaryButtonText: {
     fontSize: 14,
@@ -439,10 +434,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    borderColor: COLORS.border,
   },
 });
