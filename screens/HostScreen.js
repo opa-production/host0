@@ -50,7 +50,7 @@ export default function HostScreen({ navigation }) {
             <Text style={styles.promoSub}>
               Join thousands of hosts building businesses and earning meaningful income.
             </Text>
-            <TouchableOpacity style={styles.promoButton} onPress={handleLearnMore} activeOpacity={1}>
+            <TouchableOpacity style={styles.promoButton} onPress={handleLearnMore} activeOpacity={0.9}>
               <Text style={styles.promoButtonText}>Learn more</Text>
             </TouchableOpacity>
           </View>
@@ -59,27 +59,27 @@ export default function HostScreen({ navigation }) {
 
         <View style={styles.actionsList}>
           <TouchableOpacity 
-            style={[styles.actionRow, { marginBottom: 12 }]}
+            style={styles.actionRow}
             onPress={handleLegalCompliance}
             activeOpacity={0.85}
           >
             <View style={styles.actionLeft}>
-              <Ionicons name="document-text-outline" size={24} color={styles.iconMono.color} />
+              <Ionicons name="document-text-outline" size={24} color={COLORS.text} />
               <Text style={styles.actionText}>Legal Compliance Setup</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+            <Ionicons name="chevron-forward" size={16} color={COLORS.subtle} />
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.actionRow}
+            style={[styles.actionRow, styles.actionRowLast]}
             onPress={handleHostVehicle}
             activeOpacity={0.85}
           >
             <View style={styles.actionLeft}>
-              <Ionicons name="car-sport-outline" size={24} color={styles.iconMono.color} />
+              <Ionicons name="car-sport-outline" size={24} color={COLORS.text} />
               <Text style={styles.actionText}>Host vehicle</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+            <Ionicons name="chevron-forward" size={16} color={COLORS.subtle} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -121,14 +121,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
     marginBottom: 20,
+    minHeight: 140,
   },
   promoLeft: {
     flex: 1,
     padding: SPACING.l,
     justifyContent: 'center',
+    minWidth: 0,
   },
   promoTitle: {
     ...TYPE.section,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   },
   promoButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#5B5BFF',
+    backgroundColor: COLORS.brand,
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: RADIUS.button,
@@ -160,11 +160,9 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   actionsList: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   actionRow: {
     flexDirection: 'row',
@@ -172,6 +170,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 18,
     paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
+  },
+  actionRowLast: {
+    borderBottomWidth: 0,
   },
   actionLeft: {
     flexDirection: 'row',
@@ -181,9 +184,6 @@ const styles = StyleSheet.create({
   actionText: {
     ...TYPE.bodyStrong,
     fontSize: 15,
-    color: '#1C1C1E',
-  },
-  iconMono: {
     color: '#1C1C1E',
   },
 });
