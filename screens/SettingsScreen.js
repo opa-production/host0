@@ -1,10 +1,11 @@
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput, StatusBar, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { isBiometricEnabled, setupBiometric, disableBiometric, isBiometricAvailable } from '../utils/biometric';
 
 // Simple Toggle Component
 const Toggle = ({ value, onValueChange, disabled = false }) => (
@@ -21,6 +22,7 @@ const SettingsScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -30,6 +32,67 @@ const SettingsScreen = () => {
       headerShown: false,
     });
   }, [navigation]);
+
+  // Load biometric preference on mount
+  useEffect(() => {
+    const loadBiometricPreference = async () => {
+      const enabled = await isBiometricEnabled();
+      setBiometricsEnabled(enabled);
+      
+      const availability = await isBiometricAvailable();
+      setBiometricAvailable(availability.available);
+    };
+    
+    loadBiometricPreference();
+  }, []);
+
+  // Handle biometric toggle
+  const handleBiometricToggle = async (value) => {
+    lightHaptic();
+    
+    if (value) {
+      // User wants to enable biometrics - set up biometric authentication
+      const availability = await isBiometricAvailable();
+      
+      if (!availability.available) {
+        Alert.alert(
+          'Biometric Unavailable',
+          availability.error || 'Biometric authentication is not available on this device. Please ensure you have biometric credentials set up in your device settings.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      const result = await setupBiometric();
+      
+      if (result.success) {
+        setBiometricsEnabled(true);
+        Alert.alert(
+          'Biometric Enabled',
+          'Biometric login has been enabled. You will be prompted to authenticate with your fingerprint or face ID on your next login.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Setup Failed',
+          result.error || 'Failed to set up biometric authentication. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } else {
+      // User wants to disable biometrics
+      const result = await disableBiometric();
+      if (result.success) {
+        setBiometricsEnabled(false);
+      } else {
+        Alert.alert(
+          'Error',
+          result.error || 'Failed to disable biometric authentication.',
+          [{ text: 'OK' }]
+        );
+      }
+    }
+  };
 
   const handleChangePassword = () => {
     navigation.navigate('ChangePassword');
@@ -151,7 +214,8 @@ const SettingsScreen = () => {
             rightComponent={
               <Toggle
                 value={biometricsEnabled}
-                onValueChange={setBiometricsEnabled}
+                onValueChange={handleBiometricToggle}
+                disabled={!biometricAvailable}
               />
             }
           />

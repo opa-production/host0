@@ -148,7 +148,7 @@ export default function SignUpScreen({ navigation }) {
           </View>
 
           <View style={styles.socialButtonsContainer}>
-            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleSignUp}>
+            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleSignUp} activeOpacity={1}>
               <Image 
                 source={require('../assets/images/google.png')} 
                 style={styles.socialIcon}
@@ -157,7 +157,7 @@ export default function SignUpScreen({ navigation }) {
               <Text style={styles.socialButtonText}>Google</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.socialButton} onPress={handleAppleSignUp}>
+            <TouchableOpacity style={styles.socialButton} onPress={handleAppleSignUp} activeOpacity={1}>
               <Image 
                 source={require('../assets/images/apple.png')} 
                 style={styles.socialIcon}

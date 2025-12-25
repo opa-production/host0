@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -10,10 +10,13 @@ import {
   Platform,
   ScrollView,
   Image,
-  Dimensions
+  Dimensions,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, RADIUS } from '../ui/tokens';
+import { isBiometricEnabled, authenticateWithBiometric } from '../utils/biometric';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +24,42 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [checkingBiometric, setCheckingBiometric] = useState(true);
+  const hasCheckedBiometric = useRef(false);
+
+  // Check for biometric authentication when screen is focused (only once)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (hasCheckedBiometric.current) {
+        return;
+      }
+
+      const checkAndPromptBiometric = async () => {
+        hasCheckedBiometric.current = true;
+        setCheckingBiometric(true);
+        const enabled = await isBiometricEnabled();
+        
+        if (enabled) {
+          // Small delay to ensure UI is ready
+          setTimeout(async () => {
+            const result = await authenticateWithBiometric();
+            
+            if (result.success) {
+              // Biometric authentication successful - navigate to main app
+              navigation.replace('MainTabs');
+            } else {
+              // Authentication failed or cancelled - allow manual login
+              setCheckingBiometric(false);
+            }
+          }, 500);
+        } else {
+          setCheckingBiometric(false);
+        }
+      };
+
+      checkAndPromptBiometric();
+    }, [navigation])
+  );
 
   const handleLogin = () => {
     // TODO: Implement login logic
@@ -46,15 +85,21 @@ export default function LoginScreen({ navigation }) {
     >
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+      {checkingBiometric ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.text} />
+          <Text style={styles.loadingText}>Checking biometric authentication...</Text>
         </View>
+      ) : (
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>Sign in to continue</Text>
+          </View>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
@@ -102,7 +147,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={1}>
             <Text style={styles.loginButtonText}>Sign In</Text>
           </TouchableOpacity>
 
@@ -113,7 +158,7 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <View style={styles.socialButtonsContainer}>
-            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin}>
+            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin} activeOpacity={1}>
               <Image 
                 source={require('../assets/images/google.png')} 
                 style={styles.socialIcon}
@@ -122,7 +167,7 @@ export default function LoginScreen({ navigation }) {
               <Text style={styles.socialButtonText}>Google</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.socialButton} onPress={handleAppleLogin}>
+            <TouchableOpacity style={styles.socialButton} onPress={handleAppleLogin} activeOpacity={1}>
               <Image 
                 source={require('../assets/images/apple.png')} 
                 style={styles.socialIcon}
@@ -140,6 +185,7 @@ export default function LoginScreen({ navigation }) {
           </View>
         </View>
       </ScrollView>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -288,5 +334,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Nunito-Bold',
     color: '#007AFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.subtle,
+    textAlign: 'center',
   },
 });
