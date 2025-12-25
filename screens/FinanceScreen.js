@@ -1,9 +1,13 @@
 import React from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function FinanceScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
+  
   // Mock balances
   const earnings = {
     gross: 125000,
@@ -35,12 +39,26 @@ export default function FinanceScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      {/* Back button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
-        <Ionicons name="arrow-back" size={22} color="#000000" />
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Finance</Text>
+        <View style={styles.backButton} />
+      </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.walletCard}>
           <Text style={styles.balanceLabel}>Withdrawable</Text>
           <Text style={styles.withdrawableValue}>{formattedCurrency(earnings.withdrawable)}</Text>
@@ -118,66 +136,83 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
+  },
   content: {
     padding: SPACING.l,
-    paddingTop: 90,
-    paddingBottom: 100,
+    paddingTop: SPACING.m,
   },
   balanceLabel: {
     ...TYPE.micro,
-    color: '#8E8E93',
+    color: 'rgba(255, 255, 255, 0.8)',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   walletCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.text,
     borderRadius: RADIUS.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    padding: SPACING.m,
-    marginBottom: SPACING.l,
+    padding: SPACING.l,
+    marginBottom: SPACING.xl,
+    minHeight: 200,
   },
   withdrawableValue: {
     ...TYPE.largeTitle,
-    fontSize: 32,
-    color: '#1C1C1E',
+    fontSize: 36,
+    color: '#FFFFFF',
     marginTop: 8,
-    marginBottom: 12,
+    marginBottom: 20,
   },
   breakdownRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   breakdownLabel: {
     ...TYPE.body,
     fontSize: 13,
-    color: '#8E8E93',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   breakdownValue: {
     ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#1C1C1E',
+    fontSize: 14,
+    color: '#FFFFFF',
   },
   breakdownValueMuted: {
     ...TYPE.bodyStrong,
     fontSize: 13,
-    color: '#8E8E93',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   breakdownValueCommission: {
     ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#FF3B30',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   breakdownValueStrong: {
     ...TYPE.bodyStrong,
     fontSize: 13,
-    color: '#1C1C1E',
+    color: '#FFFFFF',
   },
   breakdownDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   primaryButton: {
     backgroundColor: '#000000',
@@ -191,7 +226,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   transactionsCard: {
-    marginTop: SPACING.l,
+    marginTop: SPACING.xl,
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     borderWidth: StyleSheet.hairlineWidth,
@@ -266,24 +301,5 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#007AFF',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 16,
-    zIndex: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
 });
