@@ -9,20 +9,62 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   const [rating, setRating] = useState(0);
   const [note, setNote] = useState('');
 
-  const booking = route?.params?.booking || {
-    vehicleName: 'BMW M3',
+  const defaultBooking = {
+    vehicleName: 'BMW M3 Competition',
     vehicleImage: require('../assets/images/bmw.jpg'),
+    plate: 'KDA 452M',
     location: 'Nakuru, Kenya',
-    startDate: '2023-12-10',
-    endDate: '2023-12-15',
+    startDate: 'Jan 15, 2024',
+    endDate: 'Jan 20, 2024',
+    startTime: '09:00',
+    endTime: '11:00',
+    duration: '5 days',
     status: 'Completed',
-    payout: 'KSh 30,500',
-    totalPaid: 'KSh 38,000',
+    payout: 36250,
+    totalPaid: 45000,
+    commission: 8750,
+    dailyRate: 9000,
     renter: {
-      name: 'John Doe',
+      name: 'Deon Orna',
+      bio: 'Experienced driver with excellent track record. Always returns cars in pristine condition.',
       rating: 4.9,
-      trips: 12,
-      avatar: null,
+      trips: 24,
+      avatar: 'https://i.pravatar.cc/150?img=12',
+    },
+  };
+
+  const routeBooking = route?.params?.booking || {};
+  
+  // Convert payout to number if it's a string
+  let payout = defaultBooking.payout;
+  if (routeBooking.payout !== undefined) {
+    if (typeof routeBooking.payout === 'string') {
+      const numStr = routeBooking.payout.replace(/[^\d]/g, '');
+      payout = parseInt(numStr, 10) || defaultBooking.payout;
+    } else {
+      payout = routeBooking.payout || defaultBooking.payout;
+    }
+  }
+  
+  // Convert totalPaid to number if it's a string
+  let totalPaid = defaultBooking.totalPaid;
+  if (routeBooking.totalPaid !== undefined) {
+    if (typeof routeBooking.totalPaid === 'string') {
+      const numStr = routeBooking.totalPaid.replace(/[^\d]/g, '');
+      totalPaid = parseInt(numStr, 10) || defaultBooking.totalPaid;
+    } else {
+      totalPaid = routeBooking.totalPaid || defaultBooking.totalPaid;
+    }
+  }
+  
+  const booking = {
+    ...defaultBooking,
+    ...routeBooking,
+    payout,
+    totalPaid,
+    renter: {
+      ...defaultBooking.renter,
+      ...(routeBooking.renter || {}),
     },
   };
 
@@ -48,6 +90,18 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     setNote('');
   };
 
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return '0';
+    // Handle string amounts like "KSh 0" or "KSh 14,000"
+    if (typeof amount === 'string') {
+      // Extract numbers from string (remove "KSh" and commas)
+      const numStr = amount.replace(/[^\d]/g, '');
+      const num = parseInt(numStr, 10);
+      return isNaN(num) ? '0' : num.toLocaleString();
+    }
+    return amount.toLocaleString();
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
@@ -57,24 +111,46 @@ export default function PastBookingDetailScreen({ navigation, route }) {
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Vehicle Info */}
         <View style={styles.heroCard}>
           <Image source={booking.vehicleImage} style={styles.heroAvatar} resizeMode="cover" />
           <View style={{ flex: 1 }}>
             <Text style={styles.heroTitle} numberOfLines={1}>{booking.vehicleName}</Text>
             <Text style={styles.heroSub}>{booking.location}</Text>
-            <View style={styles.heroMetaRow}>
-              <View style={styles.pill}>
-                <Ionicons name="calendar-outline" size={14} color={COLORS.subtle} />
-                <Text style={styles.pillText}>{booking.startDate} – {booking.endDate}</Text>
+            {booking.plate && (
+              <View style={styles.plateRow}>
+                <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
+                <Text style={styles.plateText}>{booking.plate}</Text>
               </View>
-              <View style={[styles.pill, styles.pillOk]}>
-                <Ionicons name="checkmark-circle" size={14} color="#34C759" />
-                <Text style={[styles.pillText, styles.pillOkText]}>{booking.status}</Text>
-              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Booking Dates */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Booking details</Text>
+          <View style={styles.detailRow}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.detailLabel}>Start</Text>
+              <Text style={styles.detailValue}>{booking.startDate} • {booking.startTime}</Text>
+            </View>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.detailRow}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.detailLabel}>End</Text>
+              <Text style={styles.detailValue}>{booking.endDate} • {booking.endTime}</Text>
             </View>
           </View>
         </View>
 
+        {/* Renter Info */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Renter</Text>
@@ -101,37 +177,47 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
             <View style={{ flex: 1 }}>
               <Text style={styles.renterName} numberOfLines={1}>{booking?.renter?.name || 'Renter'}</Text>
-              <Text style={styles.renterMeta} numberOfLines={1}>
-                {booking?.renter?.rating ? `${booking.renter.rating}★` : '—'} · {booking?.renter?.trips ?? 0} trips
-              </Text>
+              {booking?.renter?.bio && (
+                <Text style={styles.renterBio} numberOfLines={2}>{booking.renter.bio}</Text>
+              )}
+              <View style={styles.renterMetaRow}>
+                {booking?.renter?.rating && (
+                  <Text style={styles.renterMeta}>{booking.renter.rating}★</Text>
+                )}
+                <Text style={styles.renterMeta}> · {booking?.renter?.trips ?? 0} trips</Text>
+              </View>
             </View>
           </View>
         </View>
 
+        {/* Payout */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Payout</Text>
 
           <View style={styles.amountRow}>
             <Text style={styles.amountLabel}>Your payout</Text>
-            <Text style={styles.amountValue}>{booking.payout}</Text>
+            <Text style={styles.amountValue}>KSh {formatCurrency(booking.payout)}</Text>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.rowBetween}>
             <Text style={styles.rowLabel}>Total paid</Text>
-            <Text style={styles.rowValue}>{booking.totalPaid}</Text>
+            <Text style={styles.rowValue}>KSh {formatCurrency(booking.totalPaid)}</Text>
           </View>
-        </View>
 
-        <TouchableOpacity
-          style={styles.secondaryAction}
-          onPress={() => Alert.alert('Coming soon', 'Receipts will be available in a future update.')}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.secondaryActionText}>View receipt</Text>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.subtle} />
-        </TouchableOpacity>
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={styles.receiptLink}
+            onPress={() => Alert.alert('Coming soon', 'Receipts will be available in a future update.')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="document-text-outline" size={18} color={COLORS.brand} />
+            <Text style={styles.receiptLinkText}>View receipt</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       <Modal
@@ -250,11 +336,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    borderColor: COLORS.border,
   },
   heroCard: {
     flexDirection: 'row',
@@ -262,13 +348,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     padding: SPACING.m,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
   },
   heroAvatar: {
     width: 60,
@@ -284,40 +363,20 @@ const styles = StyleSheet.create({
     ...TYPE.caption,
     marginTop: 2,
   },
-  heroMetaRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-    flexWrap: 'wrap',
-  },
-  pill: {
+  plateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: COLORS.bg,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: RADIUS.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    marginTop: 8,
   },
-  pillText: {
+  plateText: {
     ...TYPE.caption,
-    color: COLORS.text,
-  },
-  pillOk: {
-    backgroundColor: '#EAF8EE',
-    borderColor: '#D1EED8',
-  },
-  pillOkText: {
-    color: '#248A3D',
+    color: COLORS.subtle,
   },
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
-    padding: SPACING.l,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    padding: SPACING.m,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -328,7 +387,35 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...TYPE.section,
-    marginBottom: SPACING.m,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+  },
+  detailLabel: {
+    ...TYPE.caption,
+    fontSize: 12,
+    color: COLORS.subtle,
+  },
+  detailValue: {
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: COLORS.text,
+    marginTop: 2,
   },
   rateButton: {
     flexDirection: 'row',
@@ -349,28 +436,39 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   renterAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: COLORS.bg,
   },
   renterAvatarPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   renterName: {
     ...TYPE.bodyStrong,
+    fontSize: 15,
     color: COLORS.text,
+  },
+  renterBio: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  renterMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
   },
   renterMeta: {
     ...TYPE.caption,
-    marginTop: 2,
+    color: COLORS.subtle,
   },
   amountRow: {
     flexDirection: 'row',
@@ -389,8 +487,8 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.borderStrong,
-    marginVertical: SPACING.m,
+    backgroundColor: COLORS.border,
+    marginVertical: 6,
   },
   rowBetween: {
     flexDirection: 'row',
@@ -405,19 +503,18 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     color: COLORS.text,
   },
-  secondaryAction: {
+  receiptLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.m,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
+    gap: 8,
+    marginTop: 8,
+    paddingVertical: 8,
   },
-  secondaryActionText: {
+  receiptLinkText: {
     ...TYPE.bodyStrong,
-    color: COLORS.text,
+    fontSize: 14,
+    color: COLORS.brand,
+    flex: 1,
   },
   modalOverlay: {
     flex: 1,

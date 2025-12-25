@@ -80,8 +80,7 @@ export default function PastBookingsScreen({ navigation }) {
                 startDate: b.startDate,
                 endDate: b.endDate,
                 status: getStatusText(b.status),
-                totalPaid: b.totalAmount,
-                payout: 'KSh 0',
+                totalPaid: typeof b.totalAmount === 'string' ? parseInt(b.totalAmount.replace(/[^\d]/g, ''), 10) || 0 : b.totalAmount,
               } })}
             >
               <View style={styles.listLeft}>
