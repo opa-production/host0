@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function CarDetailsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -53,7 +54,7 @@ export default function CarDetailsScreen({ navigation, route }) {
     pricePerMonth: '320000',
     minimumRentalDays: '2',
     maxRentalDays: '30',
-    ageRestriction: '25 years and above',
+    ageRestriction: '25 years',
     carRules: 'No smoking allowed. No pets. Return with full tank. No off-road driving. Maximum 4 passengers. Keep interior clean.',
     pickupLocation: 'Nakuru, Kenya',
     pickupLat: null,
@@ -79,9 +80,8 @@ export default function CarDetailsScreen({ navigation, route }) {
   };
 
   const handleEdit = () => {
-    // TODO: Navigate to edit screen
-    console.log('Edit car:', carData.id);
-    // navigation.navigate('EditCar', { carId: carData.id });
+    lightHaptic();
+    navigation.navigate('EditCar', { car: carData });
   };
 
   const formatCurrency = (amount) => {
