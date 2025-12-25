@@ -1,9 +1,12 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function AllTransactionsScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const transactions = route?.params?.transactions ?? [];
 
   const formattedCurrency = useMemo(
@@ -22,15 +25,26 @@ export default function AllTransactionsScreen({ navigation, route }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
-        <Ionicons name="arrow-back" size={22} color={COLORS.text} />
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Transactions</Text>
+        <View style={styles.backButton} />
+      </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Transactions</Text>
-          <Text style={styles.subtitle}>All activity in your wallet</Text>
-        </View>
+      <ScrollView 
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
+        showsVerticalScrollIndicator={false}
+      >
 
         <View style={styles.card}>
           {transactions.length === 0 ? (
@@ -69,41 +83,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  content: {
-    padding: SPACING.l,
-    paddingTop: 90,
-    paddingBottom: 120,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
   },
   backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 16,
-    zIndex: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
-  header: {
-    marginBottom: 16,
-  },
-  title: {
+  headerTitle: {
     ...TYPE.largeTitle,
     fontSize: 20,
+    color: COLORS.text,
   },
-  subtitle: {
-    ...TYPE.body,
-    color: '#8E8E93',
-    marginTop: 6,
+  content: {
+    padding: SPACING.l,
+    paddingTop: SPACING.m,
   },
   card: {
     backgroundColor: COLORS.surface,
