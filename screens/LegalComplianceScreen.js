@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useLayoutEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,10 +8,12 @@ import {
   TouchableOpacity, 
   Alert
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 const DocumentUpload = ({ 
   title, 
@@ -53,7 +55,9 @@ const DocumentUpload = ({
   </View>
 );
 
-export default function LegalComplianceScreen({ navigation }) {
+export default function LegalComplianceScreen({ navigation: nav }) {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [documents, setDocuments] = useState({
     logbook: null,
     insurance: null,
@@ -61,12 +65,18 @@ export default function LegalComplianceScreen({ navigation }) {
     manual: null,
   });
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
+
   useFocusEffect(
     useCallback(() => {
-      const parent = navigation.getParent();
+      const parent = nav.getParent();
       parent?.setOptions({ tabBarStyle: { display: 'none' } });
       return () => parent?.setOptions({ tabBarStyle: undefined });
-    }, [navigation])
+    }, [nav])
   );
 
   const pickDocument = async (type) => {
@@ -98,9 +108,10 @@ export default function LegalComplianceScreen({ navigation }) {
   };
 
   const handleSubmit = () => {
+    lightHaptic();
     // TODO: Implement document submission logic
     Alert.alert('Success', 'Documents submitted for verification');
-    navigation.goBack();
+    nav.goBack();
   };
 
   const isSubmitDisabled = !documents.logbook || !documents.insurance || !documents.inspection;
@@ -110,14 +121,29 @@ export default function LegalComplianceScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+      
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            nav.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Legal Compliance</Text>
+        <View style={styles.backButton} />
+      </View>
 
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Legal compliance</Text>
-        <Text style={styles.description}>Upload the required documents.</Text>
+        <Text style={styles.description}>Upload the required documents to verify your vehicle.</Text>
 
         <View style={styles.progressRow}>
           <Text style={styles.progressText}>{requiredUploadedCount}/3 required uploaded</Text>
@@ -188,18 +214,33 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
+  },
   content: {
     padding: SPACING.l,
-    paddingBottom: SPACING.xl,
-  },
-  title: {
-    ...TYPE.title,
-    marginBottom: SPACING.s,
   },
   description: {
     ...TYPE.body,
     color: COLORS.subtle,
-    marginBottom: SPACING.m,
+    marginBottom: SPACING.l,
+    lineHeight: 20,
   },
   progressRow: {
     flexDirection: 'row',
@@ -216,10 +257,8 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.pill,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   progressBadgeText: {
     ...TYPE.caption,
@@ -230,13 +269,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.card,
     padding: SPACING.m,
     marginBottom: SPACING.m,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
   },
   uploadHeader: {
     flexDirection: 'row',
@@ -266,19 +298,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(0, 122, 255, 0.10)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: RADIUS.button,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(0, 122, 255, 0.18)',
+    backgroundColor: COLORS.bg,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.brand,
   },
   uploadButtonSecondary: {
-    backgroundColor: COLORS.bg,
-    borderColor: COLORS.borderStrong,
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
   },
   uploadButtonText: {
-    ...TYPE.caption,
+    ...TYPE.bodyStrong,
+    fontSize: 14,
     color: COLORS.brand,
   },
   uploadButtonTextSecondary: {
@@ -286,12 +319,11 @@ const styles = StyleSheet.create({
   },
   noteContainer: {
     flexDirection: 'row',
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.surface,
     padding: SPACING.m,
     borderRadius: RADIUS.card,
     marginTop: SPACING.s,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
+    marginBottom: SPACING.m,
   },
   noteText: {
     ...TYPE.caption,
@@ -299,17 +331,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   submitButton: {
-    backgroundColor: COLORS.text,
-    borderRadius: RADIUS.button,
-    padding: SPACING.m,
+    backgroundColor: COLORS.brand,
+    borderRadius: 16,
+    padding: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: SPACING.s,
   },
   submitButtonDisabled: {
     opacity: 0.5,
   },
   submitButtonText: {
-    ...TYPE.section,
+    ...TYPE.bodyStrong,
+    fontSize: 16,
     color: '#FFFFFF',
   },
 });
