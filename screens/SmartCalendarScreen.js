@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 function startOfDay(d) {
   const x = new Date(d);
@@ -224,21 +225,25 @@ export default function SmartCalendarScreen({ navigation }) {
     <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
-          style={styles.headerIcon}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-
         <Text style={styles.headerTitle}>Smart Calendar</Text>
-
-        <View style={styles.headerRight} />
+        <View style={styles.backButton} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={[styles.content, { paddingTop: SPACING.m }]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.card}>
           <View style={styles.monthRow}>
             <TouchableOpacity style={styles.monthNav} onPress={() => shiftMonth(-1)} activeOpacity={0.8}>
@@ -403,29 +408,23 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg,
   },
   header: {
-    paddingHorizontal: SPACING.l,
-    paddingBottom: SPACING.m,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
   },
-  headerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
+  backButton: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   headerTitle: {
-    ...TYPE.title,
+    ...TYPE.largeTitle,
     fontSize: 20,
-  },
-  headerRight: {
-    width: 44,
-    height: 44,
+    color: COLORS.text,
   },
   content: {
     paddingHorizontal: SPACING.l,

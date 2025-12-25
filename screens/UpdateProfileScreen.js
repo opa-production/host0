@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, TextIn
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function UpdateProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -73,25 +74,27 @@ export default function UpdateProfileScreen({ navigation, route }) {
     >
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
-      {/* Floating Back Button */}
-      <TouchableOpacity
-        style={[styles.backButton, { top: insets.top + 16 }]}
-        onPress={() => navigation.goBack()}
-        activeOpacity={1}
-      >
-        <Ionicons name="arrow-back" size={22} color="#000000" />
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Update Profile</Text>
+        <View style={styles.backButton} />
+      </View>
 
       <ScrollView 
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 60 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Update Profile</Text>
-          <Text style={styles.subtitle}>Update your personal information</Text>
-        </View>
 
         {/* Form */}
         <View style={styles.form}>
@@ -200,44 +203,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  content: {
-    padding: SPACING.l,
-    paddingBottom: 120,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
   },
   backButton: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 10,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
-  header: {
-    marginBottom: 16,
-  },
-  title: {
-    ...TYPE.title,
+  headerTitle: {
+    ...TYPE.largeTitle,
     fontSize: 20,
-    color: '#1C1C1E',
-    marginBottom: 8,
+    color: COLORS.text,
   },
-  subtitle: {
-    ...TYPE.body,
-    fontSize: 13,
-    color: '#8E8E93',
+  content: {
+    padding: SPACING.l,
+    paddingTop: SPACING.m,
   },
   form: {
     gap: 12,

@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, Image, Alert, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 
 export default function PastBookingDetailScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const [rateOpen, setRateOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [note, setNote] = useState('');
@@ -106,11 +108,26 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
-        <Ionicons name="arrow-back" size={22} color={COLORS.text} />
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Booking Details</Text>
+        <View style={styles.backButton} />
+      </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Vehicle Info */}
         <View style={styles.heroCard}>
           <Image source={booking.vehicleImage} style={styles.heroAvatar} resizeMode="cover" />
@@ -317,30 +334,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  content: {
-    padding: SPACING.l,
-    paddingTop: 90,
-    paddingBottom: 110,
-    gap: SPACING.m,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
   },
   backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 16,
-    zIndex: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
+  },
+  content: {
+    padding: SPACING.l,
+    paddingTop: SPACING.m,
+    gap: SPACING.m,
   },
   heroCard: {
     flexDirection: 'row',
