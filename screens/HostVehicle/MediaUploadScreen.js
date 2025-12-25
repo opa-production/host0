@@ -26,7 +26,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ['images'],
         quality: 0.8,
         allowsMultipleSelection: false,
       });
@@ -55,7 +55,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
       }
 
       const options = {
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ['images'],
         quality: 0.8,
       };
 
@@ -86,7 +86,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Videos,
+        mediaTypes: ['videos'],
         allowsEditing: true,
         videoMaxDuration: 15,
         quality: 0.8,
