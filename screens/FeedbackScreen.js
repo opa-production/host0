@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function FeedbackScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [feedback, setFeedback] = useState('');
 
   const submitFeedback = () => {
@@ -20,19 +23,34 @@ export default function FeedbackScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
-        <Ionicons name="arrow-back" size={22} color="#000000" />
-      </TouchableOpacity>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Share Feedback</Text>
+        <View style={styles.backButton} />
+      </View>
 
       <KeyboardAvoidingView
         style={styles.inner}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={80}
+        keyboardVerticalOffset={0}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Share feedback</Text>
-          <Text style={styles.subtitle}>Tell us what we can improve or what you love.</Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + SPACING.xl }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.headerSection}>
+            <Text style={styles.subtitle}>Tell us what we can improve or what you love.</Text>
+          </View>
 
         <View style={styles.card}>
           <Text style={styles.label}>Your feedback</Text>
@@ -49,6 +67,7 @@ export default function FeedbackScreen({ navigation }) {
             <Text style={styles.primaryButtonText}>Submit</Text>
           </TouchableOpacity>
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -59,39 +78,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
+  },
   inner: {
     flex: 1,
     paddingHorizontal: SPACING.l,
-    paddingTop: 90,
-    paddingBottom: 100,
   },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 16,
-    zIndex: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+  scrollContent: {
+    paddingTop: SPACING.m,
   },
-  header: {
-    marginBottom: 16,
-    gap: 6,
-  },
-  title: {
-    ...TYPE.title,
-    fontSize: 20,
-    color: '#1C1C1E',
+  headerSection: {
+    marginBottom: SPACING.m,
   },
   subtitle: {
     ...TYPE.body,

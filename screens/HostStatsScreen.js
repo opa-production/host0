@@ -129,9 +129,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   statsContainer: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
   statRow: {
     flexDirection: 'row',

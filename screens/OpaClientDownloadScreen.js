@@ -1,9 +1,13 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function OpaClientDownloadScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
+
   const handleDownload = () => {
     // TODO: Link to Opa client app store / download URL
   };
@@ -12,13 +16,26 @@ export default function OpaClientDownloadScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
-        <Ionicons name="arrow-back" size={22} color="#000000" />
-      </TouchableOpacity>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Download Opa Client</Text>
+        <View style={styles.backButton} />
+      </View>
 
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Download Opa Client</Text>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerSection}>
           <Text style={styles.subtitle}>Get the Opa client app for a smoother booking experience.</Text>
         </View>
 
@@ -31,7 +48,7 @@ export default function OpaClientDownloadScreen({ navigation }) {
             <Text style={styles.primaryButtonText}>Download</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -41,39 +58,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
+  },
   backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 16,
-    zIndex: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
   },
   content: {
-    flex: 1,
     paddingHorizontal: SPACING.l,
-    paddingTop: 90,
-    paddingBottom: 100,
+    paddingTop: SPACING.m,
   },
-  header: {
-    marginBottom: 18,
-    gap: 6,
-  },
-  title: {
-    ...TYPE.title,
-    fontSize: 20,
-    color: '#1C1C1E',
+  headerSection: {
+    marginBottom: SPACING.l,
   },
   subtitle: {
     ...TYPE.body,
