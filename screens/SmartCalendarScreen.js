@@ -222,10 +222,10 @@ export default function SmartCalendarScreen({ navigation }) {
   const selectedLabel = selectionStart ? fmtRange(selectionStart, selectionEnd || selectionStart) : 'No dates selected';
 
   return (
-    <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 2, paddingBottom: 4 }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => {

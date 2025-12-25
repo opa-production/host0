@@ -119,17 +119,6 @@ export default function HomeScreen({ navigation }) {
                 </View>
               </View>
             </View>
-
-            <View style={[styles.skeletonCard, { marginTop: 24 }]}
-            >
-              <View style={styles.cardHeader}>
-                <SkeletonBox width={150} height={16} style={{ borderRadius: 8 }} />
-                <SkeletonBox width={22} height={16} style={{ borderRadius: 8 }} />
-              </View>
-              <View style={{ marginTop: 10 }}>
-                <SkeletonBox width={220} height={12} style={{ borderRadius: 8 }} />
-              </View>
-            </View>
           </View>
         </ScrollView>
       </View>

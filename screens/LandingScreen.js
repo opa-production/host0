@@ -15,11 +15,11 @@ export default function LandingScreen({ navigation }) {
       </View>
 
       <View style={styles.ctaSection}>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('SignUp')} activeOpacity={0.9}>
+        <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('SignUp')} activeOpacity={1}>
           <Text style={styles.primaryButtonText} numberOfLines={1}>Get Started</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Login')} activeOpacity={0.9}>
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Login')} activeOpacity={1}>
           <Text style={styles.secondaryButtonText} numberOfLines={1}>Login</Text>
         </TouchableOpacity>
       </View>
