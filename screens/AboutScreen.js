@@ -2,10 +2,13 @@ import React, { useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 const AboutScreen = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -14,29 +17,9 @@ const AboutScreen = () => {
   }, [navigation]);
 
   const handleLinkPress = (url) => {
+    lightHaptic();
     Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
   };
-
-  const aboutSections = [
-    {
-      title: 'About OpaHost',
-      content: 'OpaHost is a trusted platform for hosting car rentals. We provide a comprehensive ecosystem for managing your fleet, connecting with renters, and growing your car rental business.',
-    },
-    {
-      title: 'Our Mission',
-      content: 'Our mission is to revolutionize car rental hosting by creating a platform that empowers car owners to monetize their assets while providing renters with reliable and diverse mobility options.',
-    },
-    {
-      title: 'What We Offer',
-      items: [
-        'Fleet Management: Easy-to-use tools to manage your car rental business',
-        'Analytics: Track your business performance and insights',
-        'Secure Payments: Multiple payment options with transparent pricing',
-        '24/7 Support: Round-the-clock customer service',
-        'Verified Network: Connect with verified renters and partners',
-      ],
-    },
-  ];
 
   const contactInfo = [
     { icon: 'mail-outline', label: 'Email', value: 'support@opahost.com', action: () => handleLinkPress('mailto:support@opahost.com') },
@@ -48,49 +31,44 @@ const AboutScreen = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
-      {/* Floating Back Button */}
-      <TouchableOpacity 
-        style={styles.floatingBackButton}
-        onPress={() => navigation.goBack()}
-      >
-        <View style={styles.backButtonCircle}>
-          <Ionicons name="arrow-back" size={20} color="#000000" />
-        </View>
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>About</Text>
+        <View style={styles.backButton} />
+      </View>
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* App Logo/Title Section */}
-        <View style={styles.headerSection}>
-          <Text style={styles.appTitle}>OpaHost</Text>
-          <Text style={styles.appTagline}>
-            Premium Car Rental Hosting Platform
-          </Text>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
-        </View>
-
-        {/* About Sections */}
-        {aboutSections.map((section, index) => (
-          <View key={index} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            {section.content && (
-              <Text style={styles.sectionContent}>{section.content}</Text>
-            )}
-            {section.items && (
-              <View style={styles.itemsList}>
-                {section.items.map((item, itemIndex) => (
-                  <View key={itemIndex} style={styles.itemRow}>
-                    <Ionicons name="checkmark-circle-outline" size={18} color="#007AFF" />
-                    <Text style={styles.itemText}>{item}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
+        {/* About Card */}
+        <TouchableOpacity
+          style={styles.aboutCard}
+          onPress={() => handleLinkPress('https://opa.deonhq.xyz')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.aboutCardContent}>
+            <Ionicons name="information-circle-outline" size={32} color={COLORS.brand} />
+            <View style={styles.aboutCardText}>
+              <Text style={styles.aboutCardTitle}>About OpaHost</Text>
+              <Text style={styles.aboutCardDescription}>
+                Learn more about our mission, values, and comprehensive platform for car rental hosting.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color={COLORS.subtle} />
           </View>
-        ))}
+        </TouchableOpacity>
 
         {/* Contact Information */}
         <View style={styles.section}>
@@ -100,14 +78,14 @@ const AboutScreen = () => {
               key={index}
               style={styles.contactItem}
               onPress={contact.action}
-              activeOpacity={1}
+              activeOpacity={0.7}
             >
-              <Ionicons name={contact.icon} size={22} color="#007AFF" />
+              <Ionicons name={contact.icon} size={22} color={COLORS.brand} />
               <View style={styles.contactInfo}>
                 <Text style={styles.contactLabel}>{contact.label}</Text>
                 <Text style={styles.contactValue}>{contact.value}</Text>
               </View>
-              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+              <Ionicons name="chevron-forward-outline" size={20} color={COLORS.subtle} />
             </TouchableOpacity>
           ))}
         </View>
@@ -128,59 +106,59 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  floatingBackButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    zIndex: 10,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
   },
-  backButtonCircle: {
+  backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.surface,
-    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
     padding: SPACING.l,
-    paddingTop: 100,
-    paddingBottom: 100,
+    paddingTop: SPACING.m,
   },
-  headerSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  appTitle: {
+  headerTitle: {
     ...TYPE.largeTitle,
-    fontSize: 28,
-    marginBottom: 8,
-    color: '#1C1C1E',
+    fontSize: 20,
+    color: COLORS.text,
   },
-  appTagline: {
+  aboutCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    marginBottom: SPACING.l,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+  },
+  aboutCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.l,
+    gap: SPACING.m,
+  },
+  aboutCardText: {
+    flex: 1,
+  },
+  aboutCardTitle: {
+    ...TYPE.section,
+    fontSize: 15,
+    marginBottom: 4,
+    color: COLORS.text,
+  },
+  aboutCardDescription: {
     ...TYPE.body,
     fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 8,
     lineHeight: 18,
-    color: '#8E8E93',
-  },
-  versionText: {
-    ...TYPE.caption,
-    color: '#8E8E93',
+    color: COLORS.subtle,
   },
   section: {
     marginBottom: 32,
@@ -189,29 +167,7 @@ const styles = StyleSheet.create({
     ...TYPE.section,
     fontSize: 15,
     marginBottom: 12,
-    color: '#1C1C1E',
-  },
-  sectionContent: {
-    ...TYPE.body,
-    fontSize: 13,
-    lineHeight: 19,
-    color: '#8E8E93',
-  },
-  itemsList: {
-    gap: 12,
-    marginTop: 8,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  itemText: {
-    ...TYPE.body,
-    fontSize: 13,
-    flex: 1,
-    lineHeight: 18,
-    color: '#8E8E93',
+    color: COLORS.text,
   },
   contactItem: {
     flexDirection: 'row',
@@ -232,7 +188,7 @@ const styles = StyleSheet.create({
   contactValue: {
     ...TYPE.bodyStrong,
     fontSize: 13,
-    color: '#1C1C1E',
+    color: COLORS.text,
   },
   footerSection: {
     alignItems: 'center',
