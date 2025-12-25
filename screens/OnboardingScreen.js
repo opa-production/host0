@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 import SavingsSvg from '../assets/icons/savings.svg';
 import ControlSvg from '../assets/icons/control.svg';
 import SafetySvg from '../assets/icons/safety.svg';
@@ -50,6 +51,7 @@ export default function OnboardingScreen({ navigation }) {
   const [current, setCurrent] = useState(0);
 
   const handleNext = () => {
+    lightHaptic();
     if (current === slides.length - 1) {
       navigation.replace('Landing');
     } else {
@@ -58,21 +60,29 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   const handlePrev = () => {
+    lightHaptic();
     if (current > 0) {
       setCurrent((prev) => prev - 1);
     }
+  };
+
+  const handleSkip = () => {
+    lightHaptic();
+    navigation.replace('Landing');
   };
 
   const slide = slides[current];
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       <View style={[styles.topRow, { paddingTop: insets.top + SPACING.m }]}>
         <View style={styles.topRowSpacer} />
         <TouchableOpacity 
           style={styles.skipButton} 
-          onPress={() => navigation.replace('Landing')}>
+          onPress={handleSkip}
+          activeOpacity={1}
+        >
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>
@@ -90,7 +100,9 @@ export default function OnboardingScreen({ navigation }) {
           {current > 0 && (
             <TouchableOpacity 
               style={styles.navButton} 
-              onPress={handlePrev}>
+              onPress={handlePrev}
+              activeOpacity={1}
+            >
               <Ionicons name="arrow-back" size={20} color={COLORS.text} />
             </TouchableOpacity>
           )}
@@ -98,7 +110,9 @@ export default function OnboardingScreen({ navigation }) {
           <View style={styles.nextButtonContainer}>
             <TouchableOpacity 
               style={styles.nextButton} 
-              onPress={handleNext}>
+              onPress={handleNext}
+              activeOpacity={1}
+            >
               <Ionicons 
                 name={current === slides.length - 1 ? 'checkmark' : 'arrow-forward'} 
                 size={20} 
@@ -115,7 +129,7 @@ export default function OnboardingScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.bg,
     paddingHorizontal: SPACING.l,
   },
   topRow: {
