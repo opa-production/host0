@@ -171,24 +171,46 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Daily Operations */}
+        {/* Financial Performance */}
+        <View style={styles.financeCard}>
+          <Text style={styles.financeCardTitle}>Financial Performance</Text>
+
+          <Text style={styles.finHeadline}>
+            This month {formatCurrency(financialData.currentEarnings)} earned
+          </Text>
+
+          <View style={styles.metricsRow}>
+            <Text style={styles.financeMetricsLabel}>Withdrawable</Text>
+            <Text style={styles.financeMetricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
+          </View>
+
+          <View style={styles.financeMetricsDivider} />
+
+          <View style={styles.metricsRow}>
+            <Text style={styles.financeMetricsLabel}>Pending</Text>
+            <Text style={styles.financeMetricsValue}>{formatCurrency(pendingAmount)}</Text>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.withdrawButton}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('Withdraw', { withdrawable: financialData.nextPayout.amount });
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.withdrawButtonText}>Withdraw</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Today's Actions */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Daily Operations</Text>
+          <Text style={styles.cardTitle}>Today's Actions</Text>
           
           <View style={styles.opsRow}>
             <View style={styles.opsLeft}>
-              <Ionicons name="car-sport-outline" size={20} color={styles.iconMono.color} />
-              <Text style={styles.opsLabel}>Rentals</Text>
-            </View>
-            <Text style={styles.opsValue}>{operationsData.activeRentals}</Text>
-          </View>
-
-          <View style={styles.opsDivider} />
-
-          <View style={styles.opsRow}>
-            <View style={styles.opsLeft}>
-              <Ionicons name="enter-outline" size={20} color={styles.iconMono.color} />
-              <Text style={styles.opsLabel}>Pickups</Text>
+              <View style={[styles.actionDot, styles.actionDotBlue]} />
+              <Text style={styles.opsLabel}>Today's Pickups</Text>
             </View>
             <Text style={styles.opsValue}>{operationsData.pickups}</Text>
           </View>
@@ -197,8 +219,8 @@ export default function HomeScreen({ navigation }) {
 
           <View style={styles.opsRow}>
             <View style={styles.opsLeft}>
-              <Ionicons name="exit-outline" size={20} color={styles.iconMono.color} />
-              <Text style={styles.opsLabel}>Returns</Text>
+              <View style={[styles.actionDot, styles.actionDotGreen]} />
+              <Text style={styles.opsLabel}>Car Returns</Text>
             </View>
             <Text style={styles.opsValue}>{operationsData.returns}</Text>
           </View>
@@ -207,33 +229,22 @@ export default function HomeScreen({ navigation }) {
 
           <View style={styles.opsRow}>
             <View style={styles.opsLeft}>
-              <Ionicons name="hourglass-outline" size={20} color={styles.iconMono.color} />
-              <Text style={styles.opsLabel}>Pending</Text>
+              <View style={[styles.actionDot, styles.actionDotOrange]} />
+              <Text style={styles.opsLabel}>Active Rentals</Text>
+            </View>
+            <Text style={styles.opsValue}>{operationsData.activeRentals}</Text>
+          </View>
+
+          <View style={styles.opsDivider} />
+
+          <View style={styles.opsRow}>
+            <View style={styles.opsLeft}>
+              <View style={[styles.actionDot, styles.actionDotRed]} />
+              <Text style={styles.opsLabel}>Pending Requests</Text>
             </View>
             <Text style={styles.opsValue}>{operationsData.pendingRequests}</Text>
           </View>
         </View>
-
-        {/* Financial Performance */}
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Finance')} activeOpacity={0.95}>
-          <Text style={styles.cardTitle}>Financial Performance</Text>
-
-          <Text style={styles.finHeadline}>
-            This month {formatCurrency(financialData.currentEarnings)} earned
-          </Text>
-
-          <View style={styles.metricsRow}>
-            <Text style={styles.metricsLabel}>Withdrawable</Text>
-            <Text style={styles.metricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
-          </View>
-
-          <View style={styles.metricsDivider} />
-
-          <View style={styles.metricsRow}>
-            <Text style={styles.metricsLabel}>Pending</Text>
-            <Text style={styles.metricsValue}>{formatCurrency(pendingAmount)}</Text>
-          </View>
-        </TouchableOpacity>
 
         </ScrollView>
       </Animated.View>
@@ -305,7 +316,24 @@ const styles = StyleSheet.create({
   opsLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
+  },
+  actionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  actionDotBlue: {
+    backgroundColor: COLORS.brand,
+  },
+  actionDotGreen: {
+    backgroundColor: '#34C759',
+  },
+  actionDotOrange: {
+    backgroundColor: '#FF9500',
+  },
+  actionDotRed: {
+    backgroundColor: '#FF3B30',
   },
   opsLabel: {
     ...TYPE.bodyStrong,
@@ -324,6 +352,17 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
   },
   // Financial Card Styles
+  financeCard: {
+    backgroundColor: COLORS.text,
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    marginBottom: 24,
+  },
+  financeCardTitle: {
+    ...TYPE.section,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 20,
+  },
   metricsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -344,12 +383,39 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: COLORS.border,
   },
+  financeMetricsLabel: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  financeMetricsValue: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
+  financeMetricsDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
   finHeadline: {
     fontSize: 18,
     lineHeight: 24,
     fontFamily: 'Nunito-Bold',
-    color: COLORS.text,
+    color: '#FFFFFF',
     marginBottom: 20,
+  },
+  withdrawButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.card,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPACING.m,
+  },
+  withdrawButtonText: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
   },
   skelRow: {
     flexDirection: 'row',
