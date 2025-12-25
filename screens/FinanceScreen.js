@@ -88,7 +88,7 @@ export default function FinanceScreen({ navigation }) {
           </View>
 
           <View style={styles.transactionsList}>
-            {recentTransactions.map((t, idx) => {
+            {recentTransactions.slice(0, 4).map((t, idx) => {
               const isNegative = t.amount < 0;
               const amountText = `${isNegative ? '-' : ''}${formattedCurrency(Math.abs(t.amount))}`;
               const amountStyle =
@@ -111,7 +111,7 @@ export default function FinanceScreen({ navigation }) {
                       {amountText}
                     </Text>
                   </View>
-                  {idx !== recentTransactions.length - 1 && <View style={styles.breakdownDivider} />}
+                  {idx !== 3 && <View style={styles.breakdownDivider} />}
                 </View>
               );
             })}
