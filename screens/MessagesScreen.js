@@ -29,28 +29,26 @@ export default function MessagesScreen({ navigation }) {
           activeOpacity={0.9}
           onPress={() => {
             lightHaptic();
-            navigation.navigate('Chat', { title: 'Brian • BMW M3' });
+            navigation.navigate('Chat', { title: 'Brian' });
           }}
         >
           <View style={styles.threadLeft}>
             <View style={styles.avatar}>
-              <Ionicons name="person" size={18} color={COLORS.subtle} />
+              <Ionicons name="person" size={22} color={COLORS.subtle} />
             </View>
           </View>
 
           <View style={styles.threadBody}>
             <View style={styles.threadTop}>
               <Text style={styles.threadTitle} numberOfLines={1}>
-                Brian • BMW M3
+                Brian
               </Text>
               <Text style={styles.threadTime}>2:17 PM</Text>
             </View>
             <Text style={styles.threadPreview} numberOfLines={1}>
-              Perfect. I’ll share the exact spot once I arrive.
+              Perfect. I'll share the exact spot once I arrive.
             </Text>
           </View>
-
-          <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -82,28 +80,27 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   threadCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.m,
+    paddingVertical: SPACING.l,
+    paddingLeft: 0,
+    paddingRight: SPACING.m,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    gap: 16,
+    marginBottom: SPACING.s,
   },
   threadLeft: {
-    width: 46,
+    width: 56,
     alignItems: 'center',
   },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#F2F2F7',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    borderWidth: 2,
+    borderColor: '#1C1C1E',
   },
   threadBody: {
     flex: 1,
