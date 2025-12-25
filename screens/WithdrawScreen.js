@@ -14,9 +14,9 @@ export default function WithdrawScreen({ navigation, route }) {
   const formattedCurrency = (value) => `KSh ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 
   const paymentMethods = [
-    { id: 'mpesa', name: 'M-Pesa', icon: require('../assets/images/mpesa.png') },
-    { id: 'visa', name: 'Visa', icon: require('../assets/images/visa.png') },
-    { id: 'mastercard', name: 'Mastercard', icon: require('../assets/images/mastercard.png') },
+    { id: 'mpesa', name: 'M-Pesa', icon: require('../assets/images/mpesa.png'), details: '254 712 345 678' },
+    { id: 'visa', name: 'Visa', icon: require('../assets/images/visa.png'), details: '•••• •••• •••• 4532' },
+    { id: 'mastercard', name: 'Mastercard', icon: require('../assets/images/mastercard.png'), details: '•••• •••• •••• 7890' },
   ];
 
   const handleSubmit = () => {
@@ -86,12 +86,15 @@ export default function WithdrawScreen({ navigation, route }) {
                   activeOpacity={0.7}
                 >
                   <Image source={method.icon} style={styles.methodIcon} resizeMode="contain" />
-                  <Text style={[
-                    styles.methodName,
-                    selectedMethod === method.id && styles.methodNameSelected
-                  ]}>
-                    {method.name}
-                  </Text>
+                  <View style={styles.methodInfo}>
+                    <Text style={[
+                      styles.methodName,
+                      selectedMethod === method.id && styles.methodNameSelected
+                    ]}>
+                      {method.name}
+                    </Text>
+                    <Text style={styles.methodDetails}>{method.details}</Text>
+                  </View>
                   {selectedMethod === method.id && (
                     <View style={styles.checkmark}>
                       <Ionicons name="checkmark-circle" size={20} color={COLORS.brand} />
@@ -195,13 +198,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: SPACING.m,
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.border,
-    minHeight: 52,
+    minHeight: 68,
     position: 'relative',
   },
   methodCardSelected: {
@@ -211,14 +214,23 @@ const styles = StyleSheet.create({
     width: 48,
     height: 20,
   },
+  methodInfo: {
+    flex: 1,
+    marginLeft: SPACING.m,
+  },
   methodName: {
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: COLORS.text,
-    marginLeft: SPACING.m,
+    marginBottom: 2,
   },
   methodNameSelected: {
     color: COLORS.text,
+  },
+  methodDetails: {
+    ...TYPE.caption,
+    fontSize: 12,
+    color: COLORS.subtle,
   },
   checkmark: {
     position: 'absolute',
@@ -261,8 +273,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.m,
   },
   withdrawButtonDisabled: {
-    backgroundColor: COLORS.border,
-    opacity: 0.5,
+    backgroundColor: '#666666',
   },
   withdrawButtonText: {
     ...TYPE.bodyStrong,
