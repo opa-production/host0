@@ -44,17 +44,7 @@ export default function SignUpScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" />
-      
-      {/* Floating Back Button */}
-      <TouchableOpacity 
-        style={styles.floatingBackButton}
-        onPress={() => navigation.goBack()}
-      >
-        <View style={styles.backButtonCircle}>
-          <Ionicons name="arrow-back" size={24} color="#000000" />
-        </View>
-      </TouchableOpacity>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
@@ -194,41 +184,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg, // iOS System Background
   },
-  floatingBackButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 40,
-    left: 20,
-    zIndex: 10,
-  },
-  backButtonCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 120,
+    paddingTop: 80,
     paddingBottom: 40,
   },
   header: {
     marginBottom: 32,
+    alignItems: 'center',
   },
   title: {
     ...TYPE.largeTitle,
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     ...TYPE.body,
-    color: '#8E8E93',
+    color: COLORS.subtle,
+    textAlign: 'center',
   },
   form: {
     flex: 1,
