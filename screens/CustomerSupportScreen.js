@@ -2,10 +2,13 @@ import React, { useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal, Alert, Linking, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 const CustomerSupportScreen = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [showTicketForm, setShowTicketForm] = useState(false);
   
   // Create Ticket state
@@ -102,12 +105,27 @@ const CustomerSupportScreen = () => {
   );
 
   const renderTicketForm = () => (
-    <ScrollView
-      style={styles.formContainer}
-      contentContainerStyle={styles.formContent}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.formSection}>
+    <>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            setShowTicketForm(false);
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Create Ticket</Text>
+        <View style={styles.backButton} />
+      </View>
+      <ScrollView
+        style={styles.formContainer}
+        contentContainerStyle={styles.formContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.formSection}>
         <Text style={styles.formSectionTitle}>Urgency Level</Text>
         <View style={styles.urgencyButtonsContainer}>
           {['low', 'medium', 'high'].map((urgency) => (
@@ -191,29 +209,33 @@ const CustomerSupportScreen = () => {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </>
   );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
-      {/* Floating Back Button */}
-      <TouchableOpacity 
-        style={styles.floatingBackButton}
-        onPress={() => {
-          if (showTicketForm) {
-            setShowTicketForm(false);
-          } else {
-            navigation.goBack();
-          }
-        }}
-      >
-        <View style={styles.backButtonCircle}>
-          <Ionicons name="arrow-back" size={20} color="#000000" />
-        </View>
-      </TouchableOpacity>
-
-      {!showTicketForm ? renderInitialOptions() : renderTicketForm()}
+      {!showTicketForm ? (
+        <>
+          {/* Floating Back Button for initial view */}
+          <TouchableOpacity 
+            style={styles.floatingBackButton}
+            onPress={() => {
+              lightHaptic();
+              navigation.goBack();
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.backButtonCircle}>
+              <Ionicons name="arrow-back" size={20} color="#000000" />
+            </View>
+          </TouchableOpacity>
+          {renderInitialOptions()}
+        </>
+      ) : (
+        renderTicketForm()
+      )}
 
       {/* Ticket Success Modal */}
       <Modal
@@ -333,8 +355,27 @@ const styles = StyleSheet.create({
   },
   formContent: {
     padding: SPACING.l,
-    paddingTop: 100,
+    paddingTop: SPACING.m,
     paddingBottom: 100,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
   },
   formSection: {
     padding: SPACING.m,

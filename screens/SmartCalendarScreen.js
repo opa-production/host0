@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 
@@ -118,6 +119,7 @@ export default function SmartCalendarScreen({ navigation }) {
 
   const [instantBooking, setInstantBooking] = useState(false);
   const [bufferHours, setBufferHours] = useState(0);
+  const [syncEnabled, setSyncEnabled] = useState(false);
 
   const monthGrid = useMemo(() => {
     const y = month.getFullYear();
@@ -209,8 +211,53 @@ export default function SmartCalendarScreen({ navigation }) {
     clearSelection();
   };
 
+  // Load sync status and blocked dates on mount
+  useEffect(() => {
+    loadSyncStatus();
+  }, []);
+
+  // Reload sync status when screen is focused
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadSyncStatus();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadSyncStatus = async () => {
+    try {
+      const syncEnabledValue = await AsyncStorage.getItem('@calendar_sync_enabled');
+      const isEnabled = syncEnabledValue === 'true';
+      setSyncEnabled(isEnabled);
+
+      if (isEnabled) {
+        // Load blocked dates from synced calendar
+        const blockedDatesJson = await AsyncStorage.getItem('@calendar_blocked_dates');
+        if (blockedDatesJson) {
+          const blockedDates = JSON.parse(blockedDatesJson).map(bd => ({
+            start: new Date(bd.start),
+            end: new Date(bd.end),
+          }));
+          
+          // Merge with existing unavailable dates using functional update
+          setUnavailable(prevUnavailable => {
+            const existingRanges = prevUnavailable.map(r => normalizeRange(r.start, r.end));
+            const newRanges = blockedDates.map(bd => normalizeRange(bd.start, bd.end));
+            
+            // Combine and merge all ranges
+            const allRanges = [...existingRanges, ...newRanges];
+            return mergeRanges(allRanges);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading sync status:', error);
+    }
+  };
+
   const onSyncPress = () => {
-    Alert.alert('Coming soon', 'Calendar sync will be available in a future update.');
+    lightHaptic();
+    navigation.navigate('CalendarSync');
   };
 
   const shiftMonth = (delta) => {
@@ -376,8 +423,19 @@ export default function SmartCalendarScreen({ navigation }) {
 
           <TouchableOpacity style={styles.syncRow} onPress={onSyncPress} activeOpacity={0.85}>
             <View style={styles.syncLeft}>
-              <Text style={styles.settingLabel}>Sync with personal calendar</Text>
-              <Text style={styles.settingHint}>Connect Google/Apple calendar.</Text>
+              <View style={styles.syncLabelRow}>
+                <Text style={styles.settingLabel}>Sync with personal calendar</Text>
+                {syncEnabled && (
+                  <View style={styles.syncBadge}>
+                    <Text style={styles.syncBadgeText}>Active</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.settingHint}>
+                {syncEnabled 
+                  ? 'Calendar sync is enabled. Events will block dates automatically.'
+                  : 'Connect Google/Apple calendar to auto-block dates.'}
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={COLORS.subtle} />
           </TouchableOpacity>
@@ -650,5 +708,22 @@ const styles = StyleSheet.create({
   blockedText: {
     ...TYPE.body,
     color: COLORS.text,
+  },
+  syncLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  syncBadge: {
+    backgroundColor: '#34C759',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  syncBadgeText: {
+    ...TYPE.micro,
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: 'Nunito-SemiBold',
   },
 });

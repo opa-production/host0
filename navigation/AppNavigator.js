@@ -58,6 +58,7 @@ import PastBookingDetailScreen from '../screens/PastBookingDetailScreen';
 import ReportIssueScreen from '../screens/ReportIssueScreen';
 import ExtendBookingScreen from '../screens/ExtendBookingScreen';
 import ChatScreen from '../screens/ChatScreen';
+import CalendarSyncScreen from '../screens/CalendarSyncScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -276,6 +277,11 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="SmartCalendar" 
           component={SmartCalendarScreen}
+        />
+
+        <Stack.Screen 
+          name="CalendarSync" 
+          component={CalendarSyncScreen}
         />
         
         {/* Update Profile Screen */}
