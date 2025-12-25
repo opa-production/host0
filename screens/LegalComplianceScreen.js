@@ -116,8 +116,6 @@ export default function LegalComplianceScreen({ navigation: nav }) {
 
   const isSubmitDisabled = !documents.logbook || !documents.insurance || !documents.inspection;
 
-  const requiredUploadedCount = Number(!!documents.logbook) + Number(!!documents.insurance) + Number(!!documents.inspection);
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
@@ -144,16 +142,6 @@ export default function LegalComplianceScreen({ navigation: nav }) {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.description}>Upload the required documents to verify your vehicle.</Text>
-
-        <View style={styles.progressRow}>
-          <Text style={styles.progressText}>{requiredUploadedCount}/3 required uploaded</Text>
-          {!isSubmitDisabled && (
-            <View style={styles.progressBadge}>
-              <Ionicons name="checkmark-circle" size={16} color="#34C759" />
-              <Text style={styles.progressBadgeText}>Ready</Text>
-            </View>
-          )}
-        </View>
 
         <DocumentUpload
           title="Vehicle Logbook"
@@ -241,28 +229,6 @@ const styles = StyleSheet.create({
     color: COLORS.subtle,
     marginBottom: SPACING.l,
     lineHeight: 20,
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.l,
-  },
-  progressText: {
-    ...TYPE.caption,
-  },
-  progressBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  progressBadgeText: {
-    ...TYPE.caption,
-    color: COLORS.text,
   },
   uploadContainer: {
     backgroundColor: COLORS.surface,
