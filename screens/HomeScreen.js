@@ -172,7 +172,14 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* Financial Performance */}
-        <View style={styles.financeCard}>
+        <TouchableOpacity 
+          style={styles.financeCard}
+          onPress={() => {
+            lightHaptic();
+            navigation.navigate('Finance');
+          }}
+          activeOpacity={0.95}
+        >
           <Text style={styles.financeCardTitle}>Financial Performance</Text>
 
           <Text style={styles.finHeadline}>
@@ -193,7 +200,8 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity 
             style={styles.withdrawButton}
-            onPress={() => {
+            onPress={(e) => {
+              e.stopPropagation();
               lightHaptic();
               navigation.navigate('Withdraw', { withdrawable: financialData.nextPayout.amount });
             }}
@@ -201,7 +209,7 @@ export default function HomeScreen({ navigation }) {
           >
             <Text style={styles.withdrawButtonText}>Withdraw</Text>
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
 
         {/* Today's Actions */}
         <View style={styles.card}>

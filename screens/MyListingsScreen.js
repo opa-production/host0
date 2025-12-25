@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -141,20 +142,20 @@ export default function MyListingsScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
-      {/* Floating Back Button */}
-      <View style={[styles.topBar, { top: insets.top + 16 }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={1}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={22} color="#000000" />
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-      </View>
-
-      <View style={[styles.headerArea, { paddingTop: insets.top + 70 }]}>
-        <Text style={styles.screenTitle}>My Cars</Text>
-        <Text style={styles.screenSubtitle}>Manage your listings</Text>
+        <Text style={styles.headerTitle}>My Cars</Text>
+        <View style={styles.backButton} />
       </View>
 
       {/* Listings */}
@@ -164,7 +165,7 @@ export default function MyListingsScreen({ navigation }) {
         renderItem={renderCarCard}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingTop: SPACING.m }]}
       />
     </View>
   );
@@ -175,44 +176,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  topBar: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    zIndex: 10,
+  header: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
-  headerArea: {
     paddingHorizontal: SPACING.l,
     paddingBottom: 12,
+    backgroundColor: COLORS.bg,
   },
-  screenTitle: {
-    ...TYPE.title,
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
     fontSize: 20,
-    color: '#1C1C1E',
-  },
-  screenSubtitle: {
-    ...TYPE.body,
-    fontSize: 13,
-    color: '#8E8E93',
-    marginTop: 6,
+    color: COLORS.text,
   },
   listContent: {
     paddingHorizontal: SPACING.l,
