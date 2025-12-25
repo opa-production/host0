@@ -40,7 +40,6 @@ import ActiveBookingScreen from '../screens/ActiveBookingScreen';
 import PastBookingsScreen from '../screens/PastBookingsScreen';
 import WithdrawScreen from '../screens/WithdrawScreen';
 import AllTransactionsScreen from '../screens/AllTransactionsScreen';
-import TrackCarSelectScreen from '../screens/TrackCarSelectScreen';
 import HostLearnMoreScreen from '../screens/HostLearnMoreScreen';
 import HostStatsScreen from '../screens/HostStatsScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
@@ -217,11 +216,6 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="AllTransactions" 
           component={AllTransactionsScreen}
-        />
-
-        <Stack.Screen 
-          name="TrackCarSelect" 
-          component={TrackCarSelectScreen}
         />
 
         <Stack.Screen 

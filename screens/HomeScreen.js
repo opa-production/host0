@@ -171,111 +171,68 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Card 1: Daily Operations */}
+        {/* Daily Operations */}
         <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Daily Operations</Text>
-            <TouchableOpacity>
-              <Ionicons name="ellipsis-horizontal" size={20} color="#8E8E93" />
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.cardTitle}>Daily Operations</Text>
           
-          <View style={styles.opsList}>
-            <TouchableOpacity style={styles.opsRow} activeOpacity={0.75}>
-              <View style={styles.opsLeft}>
-                <Ionicons name="car-sport-outline" size={20} color={styles.iconMono.color} />
-                <Text style={styles.opsLabel}>Rentals</Text>
-              </View>
-              <View style={styles.opsRight}>
-                <Text style={styles.opsValue}>{operationsData.activeRentals}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
-              </View>
-            </TouchableOpacity>
+          <View style={styles.opsRow}>
+            <View style={styles.opsLeft}>
+              <Ionicons name="car-sport-outline" size={20} color={styles.iconMono.color} />
+              <Text style={styles.opsLabel}>Rentals</Text>
+            </View>
+            <Text style={styles.opsValue}>{operationsData.activeRentals}</Text>
+          </View>
 
-            <View style={styles.opsDivider} />
+          <View style={styles.opsDivider} />
 
-            <TouchableOpacity style={styles.opsRow} activeOpacity={0.75}>
-              <View style={styles.opsLeft}>
-                <Ionicons name="enter-outline" size={20} color={styles.iconMono.color} />
-                <Text style={styles.opsLabel}>Pickups</Text>
-              </View>
-              <View style={styles.opsRight}>
-                <Text style={styles.opsValue}>{operationsData.pickups}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
-              </View>
-            </TouchableOpacity>
+          <View style={styles.opsRow}>
+            <View style={styles.opsLeft}>
+              <Ionicons name="enter-outline" size={20} color={styles.iconMono.color} />
+              <Text style={styles.opsLabel}>Pickups</Text>
+            </View>
+            <Text style={styles.opsValue}>{operationsData.pickups}</Text>
+          </View>
 
-            <View style={styles.opsDivider} />
+          <View style={styles.opsDivider} />
 
-            <TouchableOpacity style={styles.opsRow} activeOpacity={0.75}>
-              <View style={styles.opsLeft}>
-                <Ionicons name="exit-outline" size={20} color={styles.iconMono.color} />
-                <Text style={styles.opsLabel}>Returns</Text>
-              </View>
-              <View style={styles.opsRight}>
-                <Text style={styles.opsValue}>{operationsData.returns}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
-              </View>
-            </TouchableOpacity>
+          <View style={styles.opsRow}>
+            <View style={styles.opsLeft}>
+              <Ionicons name="exit-outline" size={20} color={styles.iconMono.color} />
+              <Text style={styles.opsLabel}>Returns</Text>
+            </View>
+            <Text style={styles.opsValue}>{operationsData.returns}</Text>
+          </View>
 
-            <View style={styles.opsDivider} />
+          <View style={styles.opsDivider} />
 
-            <TouchableOpacity style={styles.opsRow} activeOpacity={0.75}>
-              <View style={styles.opsLeft}>
-                <Ionicons name="hourglass-outline" size={20} color={styles.iconMono.color} />
-                <Text style={styles.opsLabel}>Pending</Text>
-              </View>
-              <View style={styles.opsRight}>
-                <Text style={styles.opsValue}>{operationsData.pendingRequests}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
-              </View>
-            </TouchableOpacity>
+          <View style={styles.opsRow}>
+            <View style={styles.opsLeft}>
+              <Ionicons name="hourglass-outline" size={20} color={styles.iconMono.color} />
+              <Text style={styles.opsLabel}>Pending</Text>
+            </View>
+            <Text style={styles.opsValue}>{operationsData.pendingRequests}</Text>
           </View>
         </View>
 
-        {/* Card 2: Financial Performance */}
+        {/* Financial Performance */}
         <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Finance')} activeOpacity={0.95}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Financial Performance</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Finance')} activeOpacity={0.8}>
-              <Ionicons name="arrow-forward" size={20} color="#8E8E93" />
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.cardTitle}>Financial Performance</Text>
 
           <Text style={styles.finHeadline}>
             This month {formatCurrency(financialData.currentEarnings)} earned
           </Text>
 
-          <View style={styles.metricsList}>
-            <View style={styles.metricsRow}>
-              <Text style={styles.metricsLabel}>Withdrawable</Text>
-              <Text style={styles.metricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
-            </View>
-
-            <View style={styles.metricsDivider} />
-
-            <View style={styles.metricsRow}>
-              <Text style={styles.metricsLabel}>Pending</Text>
-              <Text style={styles.metricsValue}>{formatCurrency(pendingAmount)}</Text>
-            </View>
+          <View style={styles.metricsRow}>
+            <Text style={styles.metricsLabel}>Withdrawable</Text>
+            <Text style={styles.metricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.softCta}
-            onPress={() => navigation.navigate('Withdraw')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.softCtaText}>Withdraw</Text>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.subtle} />
-          </TouchableOpacity>
-        </TouchableOpacity>
+          <View style={styles.metricsDivider} />
 
-        <TouchableOpacity style={[styles.card, styles.trackCard]} onPress={() => navigation.navigate('TrackCarSelect')} activeOpacity={1}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Track your car</Text>
-            <Ionicons name="location-outline" size={20} color="#8E8E93" />
+          <View style={styles.metricsRow}>
+            <Text style={styles.metricsLabel}>Pending</Text>
+            <Text style={styles.metricsValue}>{formatCurrency(pendingAmount)}</Text>
           </View>
-          <Text style={styles.trackSub}>Last seen 12 minutes ago · Nakuru CBD</Text>
         </TouchableOpacity>
 
         </ScrollView>
@@ -334,34 +291,16 @@ const styles = StyleSheet.create({
     padding: SPACING.l,
     marginBottom: 24,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
   cardTitle: {
     ...TYPE.section,
-    flex: 1,
-    marginRight: 12,
+    marginBottom: 20,
   },
-  trackCard: {
-    paddingVertical: SPACING.m,
-    paddingHorizontal: SPACING.l,
-    marginBottom: SPACING.m,
-  },
-  // Daily Operations (list links)
-  opsList: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
+  // Daily Operations
   opsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
-    paddingHorizontal: 12,
   },
   opsLeft: {
     flexDirection: 'row',
@@ -372,85 +311,51 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
   },
-  opsRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   opsValue: {
+    ...TYPE.bodyStrong,
     fontSize: 13,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#1C1C1E',
+    color: COLORS.text,
   },
   opsDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5EA',
-    marginLeft: 42,
+    backgroundColor: COLORS.border,
   },
   iconMono: {
     color: '#1C1C1E',
   },
   // Financial Card Styles
-  metricsList: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
   metricsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   metricsLabel: {
     ...TYPE.body,
     fontSize: 13,
-    color: '#8E8E93',
+    color: COLORS.subtle,
   },
   metricsValue: {
     ...TYPE.bodyStrong,
     fontSize: 13,
-    color: '#1C1C1E',
+    color: COLORS.text,
   },
   metricsDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5EA',
-    marginLeft: 44,
+    backgroundColor: COLORS.border,
   },
   finHeadline: {
     fontSize: 18,
     lineHeight: 24,
     fontFamily: 'Nunito-Bold',
     color: COLORS.text,
-    marginBottom: 14,
-  },
-  softCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: '#F2F2F7',
-  },
-  softCtaText: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: COLORS.text,
+    marginBottom: 20,
   },
   skelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
-  },
-  trackSub: {
-    ...TYPE.body,
-    fontSize: 13,
-    color: '#8E8E93',
-    marginTop: 10,
   },
   earningsValue: {
     fontSize: 32,
