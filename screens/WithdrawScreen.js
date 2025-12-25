@@ -1,36 +1,40 @@
-import React, { useMemo, useState } from 'react';
-import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
 export default function WithdrawScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const withdrawable = route?.params?.withdrawable ?? 95000;
   const [amount, setAmount] = useState('');
+  const [selectedMethod, setSelectedMethod] = useState(null);
 
-  const formattedCurrency = useMemo(
-    () => (value) => `KSh ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`,
-    []
-  );
+  const formattedCurrency = (value) => `KSh ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 
-  const quickAmounts = useMemo(() => {
-    const caps = [0.25, 0.5, 1];
-    return caps
-      .map((p) => Math.floor(withdrawable * p))
-      .filter((v) => v > 0)
-      .map((v) => ({ key: `${v}`, value: v, label: formattedCurrency(v) }));
-  }, [formattedCurrency, withdrawable]);
+  const paymentMethods = [
+    { id: 'mpesa', name: 'M-Pesa', icon: require('../assets/images/mpesa.png') },
+    { id: 'visa', name: 'Visa', icon: require('../assets/images/visa.png') },
+    { id: 'mastercard', name: 'Mastercard', icon: require('../assets/images/mastercard.png') },
+  ];
 
   const handleSubmit = () => {
     const numericAmount = Number(amount.replace(/,/g, ''));
-    if (!numericAmount || Number.isNaN(numericAmount)) {
-      alert('Enter a valid amount.');
+    if (!numericAmount || Number.isNaN(numericAmount) || numericAmount <= 0) {
+      alert('Please enter a valid amount.');
       return;
     }
     if (numericAmount > withdrawable) {
       alert('Amount exceeds your withdrawable balance.');
       return;
     }
-    alert('Withdrawal request sent (mock).');
+    if (!selectedMethod) {
+      alert('Please select a payment method.');
+      return;
+    }
+    // TODO: Process withdrawal
+    alert(`Withdrawal request of ${formattedCurrency(numericAmount)} to ${paymentMethods.find(m => m.id === selectedMethod)?.name} sent.`);
     navigation.goBack();
   };
 
@@ -38,72 +42,105 @@ export default function WithdrawScreen({ navigation, route }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
-        <Ionicons name="arrow-back" size={22} color={COLORS.text} />
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Withdraw</Text>
+        <View style={styles.backButton} />
+      </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Withdraw</Text>
-            <Text style={styles.subtitle}>Move your earnings to your payout method.</Text>
+      <KeyboardAvoidingView 
+        style={styles.keyboardView} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView 
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Payment Methods */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Payment Method</Text>
+            <View style={styles.methodsContainer}>
+              {paymentMethods.map((method) => (
+                <TouchableOpacity
+                  key={method.id}
+                  style={[
+                    styles.methodCard,
+                    selectedMethod === method.id && styles.methodCardSelected
+                  ]}
+                  onPress={() => {
+                    lightHaptic();
+                    setSelectedMethod(method.id);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Image source={method.icon} style={styles.methodIcon} resizeMode="contain" />
+                  <Text style={[
+                    styles.methodName,
+                    selectedMethod === method.id && styles.methodNameSelected
+                  ]}>
+                    {method.name}
+                  </Text>
+                  {selectedMethod === method.id && (
+                    <View style={styles.checkmark}>
+                      <Ionicons name="checkmark-circle" size={20} color={COLORS.brand} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
-          <View style={styles.card}>
-            <Text style={styles.label}>Withdrawable</Text>
-            <Text style={styles.balance}>{formattedCurrency(withdrawable)}</Text>
-          </View>
-
-          <View style={styles.card}>
+          {/* Amount Input */}
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>Amount</Text>
-
-            <View style={styles.inputRow}>
+            <View style={styles.inputContainer}>
               <Text style={styles.currencyPrefix}>KSh</Text>
               <TextInput
                 value={amount}
-                onChangeText={setAmount}
+                onChangeText={(text) => {
+                  // Allow only numbers and commas
+                  const cleaned = text.replace(/[^0-9,]/g, '');
+                  setAmount(cleaned);
+                }}
                 placeholder="0"
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={COLORS.subtle}
                 keyboardType="numeric"
                 style={styles.input}
               />
             </View>
-
-            <View style={styles.quickRow}>
-              {quickAmounts.map((q) => (
-                <TouchableOpacity
-                  key={q.key}
-                  style={styles.quickPill}
-                  activeOpacity={0.9}
-                  onPress={() => setAmount(`${q.value}`)}
-                >
-                  <Text style={styles.quickPillText}>{q.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.divider} />
-
-            <TouchableOpacity style={styles.methodRow} activeOpacity={0.85}>
-              <View style={styles.methodLeft}>
-                <View style={styles.iconCircle}>
-                  <Ionicons name="wallet-outline" size={18} color={COLORS.text} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.methodTitle}>Payout method</Text>
-                  <Text style={styles.methodSub}>M-Pesa • **** 123</Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
-            </TouchableOpacity>
+            <Text style={styles.inputHint}>
+              Enter the amount you want to withdraw
+            </Text>
           </View>
 
-          <TouchableOpacity style={styles.primaryButton} onPress={handleSubmit} activeOpacity={0.9}>
-            <Text style={styles.primaryButtonText}>Withdraw</Text>
+          {/* Withdraw Button */}
+          <TouchableOpacity 
+            style={[
+              styles.withdrawButton,
+              (!amount || !selectedMethod) && styles.withdrawButtonDisabled
+            ]} 
+            onPress={handleSubmit}
+            activeOpacity={0.8}
+            disabled={!amount || !selectedMethod}
+          >
+            <Text style={styles.withdrawButtonText}>Withdraw</Text>
           </TouchableOpacity>
 
+          {/* Footer Note */}
           <Text style={styles.footerNote}>
-            By withdrawing, you agree to processing times and payout policies.
+            Processing time: 1-3 business days. By withdrawing, you agree to our payout policies.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -116,161 +153,126 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  content: {
-    padding: SPACING.l,
-    paddingTop: 90,
-    paddingBottom: 120,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 16,
-    zIndex: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
   header: {
-    marginBottom: 16,
-  },
-  title: {
-    ...TYPE.largeTitle,
-    fontSize: 20,
-  },
-  subtitle: {
-    ...TYPE.body,
-    color: '#8E8E93',
-    marginTop: 6,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    padding: SPACING.m,
-    marginTop: 12,
-  },
-  label: {
-    ...TYPE.micro,
-    color: '#8E8E93',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  balance: {
-    ...TYPE.largeTitle,
-    fontSize: 30,
-    color: '#1C1C1E',
-    marginTop: 8,
-  },
-  sectionTitle: {
-    ...TYPE.section,
-    color: '#1C1C1E',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    backgroundColor: COLORS.bg,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    paddingHorizontal: 12,
-    height: 54,
-  },
-  currencyPrefix: {
-    ...TYPE.bodyStrong,
-    color: '#1C1C1E',
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 18,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#1C1C1E',
-  },
-  quickRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
-  },
-  quickPill: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.pill,
-    backgroundColor: COLORS.bg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
-  quickPillText: {
-    ...TYPE.caption,
-    color: '#1C1C1E',
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.borderStrong,
-    marginTop: 16,
-    marginBottom: 12,
-  },
-  methodRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  methodLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-    paddingRight: 12,
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
     backgroundColor: COLORS.bg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
-  methodTitle: {
-    ...TYPE.bodyStrong,
-    color: '#1C1C1E',
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
   },
-  methodSub: {
-    ...TYPE.body,
-    fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 2,
+  keyboardView: {
+    flex: 1,
   },
-  primaryButton: {
-    marginTop: 16,
-    backgroundColor: '#000000',
-    borderRadius: RADIUS.button,
-    paddingVertical: 14,
-    alignItems: 'center',
+  content: {
+    padding: SPACING.l,
+    paddingTop: SPACING.m,
   },
-  primaryButtonText: {
+  section: {
+    marginBottom: SPACING.l,
+  },
+  sectionTitle: {
     ...TYPE.section,
+    fontSize: 15,
+    color: COLORS.text,
+    marginBottom: SPACING.m,
+  },
+  methodsContainer: {
+    gap: SPACING.s,
+  },
+  methodCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.m,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+    minHeight: 52,
+    position: 'relative',
+  },
+  methodCardSelected: {
+    borderColor: COLORS.text,
+  },
+  methodIcon: {
+    width: 48,
+    height: 20,
+  },
+  methodName: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: COLORS.text,
+    marginLeft: SPACING.m,
+  },
+  methodNameSelected: {
+    color: COLORS.text,
+  },
+  checkmark: {
+    position: 'absolute',
+    right: SPACING.m,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.m,
+    height: 56,
+  },
+  currencyPrefix: {
+    ...TYPE.bodyStrong,
+    fontSize: 16,
+    color: COLORS.text,
+    marginRight: SPACING.s,
+  },
+  input: {
+    flex: 1,
+    ...TYPE.largeTitle,
+    fontSize: 24,
+    color: COLORS.text,
+  },
+  inputHint: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
+    marginTop: SPACING.s,
+  },
+  withdrawButton: {
+    backgroundColor: '#000000',
+    borderRadius: RADIUS.card,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPACING.m,
+    marginBottom: SPACING.m,
+  },
+  withdrawButtonDisabled: {
+    backgroundColor: COLORS.border,
+    opacity: 0.5,
+  },
+  withdrawButtonText: {
+    ...TYPE.bodyStrong,
+    fontSize: 16,
     color: '#FFFFFF',
   },
   footerNote: {
     ...TYPE.caption,
-    color: '#8E8E93',
+    color: COLORS.subtle,
     textAlign: 'center',
-    marginTop: 14,
-    paddingHorizontal: 10,
+    lineHeight: 16,
   },
 });
