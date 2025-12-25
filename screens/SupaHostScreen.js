@@ -18,8 +18,18 @@ export default function SupaHostScreen({ navigation: nav }) {
   }, [navigation]);
 
   const pricing = useMemo(() => {
-    const monthly = { label: 'Monthly', range: 'KES 1,500 – 5,000 / mo' };
-    const yearly = { label: 'Yearly', range: 'KES 18,000 – 60,000 / yr' };
+    const monthly = { 
+      label: 'Monthly', 
+      originalPrice: 'KES 5,000',
+      currentPrice: 'KES 3,500',
+      period: '/ mo'
+    };
+    const yearly = { 
+      label: 'Yearly', 
+      originalPrice: 'KES 60,000',
+      currentPrice: 'KES 45,000',
+      period: '/ yr'
+    };
     return billing === 'monthly' ? monthly : yearly;
   }, [billing]);
 
@@ -92,13 +102,15 @@ export default function SupaHostScreen({ navigation: nav }) {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>SupaHost</Text>
-            {/* <View style={styles.badge}>
-              <Ionicons name="star" size={14} color="#111111" />
-              <Text style={styles.badgeText}>Premium</Text>
-            </View> */}
           </View>
-          <Text style={styles.price}>{pricing.range}</Text>
-          <Text style={styles.note}>Pricing varies by number of cars.</Text>
+          
+          <View style={styles.priceContainer}>
+            <Text style={styles.originalPrice}>{pricing.originalPrice}</Text>
+            <View style={styles.currentPriceRow}>
+              <Text style={styles.currentPrice}>{pricing.currentPrice}</Text>
+              <Text style={styles.pricePeriod}>{pricing.period}</Text>
+            </View>
+          </View>
 
           <View style={styles.divider} />
 
@@ -162,7 +174,7 @@ const styles = StyleSheet.create({
   toggleContainer: {
     flexDirection: 'row',
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
+    borderRadius: 999,
     padding: 3,
     alignSelf: 'center',
     width: '68%',
@@ -172,7 +184,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 999,
     backgroundColor: COLORS.surface,
   },
   toggleOptionActive: {
@@ -216,15 +228,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-SemiBold',
     color: '#111111',
   },
-  price: {
-    ...TYPE.section,
-    fontSize: 20,
-    color: '#1C1C1E',
+  priceContainer: {
+    marginVertical: 4,
   },
-  note: {
+  originalPrice: {
     ...TYPE.body,
-    fontSize: 13,
-    color: '#8E8E93',
+    fontSize: 16,
+    color: COLORS.subtle,
+    textDecorationLine: 'line-through',
+    marginBottom: 4,
+  },
+  currentPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  currentPrice: {
+    ...TYPE.largeTitle,
+    fontSize: 28,
+    fontFamily: 'Nunito-Bold',
+    color: COLORS.text,
+  },
+  pricePeriod: {
+    ...TYPE.body,
+    fontSize: 16,
+    color: COLORS.subtle,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
