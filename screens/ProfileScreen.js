@@ -23,7 +23,7 @@ export default function ProfileScreen({ navigation }) {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -106,31 +106,20 @@ export default function ProfileScreen({ navigation }) {
 
         {/* Personal Info Section */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
-            <TouchableOpacity 
-              onPress={() => { lightHaptic(); handleEditProfile(); }}
-              style={styles.editButton}
-            >
-              <Ionicons name="create-outline" size={20} color="#666666" />
-            </TouchableOpacity>
-          </View>
+          <View style={styles.sectionDivider} />
+          <Text style={styles.sectionTitle}>Personal Information</Text>
           
-          <View style={styles.infoItem}>
-            <Ionicons name="call-outline" size={20} color="#666666" style={styles.infoIcon} />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Phone Number</Text>
-              <Text style={styles.infoValue}>{userData.phone}</Text>
-            </View>
-          </View>
-
-          <View style={styles.infoItem}>
-            <Ionicons name="card-outline" size={20} color="#666666" style={styles.infoIcon} />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>ID Number</Text>
-              <Text style={styles.infoValue}>{userData.idNumber}</Text>
-            </View>
-          </View>
+          <TouchableOpacity
+            style={styles.linkItem}
+            onPress={() => {
+              lightHaptic();
+              handleEditProfile();
+            }}
+          >
+            <Ionicons name="person-outline" size={22} color="#666666" style={styles.linkIcon} />
+            <Text style={styles.linkText}>View and edit personal information</Text>
+            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+          </TouchableOpacity>
         </View>
 
         {/* Links Section */}
@@ -349,34 +338,7 @@ const styles = StyleSheet.create({
     ...TYPE.section,
     fontSize: 15,
     color: '#1C1C1E',
-  },
-  sectionSubtitle: {
-    ...TYPE.caption,
-    color: '#8E8E93',
-  },
-  editButton: {
-    padding: 4,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  infoIcon: {
-    marginRight: 16,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    ...TYPE.micro,
-    color: '#8E8E93',
-    marginBottom: 4,
-  },
-  infoValue: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#1C1C1E',
+    marginBottom: 16,
   },
   linkItem: {
     flexDirection: 'row',
