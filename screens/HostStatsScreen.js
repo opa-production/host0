@@ -126,6 +126,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...TYPE.largeTitle,
+    fontSize: 20,
   },
   statsContainer: {
     backgroundColor: COLORS.surface,

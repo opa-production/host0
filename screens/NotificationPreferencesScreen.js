@@ -140,6 +140,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
   },
   section: {
     backgroundColor: 'transparent',

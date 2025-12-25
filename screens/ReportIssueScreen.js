@@ -119,6 +119,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...TYPE.title,
+    fontSize: 20,
   },
   headerRight: {
     width: 44,
