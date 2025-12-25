@@ -162,10 +162,9 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext }) {
         style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
         onPress={onNext}
         disabled={!canProceed()}
-        activeOpacity={1}
+        activeOpacity={0.9}
       >
         <Text style={styles.nextButtonText}>Next: Upload Media</Text>
-        <Ionicons name="arrow-forward" size={20} color="#ffffff" />
       </TouchableOpacity>
     </ScrollView>
   );
@@ -267,14 +266,12 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   nextButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
+    backgroundColor: COLORS.brand,
+    borderRadius: 16,
     padding: 18,
     marginTop: 8,
-    gap: 8,
   },
   nextButtonDisabled: {
     backgroundColor: '#cccccc',

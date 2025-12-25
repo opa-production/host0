@@ -444,9 +444,9 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
         <TouchableOpacity
           style={styles.backButton}
           onPress={onBack}
-          activeOpacity={1}
+          activeOpacity={0.9}
         >
-          <Ionicons name="arrow-back" size={20} color="#000000" />
+          <Ionicons name="arrow-back" size={20} color={COLORS.text} />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
@@ -454,10 +454,9 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
           style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
           onPress={onNext}
           disabled={!canProceed()}
-          activeOpacity={1}
+          activeOpacity={0.9}
         >
           <Text style={styles.nextButtonText}>Review</Text>
-          <Ionicons name="arrow-forward" size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -639,10 +638,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.bg,
-    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
     padding: 18,
     gap: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   backButtonText: {
     fontSize: 16,
@@ -651,13 +652,11 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     flex: 2,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
+    backgroundColor: COLORS.brand,
+    borderRadius: 16,
     padding: 18,
-    gap: 8,
   },
   nextButtonDisabled: {
     backgroundColor: '#cccccc',

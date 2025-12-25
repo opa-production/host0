@@ -175,13 +175,12 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
 
       {/* Navigation Buttons */}
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={1}>
-          <Ionicons name="arrow-back" size={20} color="#000000" />
+        <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.9}>
+          <Ionicons name="arrow-back" size={20} color={COLORS.text} />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.submitButton} onPress={onSubmit} activeOpacity={1}>
-          <Ionicons name="checkmark-circle" size={20} color="#ffffff" />
+        <TouchableOpacity style={styles.submitButton} onPress={onSubmit} activeOpacity={0.9}>
           <Text style={styles.submitButtonText}>List Car</Text>
         </TouchableOpacity>
       </View>
@@ -328,10 +327,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.bg,
-    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
     padding: 18,
     gap: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   backButtonText: {
     fontSize: 16,
@@ -340,13 +341,11 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 2,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
+    backgroundColor: COLORS.brand,
+    borderRadius: 16,
     padding: 18,
-    gap: 8,
   },
   submitButtonText: {
     fontSize: 16,

@@ -132,24 +132,26 @@ export default function HostVehicleScreen({ navigation }) {
       
       {/* Header with Progress */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={1}
-        >
-          <Ionicons name="arrow-back" size={24} color="#000000" />
-        </TouchableOpacity>
-        
-        <View style={styles.progressContainer}>
-          <Text style={styles.stepIndicator}>
-            Step {currentStep} of 5
-          </Text>
-          <Text style={styles.stepTitle}>{stepTitles[currentStep - 1]}</Text>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          </TouchableOpacity>
           
-          {/* Progress Bar */}
-          <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBar, { width: `${(currentStep / 5) * 100}%` }]} />
+          <View style={styles.progressContainer}>
+            <Text style={styles.stepTitle}>{stepTitles[currentStep - 1]}</Text>
+            <Text style={styles.stepIndicator}>
+              Step {currentStep} of 5
+            </Text>
           </View>
+        </View>
+        
+        {/* Progress Bar */}
+        <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBar, { width: `${(currentStep / 5) * 100}%` }]} />
         </View>
       </View>
 
@@ -166,42 +168,44 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: SPACING.l,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderStrong,
-    backgroundColor: COLORS.surface,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
   },
   backButton: {
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
   },
   progressContainer: {
-    marginTop: 4,
-  },
-  stepIndicator: {
-    fontSize: 12,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.subtle,
-    marginBottom: 4,
+    flex: 1,
   },
   stepTitle: {
     fontSize: 20,
     fontFamily: 'Nunito-Bold',
     color: COLORS.text,
-    marginBottom: 8,
+    marginBottom: 2,
+  },
+  stepIndicator: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.subtle,
   },
   progressBarContainer: {
     height: 3,
-    backgroundColor: COLORS.borderStrong,
+    backgroundColor: COLORS.border,
     borderRadius: 2,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.brand,
     borderRadius: 2,
   },
 });
