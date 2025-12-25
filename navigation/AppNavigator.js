@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { lightHaptic } from '../ui/haptics';
+import { COLORS } from '../ui/tokens';
 
 // Main Screens
 import LandingScreen from '../screens/LandingScreen';
@@ -89,7 +90,7 @@ function MainTabs() {
           <BlurView intensity={45} tint="light" style={{ flex: 1, opacity: 1 }} />
         ),
         tabBarStyle: {
-          backgroundColor: 'rgba(255, 255, 255, 0.92)',
+          backgroundColor: COLORS.bg,
           borderTopWidth: 0,
           elevation: 0,
           position: 'absolute',

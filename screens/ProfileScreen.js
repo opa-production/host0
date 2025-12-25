@@ -89,7 +89,6 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.sectionDivider} />
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Host stats</Text>
-            <Text style={styles.sectionSubtitle}>See detailed performance</Text>
           </View>
 
           <TouchableOpacity
