@@ -1,10 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useLayoutEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
-export default function SupaHostScreen({ navigation }) {
+export default function SupaHostScreen({ navigation: nav }) {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [billing, setBilling] = useState('monthly'); // monthly | yearly
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
 
   const pricing = useMemo(() => {
     const monthly = { label: 'Monthly', range: 'KES 1,500 – 5,000 / mo' };
@@ -24,26 +35,43 @@ export default function SupaHostScreen({ navigation }) {
   ];
 
   const handleGetBadge = () => {
-    // TODO: hook into payment using saved methods
-    Alert.alert('Payment initiated', 'Processing payment with your saved method for SupaHost.');
+    lightHaptic();
+    nav.navigate('GetBadge');
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+      
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            nav.goBack();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Become a SupaHost</Text>
+        <View style={styles.backButton} />
+      </View>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
-        <Ionicons name="arrow-back" size={22} color="#000000" />
-      </TouchableOpacity>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Become a SupaHost</Text>
+      <ScrollView 
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]} 
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.subtitle}>Unlock boosted earnings and visibility with the premium host badge.</Text>
 
         <View style={styles.toggleContainer}>
           <TouchableOpacity
             style={[styles.toggleOption, billing === 'monthly' && styles.toggleOptionActive]}
-            onPress={() => setBilling('monthly')}
+            onPress={() => {
+              lightHaptic();
+              setBilling('monthly');
+            }}
             activeOpacity={0.9}
           >
             <Text style={[styles.toggleText, billing === 'monthly' && styles.toggleTextActive]}>Monthly</Text>
@@ -51,7 +79,10 @@ export default function SupaHostScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.toggleOption, billing === 'yearly' && styles.toggleOptionActive]}
-            onPress={() => setBilling('yearly')}
+            onPress={() => {
+              lightHaptic();
+              setBilling('yearly');
+            }}
             activeOpacity={0.9}
           >
             <Text style={[styles.toggleText, billing === 'yearly' && styles.toggleTextActive]}>Yearly</Text>
@@ -84,7 +115,7 @@ export default function SupaHostScreen({ navigation }) {
           <TouchableOpacity
             style={styles.primaryButton}
             activeOpacity={0.9}
-            onPress={() => navigation.navigate('GetBadge')}
+            onPress={handleGetBadge}
           >
             <Text style={styles.primaryButtonText}>Get badge</Text>
           </TouchableOpacity>
@@ -99,35 +130,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
+  },
   backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 16,
-    zIndex: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
   },
   content: {
     paddingHorizontal: SPACING.l,
-    paddingTop: 90,
-    paddingBottom: 80,
-    gap: 14,
-  },
-  title: {
-    ...TYPE.title,
-    fontSize: 20,
-    color: '#1C1C1E',
+    paddingTop: SPACING.m,
+    gap: 20,
   },
   subtitle: {
     ...TYPE.body,
@@ -136,11 +161,9 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
     padding: 3,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
     alignSelf: 'center',
     width: '68%',
   },
@@ -149,11 +172,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    backgroundColor: COLORS.surface,
   },
   toggleOptionActive: {
-    backgroundColor: '#111111',
+    backgroundColor: COLORS.text,
   },
   toggleText: {
     ...TYPE.bodyStrong,
@@ -167,14 +190,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     padding: SPACING.m,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: 12,
+    gap: 16,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -211,8 +227,8 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
   divider: {
-    height: 1,
-    backgroundColor: '#f0f0f0',
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.border,
   },
   benefitsTitle: {
     ...TYPE.section,
@@ -234,15 +250,15 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
   },
   primaryButton: {
-    backgroundColor: '#111111',
-    paddingVertical: 14,
-    borderRadius: 14,
+    backgroundColor: COLORS.brand,
+    paddingVertical: 16,
+    borderRadius: 16,
     alignItems: 'center',
     marginTop: 4,
   },
   primaryButtonText: {
     ...TYPE.bodyStrong,
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Nunito-Bold',
     color: '#FFFFFF',
   },
