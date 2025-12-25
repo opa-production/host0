@@ -2,13 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import NetInfo from '@react-native-community/netinfo';
 import AppNavigator from './navigation/AppNavigator';
+import OfflineScreen from './screens/OfflineScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
 
   // Load Nunito fonts
   const [loaded, error] = useFonts({
@@ -16,6 +20,25 @@ export default function App() {
     'Nunito-SemiBold': require('./assets/fonts/Nunito-SemiBold.ttf'),
     'Nunito-Bold': require('./assets/fonts/Nunito-Bold.ttf'),
   });
+
+  // Network connectivity listener
+  useEffect(() => {
+    // Check initial network state
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const connected = state.isConnected && (state.isInternetReachable !== false);
+      setIsConnected(connected);
+    });
+
+    // Also check immediately
+    NetInfo.fetch().then(state => {
+      const connected = state.isConnected && (state.isInternetReachable !== false);
+      setIsConnected(connected);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (error) {
@@ -31,9 +54,25 @@ export default function App() {
     }
   }, [loaded, error]);
 
+  const handleRetry = () => {
+    NetInfo.fetch().then(state => {
+      const connected = state.isConnected && (state.isInternetReachable !== false);
+      setIsConnected(connected);
+    });
+  };
+
   if (!fontsLoaded) {
     return null;
   }
 
-  return <AppNavigator />;
+  return (
+    <SafeAreaProvider>
+      {/* Show offline screen when not connected */}
+      {!isConnected ? (
+        <OfflineScreen onRetry={handleRetry} />
+      ) : (
+        <AppNavigator />
+      )}
+    </SafeAreaProvider>
+  );
 }
