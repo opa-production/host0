@@ -6,7 +6,8 @@ import {
   ScrollView, 
   StatusBar, 
   TouchableOpacity, 
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,13 +15,17 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { uploadDocument, uploadMultipleDocuments, getDocumentUrl } from '../services/documentUpload';
+import { getUserId } from '../utils/userStorage';
 
 const DocumentUpload = ({ 
   title, 
   onPress, 
   fileName, 
   isRequired = true,
-  icon = 'document-text-outline'
+  icon = 'document-text-outline',
+  documentType,
+  isUploading = false
 }) => (
   <View style={styles.uploadContainer}>
     <View style={styles.uploadHeader}>
@@ -41,14 +46,17 @@ const DocumentUpload = ({
         style={[styles.uploadButton, fileName && styles.uploadButtonSecondary]}
         onPress={onPress}
         activeOpacity={0.9}
+        disabled={isUploading}
       >
-        {fileName ? (
+        {isUploading ? (
+          <ActivityIndicator size="small" color={COLORS.brand} />
+        ) : fileName ? (
           <Ionicons name="checkmark" size={16} color="#34C759" />
         ) : (
           <Ionicons name="cloud-upload-outline" size={16} color={COLORS.brand} />
         )}
         <Text style={[styles.uploadButtonText, fileName && styles.uploadButtonTextSecondary]}>
-          {fileName ? 'Replace' : 'Upload'}
+          {isUploading ? 'Uploading...' : fileName ? 'Replace' : 'Upload'}
         </Text>
       </TouchableOpacity>
     </View>
@@ -64,6 +72,14 @@ export default function LegalComplianceScreen({ navigation: nav }) {
     inspection: null,
     manual: null,
   });
+  const [uploadedPaths, setUploadedPaths] = useState({
+    logbook: null,
+    insurance: null,
+    inspection: null,
+    manual: null,
+  });
+  const [uploading, setUploading] = useState(false);
+  const [uploadingType, setUploadingType] = useState(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -91,27 +107,152 @@ export default function LegalComplianceScreen({ navigation: nav }) {
       const asset = result?.assets?.[0];
       if (!asset) return;
 
+      // Store the file locally first
+      const fileData = {
+        name: asset.name,
+        uri: asset.uri,
+        type: asset.mimeType,
+      };
+
       setDocuments(prev => ({
         ...prev,
-        [type]: {
-          name: asset.name,
-          uri: asset.uri,
-          type: asset.mimeType,
-        }
+        [type]: fileData,
       }));
 
-      Alert.alert('Uploaded', `${asset.name}`);
+      // Upload to Supabase
+      setUploadingType(type);
+      setUploading(true);
+      lightHaptic();
+
+      // Get user ID from storage (set after login with Python backend)
+      const userId = await getUserId();
+      
+      if (!userId) {
+        Alert.alert(
+          'Authentication Required',
+          'Please log in to upload documents. User ID not found.'
+        );
+        setUploading(false);
+        setUploadingType(null);
+        setDocuments(prev => ({
+          ...prev,
+          [type]: null,
+        }));
+        return;
+      }
+      
+      const uploadResult = await uploadDocument(fileData, userId, type);
+
+      setUploading(false);
+      setUploadingType(null);
+
+      if (uploadResult.success) {
+        setUploadedPaths(prev => ({
+          ...prev,
+          [type]: uploadResult.path,
+        }));
+        Alert.alert('Success', `${asset.name} uploaded successfully`);
+      } else {
+        Alert.alert('Upload Failed', uploadResult.error || 'Failed to upload document');
+        // Remove the document from state if upload failed
+        setDocuments(prev => ({
+          ...prev,
+          [type]: null,
+        }));
+      }
     } catch (err) {
+      setUploading(false);
+      setUploadingType(null);
       Alert.alert('Error', 'Failed to pick document');
       console.error('Error picking document:', err);
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     lightHaptic();
-    // TODO: Implement document submission logic
-    Alert.alert('Success', 'Documents submitted for verification');
-    nav.goBack();
+    
+    // Check if all required documents are uploaded
+    const requiredDocs = ['logbook', 'insurance', 'inspection'];
+    const missingDocs = requiredDocs.filter(doc => !uploadedPaths[doc]);
+    
+    if (missingDocs.length > 0) {
+      Alert.alert(
+        'Missing Documents', 
+        'Please upload all required documents before submitting.'
+      );
+      return;
+    }
+
+    setUploading(true);
+    
+      try {
+        // Get user ID for API call
+        const userId = await getUserId();
+        
+        if (!userId) {
+          Alert.alert('Authentication Required', 'Please log in to submit documents.');
+          return;
+        }
+
+        // Prepare document data to send to your Python backend
+        const documentData = {
+          userId: userId,
+          documents: {
+            logbook: uploadedPaths.logbook ? {
+              path: uploadedPaths.logbook,
+              url: getDocumentUrl(uploadedPaths.logbook),
+              name: documents.logbook?.name,
+            } : null,
+            insurance: uploadedPaths.insurance ? {
+              path: uploadedPaths.insurance,
+              url: getDocumentUrl(uploadedPaths.insurance),
+              name: documents.insurance?.name,
+            } : null,
+            inspection: uploadedPaths.inspection ? {
+              path: uploadedPaths.inspection,
+              url: getDocumentUrl(uploadedPaths.inspection),
+              name: documents.inspection?.name,
+            } : null,
+            manual: uploadedPaths.manual ? {
+              path: uploadedPaths.manual,
+              url: getDocumentUrl(uploadedPaths.manual),
+              name: documents.manual?.name,
+            } : null,
+          },
+        };
+        
+        // TODO: Send documentData to your Python backend API
+        // Example:
+        // const response = await fetch('YOUR_API_URL/api/legal-documents', {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     'Authorization': `Bearer ${await getUserToken()}`,
+        //   },
+        //   body: JSON.stringify(documentData),
+        // });
+        
+        console.log('Document data to send to backend:', documentData);
+        
+        // Simulate API call - Replace with actual API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      Alert.alert(
+        'Success', 
+        'Documents submitted for verification. You will be notified once verification is complete.',
+        [
+          {
+            text: 'OK',
+            onPress: () => nav.goBack(),
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to submit documents. Please try again.');
+      console.error('Submit error:', error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const isSubmitDisabled = !documents.logbook || !documents.insurance || !documents.inspection;
@@ -147,18 +288,24 @@ export default function LegalComplianceScreen({ navigation: nav }) {
           title="Vehicle Logbook"
           onPress={() => pickDocument('logbook')}
           fileName={documents.logbook?.name}
+          documentType="logbook"
+          isUploading={uploading && uploadingType === 'logbook'}
         />
 
         <DocumentUpload
           title="Valid Insurance Cover"
           onPress={() => pickDocument('insurance')}
           fileName={documents.insurance?.name}
+          documentType="insurance"
+          isUploading={uploading && uploadingType === 'insurance'}
         />
 
         <DocumentUpload
           title="Inspection Certificate"
           onPress={() => pickDocument('inspection')}
           fileName={documents.inspection?.name}
+          documentType="inspection"
+          isUploading={uploading && uploadingType === 'inspection'}
         />
 
         <DocumentUpload
@@ -167,6 +314,8 @@ export default function LegalComplianceScreen({ navigation: nav }) {
           fileName={documents.manual?.name}
           isRequired={false}
           icon="book-outline"
+          documentType="manual"
+          isUploading={uploading && uploadingType === 'manual'}
         />
 
         <View style={styles.noteContainer}>
@@ -179,15 +328,19 @@ export default function LegalComplianceScreen({ navigation: nav }) {
         <TouchableOpacity 
           style={[
             styles.submitButton, 
-            isSubmitDisabled && styles.submitButtonDisabled
+            (isSubmitDisabled || uploading) && styles.submitButtonDisabled
           ]} 
           onPress={handleSubmit}
-          disabled={isSubmitDisabled}
+          disabled={isSubmitDisabled || uploading}
           activeOpacity={0.9}
         >
-          <Text style={styles.submitButtonText}>
-            Submit for Verification
-          </Text>
+          {uploading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.submitButtonText}>
+              Submit for Verification
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </View>
