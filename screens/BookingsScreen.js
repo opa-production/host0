@@ -172,7 +172,14 @@ export default function BookingsScreen({ navigation }) {
 
         {/* Booking Grid */}
         <View style={styles.grid}>
-          <View style={styles.gridCard}>
+          <TouchableOpacity
+            style={styles.gridCard}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('ActiveBooking');
+            }}
+            activeOpacity={0.7}
+          >
             <View style={styles.gridHeaderRow}>
               <Image source={booking.vehicleImage} style={styles.vehicleAvatar} />
               <View style={{ flex: 1 }}>
@@ -186,15 +193,11 @@ export default function BookingsScreen({ navigation }) {
 
             <View style={styles.gridBottomRow}>
               <Text style={styles.gridAmount}>{booking.totalAmount}</Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('ActiveBooking')}
-                style={styles.viewPill}
-                activeOpacity={0.9}
-              >
+              <View style={styles.viewPill}>
                 <Text style={styles.viewPillText}>View details</Text>
-              </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </Animated.View>
