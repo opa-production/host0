@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -6,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { lightHaptic } from '../ui/haptics';
 import { COLORS } from '../ui/tokens';
+import { useHost } from '../utils/HostContext';
 
 // Main Screens
 import LandingScreen from '../screens/LandingScreen';
@@ -138,12 +140,24 @@ function MainTabs() {
 }
 
 export default function AppNavigator() {
+  const { isAuthenticated, isLoading } = useHost();
+
+  // Show loading screen while checking auth
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg }}>
+        <ActivityIndicator size="large" color={COLORS.text} />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
         }}
+        initialRouteName={isAuthenticated ? 'MainTabs' : 'Onboarding'}
       >
         {/* Onboarding + Auth Flow */}
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />

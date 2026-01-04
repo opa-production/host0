@@ -1,56 +1,42 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { useHost } from '../utils/HostContext';
+import { updateHostProfile } from '../services/authService';
 
 export default function UpdateProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
+  const { host, updateHost } = useHost();
   
-  // Get initial data from route params or use defaults
-  const initialData = route?.params?.userData || {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
-    idNumber: '1234567890',
-  };
+  // Get initial data from route params (hostData) or fall back to context
+  const initialData = route?.params?.hostData || host || {};
 
   const [formData, setFormData] = useState({
-    name: initialData.name,
-    email: initialData.email,
-    phone: initialData.phone,
-    idNumber: initialData.idNumber,
+    bio: initialData.bio || '',
+    mobile_number: initialData.mobile_number || '',
+    id_number: initialData.id_number || '',
   });
 
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Validate form
+  // Validate form (all fields are optional but validate format if provided)
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+    if (formData.bio && formData.bio.length > 2000) {
+      newErrors.bio = 'Bio must not exceed 2000 characters';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    if (formData.mobile_number && formData.mobile_number.replace(/\D/g, '').length < 10) {
+      newErrors.mobile_number = 'Please enter a valid phone number';
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (formData.phone.replace(/\D/g, '').length < 10) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-
-    if (!formData.idNumber.trim()) {
-      newErrors.idNumber = 'ID number is required';
-    } else if (formData.idNumber.trim().length < 5) {
-      newErrors.idNumber = 'ID number must be at least 5 characters';
+    if (formData.id_number && formData.id_number.trim().length < 5) {
+      newErrors.id_number = 'ID number must be at least 5 characters';
     }
 
     setErrors(newErrors);
@@ -58,12 +44,46 @@ export default function UpdateProfileScreen({ navigation, route }) {
   };
 
   // Handle save
-  const handleSave = () => {
-    if (validateForm()) {
-      // TODO: Save to API/context
-      console.log('Saving profile:', formData);
-      // Navigate back with updated data
-      navigation.goBack();
+  const handleSave = async () => {
+    if (!validateForm()) {
+      Alert.alert('Validation Error', 'Please correct the errors before saving.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Prepare data - only send non-empty fields
+      const updateData = {};
+      if (formData.bio?.trim()) updateData.bio = formData.bio.trim();
+      if (formData.mobile_number?.trim()) updateData.mobile_number = formData.mobile_number.trim();
+      if (formData.id_number?.trim()) updateData.id_number = formData.id_number.trim();
+
+      // Call backend API
+      const result = await updateHostProfile(updateData);
+
+      if (result.success) {
+        // Update context with new profile data
+        await updateHost(result.host);
+        
+        Alert.alert(
+          'Success',
+          'Profile updated successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Update Failed', result.error || 'Failed to update profile. Please try again.');
+      }
+    } catch (error) {
+      console.error('Update profile error:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -98,99 +118,85 @@ export default function UpdateProfileScreen({ navigation, route }) {
 
         {/* Form */}
         <View style={styles.form}>
-          {/* Name Input */}
+          {/* Bio Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name</Text>
+            <Text style={styles.label}>Bio (Optional)</Text>
             <TextInput
-              style={[styles.input, errors.name && styles.inputError]}
-              placeholder="Enter your full name"
+              style={[styles.textArea, errors.bio && styles.inputError]}
+              placeholder="Tell others about yourself..."
               placeholderTextColor="#999999"
-              value={formData.name}
+              value={formData.bio}
               onChangeText={(text) => {
-                setFormData({ ...formData, name: text });
-                if (errors.name) {
-                  setErrors({ ...errors, name: '' });
+                setFormData({ ...formData, bio: text });
+                if (errors.bio) {
+                  setErrors({ ...errors, bio: '' });
                 }
               }}
-              autoCapitalize="words"
+              multiline
+              numberOfLines={4}
+              maxLength={2000}
             />
-            {errors.name && (
-              <Text style={styles.errorText}>{errors.name}</Text>
-            )}
-          </View>
-
-          {/* Email Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email Address</Text>
-            <TextInput
-              style={[styles.input, errors.email && styles.inputError]}
-              placeholder="Enter your email"
-              placeholderTextColor="#999999"
-              value={formData.email}
-              onChangeText={(text) => {
-                setFormData({ ...formData, email: text });
-                if (errors.email) {
-                  setErrors({ ...errors, email: '' });
-                }
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {errors.email && (
-              <Text style={styles.errorText}>{errors.email}</Text>
+            <Text style={styles.characterCount}>{formData.bio.length}/2000 characters</Text>
+            {errors.bio && (
+              <Text style={styles.errorText}>{errors.bio}</Text>
             )}
           </View>
 
           {/* Phone Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={styles.label}>Mobile Number (Optional)</Text>
             <TextInput
-              style={[styles.input, errors.phone && styles.inputError]}
-              placeholder="Enter your phone number"
+              style={[styles.input, errors.mobile_number && styles.inputError]}
+              placeholder="Enter your mobile number"
               placeholderTextColor="#999999"
-              value={formData.phone}
+              value={formData.mobile_number}
               onChangeText={(text) => {
-                setFormData({ ...formData, phone: text });
-                if (errors.phone) {
-                  setErrors({ ...errors, phone: '' });
+                setFormData({ ...formData, mobile_number: text });
+                if (errors.mobile_number) {
+                  setErrors({ ...errors, mobile_number: '' });
                 }
               }}
               keyboardType="phone-pad"
             />
-            {errors.phone && (
-              <Text style={styles.errorText}>{errors.phone}</Text>
+            {errors.mobile_number && (
+              <Text style={styles.errorText}>{errors.mobile_number}</Text>
             )}
           </View>
 
           {/* ID Number Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>ID Number</Text>
+            <Text style={styles.label}>ID Number (Optional)</Text>
+            <Text style={styles.helperText}>ID, passport, or driver's license number</Text>
             <TextInput
-              style={[styles.input, errors.idNumber && styles.inputError]}
+              style={[styles.input, errors.id_number && styles.inputError]}
               placeholder="Enter your ID number"
               placeholderTextColor="#999999"
-              value={formData.idNumber}
+              value={formData.id_number}
               onChangeText={(text) => {
-                setFormData({ ...formData, idNumber: text });
-                if (errors.idNumber) {
-                  setErrors({ ...errors, idNumber: '' });
+                setFormData({ ...formData, id_number: text });
+                if (errors.id_number) {
+                  setErrors({ ...errors, id_number: '' });
                 }
               }}
               keyboardType="default"
             />
-            {errors.idNumber && (
-              <Text style={styles.errorText}>{errors.idNumber}</Text>
+            {errors.id_number && (
+              <Text style={styles.errorText}>{errors.id_number}</Text>
             )}
           </View>
 
           {/* Save Button */}
           <TouchableOpacity
-            style={styles.saveButton}
+            style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
             onPress={handleSave}
-            activeOpacity={1}
+            activeOpacity={0.8}
+            disabled={isLoading}
           >
-            <Text style={styles.saveButtonText}>Save Changes</Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -237,6 +243,12 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginBottom: 6,
   },
+  helperText: {
+    ...TYPE.caption,
+    fontSize: 11,
+    color: '#8E8E93',
+    marginBottom: 6,
+  },
   input: {
     width: '100%',
     height: 48,
@@ -248,6 +260,27 @@ const styles = StyleSheet.create({
     ...TYPE.body,
     fontSize: 14,
     color: '#1C1C1E',
+  },
+  textArea: {
+    width: '100%',
+    minHeight: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    ...TYPE.body,
+    fontSize: 14,
+    color: '#1C1C1E',
+    textAlignVertical: 'top',
+  },
+  characterCount: {
+    ...TYPE.caption,
+    fontSize: 11,
+    color: '#8E8E93',
+    marginTop: 4,
+    textAlign: 'right',
   },
   inputError: {
     borderColor: '#FF3B30',
@@ -274,6 +307,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 3,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
   saveButtonText: {
     ...TYPE.bodyStrong,

@@ -9,24 +9,79 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image
+  Image,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, RADIUS } from '../ui/tokens';
+import { registerHost, loginHost } from '../services/authService';
+import { useHost } from '../utils/HostContext';
 
 export default function SignUpScreen({ navigation }) {
+  const { login } = useHost();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignUp = () => {
-    // TODO: Implement signup logic
-    console.log('Sign Up:', { name, email, password });
-    // For now, navigate to main app
-    navigation.replace('MainTabs');
+  const handleSignUp = async () => {
+    // Validation
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert('Missing Fields', 'Please fill in all fields.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Password Mismatch', 'Passwords do not match.');
+      return;
+    }
+
+    if (password.length < 8) {
+      Alert.alert('Weak Password', 'Password must be at least 8 characters long.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Register the host
+      const registerResult = await registerHost(name, email, password, confirmPassword);
+      
+      if (!registerResult.success) {
+        Alert.alert('Registration Failed', registerResult.error || 'Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Auto-login after successful registration
+      const loginResult = await loginHost(email, password);
+      
+      if (loginResult.success) {
+        // Update host context with profile
+        await login(loginResult.host);
+        
+        console.log('Registration and login successful:', loginResult.host.email);
+        
+        // Navigate to main app
+        navigation.replace('MainTabs');
+      } else {
+        // Registration succeeded but login failed - navigate to login screen
+        Alert.alert(
+          'Account Created',
+          'Your account has been created successfully. Please login.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleSignUp = () => {
@@ -137,8 +192,12 @@ export default function SignUpScreen({ navigation }) {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} activeOpacity={1}>
-            <Text style={styles.signUpButtonText}>Create Account</Text>
+          <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} activeOpacity={1} disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.signUpButtonText}>Create Account</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.divider}>

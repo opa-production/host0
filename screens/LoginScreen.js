@@ -11,20 +11,26 @@ import {
   ScrollView,
   Image,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, RADIUS } from '../ui/tokens';
 import { isBiometricEnabled, authenticateWithBiometric } from '../utils/biometric';
 import { useFocusEffect } from '@react-navigation/native';
+import { setUserId, setUserToken, getUserProfile } from '../utils/userStorage';
+import { loginHost } from '../services/authService';
+import { useHost } from '../utils/HostContext';
 
 const { width } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
+  const { login } = useHost();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [checkingBiometric, setCheckingBiometric] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const hasCheckedBiometric = useRef(false);
 
   // Check for biometric authentication when screen is focused (only once)
@@ -40,18 +46,26 @@ export default function LoginScreen({ navigation }) {
         const enabled = await isBiometricEnabled();
         
         if (enabled) {
-          // Small delay to ensure UI is ready
-          setTimeout(async () => {
-            const result = await authenticateWithBiometric();
-            
-            if (result.success) {
-              // Biometric authentication successful - navigate to main app
-              navigation.replace('MainTabs');
-            } else {
-              // Authentication failed or cancelled - allow manual login
-              setCheckingBiometric(false);
-            }
-          }, 500);
+          // Check if we have stored profile for biometric login
+          const storedProfile = await getUserProfile();
+          
+          if (storedProfile) {
+            // Small delay to ensure UI is ready
+            setTimeout(async () => {
+              const result = await authenticateWithBiometric();
+              
+              if (result.success) {
+                // Biometric authentication successful - navigate to main app
+                navigation.replace('MainTabs');
+              } else {
+                // Authentication failed or cancelled - allow manual login
+                setCheckingBiometric(false);
+              }
+            }, 500);
+          } else {
+            // No stored profile, skip biometric
+            setCheckingBiometric(false);
+          }
         } else {
           setCheckingBiometric(false);
         }
@@ -61,11 +75,34 @@ export default function LoginScreen({ navigation }) {
     }, [navigation])
   );
 
-  const handleLogin = () => {
-    // TODO: Implement login logic
-    console.log('Login:', { email, password });
-    // For now, navigate to main app
-    navigation.replace('MainTabs');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Missing Fields', 'Please enter both email and password.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await loginHost(email, password);
+      
+      if (result.success) {
+        // Update host context with profile
+        await login(result.host);
+        
+        console.log('Login successful:', result.host.email);
+        
+        // Navigate to main app
+        navigation.replace('MainTabs');
+      } else {
+        Alert.alert('Login Failed', result.error || 'Please check your credentials and try again.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -147,8 +184,12 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={1}>
-            <Text style={styles.loginButtonText}>Sign In</Text>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={1} disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.loginButtonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.divider}>

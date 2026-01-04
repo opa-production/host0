@@ -8,14 +8,17 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SPACING } from '../../ui/tokens';
+import { uploadVehicleImages, uploadVehicleVideo } from '../../services/mediaService';
 
 export default function MediaUploadScreen({ formData, updateFormData, onNext, onBack }) {
   const insets = useSafeAreaInsets();
+  const [uploading, setUploading] = useState(false);
 
   const pickCoverPhoto = async () => {
     try {
