@@ -64,8 +64,8 @@ export default function ProfileScreen({ navigation }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Section - Profile Image, Name, Email */}
-        <View style={styles.profileHeader}>
+        {/* Profile Card with Image and Details */}
+        <View style={styles.profileCard}>
           <View style={styles.profileImageContainer}>
             {userData.profileImage ? (
               <Image 
@@ -81,33 +81,16 @@ export default function ProfileScreen({ navigation }) {
               <Ionicons name="camera" size={18} color="#111111" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.profileName}>{userData.name}</Text>
-          <Text style={styles.profileEmail}>{userData.email}</Text>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionDivider} />
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Host stats</Text>
+          <View style={styles.profileDetails}>
+            <Text style={styles.profileName}>{userData.name}</Text>
+            <Text style={styles.profileEmail}>{userData.email}</Text>
+            <Text style={styles.profilePhone}>{userData.phone}</Text>
           </View>
-
-          <TouchableOpacity
-            style={styles.linkItem}
-            onPress={() => {
-              lightHaptic();
-              navigation.navigate('HostStats');
-            }}
-          >
-            <Ionicons name="stats-chart-outline" size={22} color="#666666" style={styles.linkIcon} />
-            <Text style={styles.linkText}>View hosting performance</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-          </TouchableOpacity>
         </View>
 
-        {/* Personal Info Section */}
+        {/* Account Information Link */}
         <View style={styles.section}>
           <View style={styles.sectionDivider} />
-          <Text style={styles.sectionTitle}>Personal Information</Text>
           
           <TouchableOpacity
             style={styles.linkItem}
@@ -117,15 +100,15 @@ export default function ProfileScreen({ navigation }) {
             }}
           >
             <Ionicons name="person-outline" size={22} color="#666666" style={styles.linkIcon} />
-            <Text style={styles.linkText}>View and edit personal information</Text>
+            <Text style={styles.linkText}>Account Information</Text>
             <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
           </TouchableOpacity>
         </View>
 
-        {/* Links Section */}
+        {/* All Links Section */}
         <View style={styles.section}>
           <View style={styles.sectionDivider} />
-          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={styles.sectionTitle}>More</Text>
           
           <View style={styles.linkGroup}>
             <TouchableOpacity 
@@ -134,15 +117,6 @@ export default function ProfileScreen({ navigation }) {
             >
               <Ionicons name="settings-outline" size={22} color="#666666" style={styles.linkIcon} />
               <Text style={styles.linkText}>Settings</Text>
-              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.linkItem}
-              onPress={() => { lightHaptic(); navigation.navigate('Finance'); }}
-            >
-              <Ionicons name="wallet-outline" size={22} color="#666666" style={styles.linkIcon} />
-              <Text style={styles.linkText}>Finances</Text>
               <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
             </TouchableOpacity>
 
@@ -163,14 +137,7 @@ export default function ProfileScreen({ navigation }) {
               <Text style={styles.linkText}>Upload Documents</Text>
               <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
             </TouchableOpacity>
-          </View>
-        </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionDivider} />
-          <Text style={styles.sectionTitle}>Hosting</Text>
-          
-          <View style={styles.linkGroup}>
             <TouchableOpacity 
               style={styles.linkItem}
               onPress={() => { lightHaptic(); navigation.navigate('SupaHost'); }}
@@ -188,14 +155,7 @@ export default function ProfileScreen({ navigation }) {
               <Text style={styles.linkText}>Download Opa Client</Text>
               <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
             </TouchableOpacity>
-          </View>
-        </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionDivider} />
-          <Text style={styles.sectionTitle}>Support</Text>
-          
-          <View style={styles.linkGroup}>
             <TouchableOpacity 
               style={styles.linkItem}
               onPress={() => { lightHaptic(); navigation.navigate('Feedback'); }}
@@ -208,7 +168,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
-          <Ionicons name="log-out-outline" size={22} color="#007AFF" style={styles.linkIcon} />
+          <Ionicons name="log-out-outline" size={22} color="#FF3B30" style={styles.logoutIcon} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
 
@@ -264,28 +224,34 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderStrong,
   },
   scrollContent: {
-    paddingTop: 70,
+    paddingTop: 20,
     paddingBottom: 120,
   },
-  profileHeader: {
-    alignItems: 'center',
-    paddingVertical: SPACING.xl,
+  profileCard: {
+    backgroundColor: COLORS.bg,
     paddingHorizontal: SPACING.l,
+    marginTop: SPACING.l,
+    marginBottom: SPACING.m,
+    paddingVertical: SPACING.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   profileImageContainer: {
-    marginBottom: 16,
     position: 'relative',
-    alignItems: 'center',
+    marginRight: 16,
+  },
+  profileDetails: {
+    flex: 1,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
   },
   profileImagePlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -295,10 +261,10 @@ const styles = StyleSheet.create({
   cameraButton: {
     position: 'absolute',
     bottom: 0,
-    right: -6,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    right: -4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -312,11 +278,17 @@ const styles = StyleSheet.create({
   },
   profileName: {
     ...TYPE.title,
-    fontSize: 20,
+    fontSize: 17,
     color: '#1C1C1E',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   profileEmail: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
+    marginBottom: 2,
+  },
+  profilePhone: {
     ...TYPE.body,
     fontSize: 13,
     color: '#8E8E93',
@@ -364,12 +336,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: SPACING.xl,
-    borderBottomColor: '#E5E5EA',
+    paddingVertical: 16,
+  },
+  logoutIcon: {
+    marginRight: 8,
   },
   logoutText: {
     ...TYPE.subhead,
-    color: '#007AFF',
+    color: '#FF3B30',
     fontFamily: 'Nunito-Bold',
+    fontSize: 16,
   },
   overlay: {
     position: 'absolute',

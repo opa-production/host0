@@ -142,21 +142,9 @@ export default function HomeScreen({ navigation }) {
         >
         {/* Header with Greeting */}
         <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View style={styles.greetingContainer}>
-              <Text style={styles.greeting}>{getGreeting()},</Text>
-              <Text style={styles.userName}>{userName}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={() => {
-                lightHaptic();
-                navigation.navigate('SmartCalendar');
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="calendar-number-outline" size={24} color="#000000" />
-            </TouchableOpacity>
+          <View style={styles.greetingContainer}>
+            <Text style={styles.greeting}>{getGreeting()},</Text>
+            <Text style={styles.userName}>{userName}</Text>
           </View>
         </View>
 

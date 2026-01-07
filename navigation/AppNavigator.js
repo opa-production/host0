@@ -74,8 +74,8 @@ function MainTabs() {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Bookings') {
             iconName = focused ? 'calendar' : 'calendar-outline';
-          } else if (route.name === 'Host') {
-            iconName = focused ? 'car' : 'car-outline';
+          } else if (route.name === 'My Cars') {
+            iconName = focused ? 'car-sport' : 'car-sport-outline';
           } else if (route.name === 'Messages') {
             iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
           } else if (route.name === 'Profile') {
@@ -119,7 +119,7 @@ function MainTabs() {
         listeners={{ tabPress: () => lightHaptic() }}
       />
       <Tab.Screen
-        name="Host"
+        name="My Cars"
         component={HostScreen}
         listeners={{ tabPress: () => lightHaptic() }}
       />

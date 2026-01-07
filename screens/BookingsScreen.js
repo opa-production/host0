@@ -157,16 +157,28 @@ export default function BookingsScreen({ navigation }) {
               <Text style={styles.title}>Bookings</Text>
               <Text style={styles.subtitle}>Manage your bookings</Text>
             </View>
-            <TouchableOpacity
-              onPress={() => {
-                lightHaptic();
-                navigation.navigate('PastBookings');
-              }}
-              style={styles.headerIconButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="albums-outline" size={24} color="#000000" />
-            </TouchableOpacity>
+            <View style={styles.headerIcons}>
+              <TouchableOpacity
+                onPress={() => {
+                  lightHaptic();
+                  navigation.navigate('SmartCalendar');
+                }}
+                style={styles.headerIconButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="calendar-number-outline" size={24} color="#000000" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  lightHaptic();
+                  navigation.navigate('PastBookings');
+                }}
+                style={styles.headerIconButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="albums-outline" size={24} color="#000000" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -221,6 +233,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerIconButton: {
     padding: 6,

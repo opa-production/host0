@@ -63,8 +63,8 @@ const DocumentUpload = ({
   </View>
 );
 
-export default function LegalComplianceScreen({ navigation: nav }) {
-  const navigation = useNavigation();
+export default function LegalComplianceScreen({ navigation: nav, onBack, onComplete, isPartOfFlow = false }) {
+  const navigation = nav || useNavigation();
   const insets = useSafeAreaInsets();
   const [documents, setDocuments] = useState({
     logbook: null,
@@ -82,17 +82,21 @@ export default function LegalComplianceScreen({ navigation: nav }) {
   const [uploadingType, setUploadingType] = useState(null);
 
   useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-    });
-  }, [navigation]);
+    if (!isPartOfFlow && navigation?.setOptions) {
+      navigation.setOptions({
+        headerShown: false,
+      });
+    }
+  }, [navigation, isPartOfFlow]);
 
   useFocusEffect(
     useCallback(() => {
-      const parent = nav.getParent();
-      parent?.setOptions({ tabBarStyle: { display: 'none' } });
-      return () => parent?.setOptions({ tabBarStyle: undefined });
-    }, [nav])
+      if (!isPartOfFlow && navigation?.getParent) {
+        const parent = navigation.getParent();
+        parent?.setOptions({ tabBarStyle: { display: 'none' } });
+        return () => parent?.setOptions({ tabBarStyle: undefined });
+      }
+    }, [navigation, isPartOfFlow])
   );
 
   const pickDocument = async (type) => {
@@ -243,7 +247,13 @@ export default function LegalComplianceScreen({ navigation: nav }) {
         [
           {
             text: 'OK',
-            onPress: () => nav.goBack(),
+            onPress: () => {
+              if (isPartOfFlow && onComplete) {
+                onComplete();
+              } else if (navigation?.goBack) {
+                navigation.goBack();
+              }
+            },
           },
         ]
       );
@@ -261,21 +271,27 @@ export default function LegalComplianceScreen({ navigation: nav }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => {
-            lightHaptic();
-            nav.goBack();
-          }}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Legal Compliance</Text>
-        <View style={styles.backButton} />
-      </View>
+      {/* Header - Only show if not part of flow */}
+      {!isPartOfFlow && (
+        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              lightHaptic();
+              if (onBack) {
+                onBack();
+              } else if (navigation?.goBack) {
+                navigation.goBack();
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Legal Compliance</Text>
+          <View style={styles.backButton} />
+        </View>
+      )}
 
       <ScrollView 
         style={styles.scrollView}

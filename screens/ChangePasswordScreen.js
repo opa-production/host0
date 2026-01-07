@@ -104,103 +104,110 @@ const ChangePasswordScreen = () => {
             </Text>
           </View>
 
-          {/* Current Password */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Current Password</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter current password"
-                placeholderTextColor="#999999"
-                value={currentPassword}
-                onChangeText={(text) => {
-                  setCurrentPassword(text);
-                  if (errors.currentPassword) {
-                    setErrors(prev => ({ ...prev, currentPassword: null }));
-                  }
-                }}
-                secureTextEntry={!showCurrentPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowCurrentPassword(!showCurrentPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons 
-                  name={showCurrentPassword ? 'eye-outline' : 'eye-off-outline'} 
-                  size={20} 
-                  color="#666666" 
+          {/* Password Form Card */}
+          <View style={styles.formCard}>
+            {/* Current Password */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Current Password</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter current password"
+                  placeholderTextColor="#999999"
+                  value={currentPassword}
+                  onChangeText={(text) => {
+                    setCurrentPassword(text);
+                    if (errors.currentPassword) {
+                      setErrors(prev => ({ ...prev, currentPassword: null }));
+                    }
+                  }}
+                  secureTextEntry={!showCurrentPassword}
                 />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons 
+                    name={showCurrentPassword ? 'eye-outline' : 'eye-off-outline'} 
+                    size={20} 
+                    color="#666666" 
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.currentPassword && (
+                <Text style={styles.errorText}>{errors.currentPassword}</Text>
+              )}
             </View>
-            {errors.currentPassword && (
-              <Text style={styles.errorText}>{errors.currentPassword}</Text>
-            )}
-          </View>
 
-          {/* New Password */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>New Password</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter new password"
-                placeholderTextColor="#999999"
-                value={newPassword}
-                onChangeText={(text) => {
-                  setNewPassword(text);
-                  if (errors.newPassword) {
-                    setErrors(prev => ({ ...prev, newPassword: null }));
-                  }
-                }}
-                secureTextEntry={!showNewPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowNewPassword(!showNewPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons 
-                  name={showNewPassword ? 'eye-outline' : 'eye-off-outline'} 
-                  size={20} 
-                  color="#666666" 
-                />
-              </TouchableOpacity>
-            </View>
-            {errors.newPassword && (
-              <Text style={styles.errorText}>{errors.newPassword}</Text>
-            )}
-          </View>
+            <View style={styles.divider} />
 
-          {/* Confirm Password */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirm New Password</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm new password"
-                placeholderTextColor="#999999"
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  if (errors.confirmPassword) {
-                    setErrors(prev => ({ ...prev, confirmPassword: null }));
-                  }
-                }}
-                secureTextEntry={!showConfirmPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons 
-                  name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} 
-                  size={20} 
-                  color="#666666" 
+            {/* New Password */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>New Password</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter new password"
+                  placeholderTextColor="#999999"
+                  value={newPassword}
+                  onChangeText={(text) => {
+                    setNewPassword(text);
+                    if (errors.newPassword) {
+                      setErrors(prev => ({ ...prev, newPassword: null }));
+                    }
+                  }}
+                  secureTextEntry={!showNewPassword}
                 />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowNewPassword(!showNewPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons 
+                    name={showNewPassword ? 'eye-outline' : 'eye-off-outline'} 
+                    size={20} 
+                    color="#666666" 
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.newPassword && (
+                <Text style={styles.errorText}>{errors.newPassword}</Text>
+              )}
             </View>
-            {errors.confirmPassword && (
-              <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-            )}
+
+            <View style={styles.divider} />
+
+            {/* Confirm Password */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Confirm New Password</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm new password"
+                  placeholderTextColor="#999999"
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    if (errors.confirmPassword) {
+                      setErrors(prev => ({ ...prev, confirmPassword: null }));
+                    }
+                  }}
+                  secureTextEntry={!showConfirmPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons 
+                    name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} 
+                    size={20} 
+                    color="#666666" 
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.confirmPassword && (
+                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+              )}
+            </View>
           </View>
 
           {/* Change Password Button */}
@@ -292,8 +299,22 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#8E8E93',
   },
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: SPACING.l,
+  },
   inputContainer: {
-    marginBottom: 20,
+    paddingVertical: 4,
   },
   label: {
     ...TYPE.bodyStrong,
@@ -304,12 +325,15 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    paddingHorizontal: 16,
-    height: 52,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    height: 44,
+    borderWidth: 0,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#1C1C1E',
+    marginVertical: SPACING.m,
   },
   input: {
     flex: 1,
@@ -328,11 +352,10 @@ const styles = StyleSheet.create({
   },
   changePasswordButton: {
     backgroundColor: '#000000',
-    borderRadius: 18,
+    borderRadius: RADIUS.button,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,

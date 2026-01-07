@@ -96,8 +96,8 @@ export default function UpdateProfileScreen({ navigation, route }) {
         keyboardShouldPersistTaps="handled"
       >
 
-        {/* Form */}
-        <View style={styles.form}>
+        {/* Form Card */}
+        <View style={styles.formCard}>
           {/* Name Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Full Name</Text>
@@ -118,6 +118,8 @@ export default function UpdateProfileScreen({ navigation, route }) {
               <Text style={styles.errorText}>{errors.name}</Text>
             )}
           </View>
+
+          <View style={styles.divider} />
 
           {/* Email Input */}
           <View style={styles.inputGroup}>
@@ -142,6 +144,8 @@ export default function UpdateProfileScreen({ navigation, route }) {
             )}
           </View>
 
+          <View style={styles.divider} />
+
           {/* Phone Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Phone Number</Text>
@@ -163,6 +167,8 @@ export default function UpdateProfileScreen({ navigation, route }) {
             )}
           </View>
 
+          <View style={styles.divider} />
+
           {/* ID Number Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>ID Number</Text>
@@ -183,16 +189,16 @@ export default function UpdateProfileScreen({ navigation, route }) {
               <Text style={styles.errorText}>{errors.idNumber}</Text>
             )}
           </View>
-
-          {/* Save Button */}
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSave}
-            activeOpacity={1}
-          >
-            <Text style={styles.saveButtonText}>Save Changes</Text>
-          </TouchableOpacity>
         </View>
+
+        {/* Save Button */}
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleSave}
+          activeOpacity={1}
+        >
+          <Text style={styles.saveButtonText}>Save Changes</Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -226,28 +232,43 @@ const styles = StyleSheet.create({
     padding: SPACING.l,
     paddingTop: SPACING.m,
   },
-  form: {
-    gap: 12,
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: SPACING.l,
   },
   inputGroup: {
-    marginBottom: 4,
+    paddingVertical: 4,
   },
   label: {
     ...TYPE.micro,
     color: '#8E8E93',
-    marginBottom: 6,
+    marginBottom: 8,
+    fontSize: 12,
   },
   input: {
     width: '100%',
-    height: 48,
-    paddingHorizontal: 16,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    height: 44,
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
     ...TYPE.body,
-    fontSize: 14,
+    fontSize: 15,
     color: '#1C1C1E',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#1C1C1E',
+    marginVertical: SPACING.m,
   },
   inputError: {
     borderColor: '#FF3B30',
@@ -260,12 +281,11 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     width: '100%',
-    height: 46,
+    height: 50,
     backgroundColor: '#000000',
-    borderRadius: 16,
+    borderRadius: RADIUS.button,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,

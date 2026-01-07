@@ -8,6 +8,7 @@ import MediaUploadScreen from './HostVehicle/MediaUploadScreen';
 import CarSpecsScreen from './HostVehicle/CarSpecsScreen';
 import RentalInfoScreen from './HostVehicle/RentalInfoScreen';
 import ReviewScreen from './HostVehicle/ReviewScreen';
+import LegalComplianceScreen from './LegalComplianceScreen';
 
 export default function HostVehicleScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -58,7 +59,7 @@ export default function HostVehicleScreen({ navigation }) {
   };
 
   const nextStep = () => {
-    if (currentStep < 5) {
+    if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -114,6 +115,14 @@ export default function HostVehicleScreen({ navigation }) {
         );
       case 5:
         return (
+          <LegalComplianceScreen
+            onBack={prevStep}
+            onComplete={nextStep}
+            isPartOfFlow={true}
+          />
+        );
+      case 6:
+        return (
           <ReviewScreen
             formData={formData}
             onBack={prevStep}
@@ -125,7 +134,7 @@ export default function HostVehicleScreen({ navigation }) {
     }
   };
 
-  const stepTitles = ['Basic Info', 'Upload Media', 'Specifications', 'Rental Info', 'Review'];
+  const stepTitles = ['Basic Info', 'Upload Media', 'Specifications', 'Rental Info', 'Legal Setup', 'Review'];
 
   return (
     <View style={styles.container}>
@@ -145,14 +154,14 @@ export default function HostVehicleScreen({ navigation }) {
           <View style={styles.progressContainer}>
             <Text style={styles.stepTitle}>{stepTitles[currentStep - 1]}</Text>
             <Text style={styles.stepIndicator}>
-              Step {currentStep} of 5
+              Step {currentStep} of 6
             </Text>
           </View>
         </View>
         
         {/* Progress Bar */}
         <View style={styles.progressBarContainer}>
-          <View style={[styles.progressBar, { width: `${(currentStep / 5) * 100}%` }]} />
+          <View style={[styles.progressBar, { width: `${(currentStep / 6) * 100}%` }]} />
         </View>
       </View>
 
