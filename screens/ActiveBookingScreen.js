@@ -105,6 +105,16 @@ export default function ActiveBookingScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Booking details</Text>
           <View style={styles.detailRow}>
             <View style={styles.iconCircle}>
+              <Ionicons name="time-outline" size={18} color="#222222" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.detailLabel}>Duration</Text>
+              <Text style={styles.detailValue}>{booking.price.days} days</Text>
+            </View>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.detailRow}>
+            <View style={styles.iconCircle}>
               <Ionicons name="calendar-outline" size={18} color="#222222" />
             </View>
             <View style={{ flex: 1 }}>
@@ -120,6 +130,16 @@ export default function ActiveBookingScreen({ navigation }) {
             <View style={{ flex: 1 }}>
               <Text style={styles.detailLabel}>End</Text>
               <Text style={styles.detailValue}>{booking.endDate}</Text>
+            </View>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.detailRow}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="checkmark-circle-outline" size={18} color="#222222" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.detailLabel}>Pick up status</Text>
+              <Text style={styles.detailValue}>Completed</Text>
             </View>
           </View>
           <View style={styles.divider} />
@@ -158,38 +178,42 @@ export default function ActiveBookingScreen({ navigation }) {
         </View>
 
         {/* Actions */}
-        <View style={[styles.card, styles.actionsCard]}>
-          <TouchableOpacity
-            style={styles.trackButton}
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate('Map', {
-              title: booking.vehicleName,
-              plate: booking.plate,
-              initialRegion: {
-                latitude: -0.3031,
-                longitude: 36.08,
-                latitudeDelta: 0.06,
-                longitudeDelta: 0.06,
-              }
-            })}
-          >
-            <Ionicons name="location-outline" size={20} color="#ffffff" />
-            <Text style={styles.trackButtonText}>Track car</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate('ExtendBooking', { bookingRef: `${booking.vehicleName} • ${booking.plate}` })}
-          >
-            <Text style={styles.primaryButtonText}>Extend booking</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.outlineButton}
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate('ReportIssue', { bookingRef: `${booking.vehicleName} • ${booking.plate}` })}
-          >
-            <Text style={styles.outlineButtonText}>Report issue</Text>
-          </TouchableOpacity>
+        <View style={styles.card}>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Map', {
+                title: booking.vehicleName,
+                plate: booking.plate,
+                initialRegion: {
+                  latitude: -0.3031,
+                  longitude: 36.08,
+                  latitudeDelta: 0.06,
+                  longitudeDelta: 0.06,
+                }
+              })}
+            >
+              <Ionicons name="location" size={24} color="#222222" />
+              <Text style={styles.actionButtonText}>Track car</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('ExtendBooking', { bookingRef: `${booking.vehicleName} • ${booking.plate}` })}
+            >
+              <Ionicons name="time" size={24} color="#222222" />
+              <Text style={styles.actionButtonText}>Extend booking</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('ReportIssue', { bookingRef: `${booking.vehicleName} • ${booking.plate}` })}
+            >
+              <Ionicons name="alert-circle" size={24} color="#222222" />
+              <Text style={styles.actionButtonText}>Report</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -401,46 +425,24 @@ const styles = StyleSheet.create({
   accent: {
     color: COLORS.text,
   },
-  actionsCard: {
-    gap: 12,
-  },
-  trackButton: {
+  actionsRow: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    gap: 16,
+  },
+  actionButton: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: COLORS.brand,
-    paddingVertical: 14,
-    borderRadius: 14,
+    gap: 6,
+    paddingVertical: 12,
   },
-  trackButtonText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Bold',
-    color: '#ffffff',
-  },
-  primaryButton: {
-    backgroundColor: '#111111',
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Bold',
-    color: '#ffffff',
-  },
-  outlineButton: {
-    borderColor: COLORS.text,
-    borderWidth: 1.5,
-    paddingVertical: 13,
-    borderRadius: 14,
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-  },
-  outlineButtonText: {
-    fontSize: 15,
-    fontFamily: 'Nunito-Bold',
-    color: COLORS.text,
+  actionButtonText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#222222',
+    textAlign: 'center',
   },
   secondaryButton: {
     flexDirection: 'row',

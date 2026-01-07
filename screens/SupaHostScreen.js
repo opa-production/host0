@@ -34,14 +34,13 @@ export default function SupaHostScreen({ navigation: nav }) {
   }, [billing]);
 
   const benefits = [
-    '0% commission on rentals',
-    '0% booking fee for users (when booking a premium host car)',
-    'Cars get boosted visibility',
-    'Enable pay on-site',
-    'Priority support',
-    'Premium host badge',
-    'Discounts on Opa marketing',
-    'Free professional listing photos (optional future perk)',
+    'Reduced commission on cars',
+    'Boosted visibility',
+    'Unlimited number of listings',
+    'Verified badge',
+    'Instant payouts',
+    'Smart calendar access',
+    'Enable pay on site',
   ];
 
   const handleGetBadge = () => {
