@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const USER_ID_KEY = '@user_id';
 const USER_TOKEN_KEY = '@user_token';
+const USER_PROFILE_KEY = '@user_profile';
 
 /**
  * Get the current user ID from storage
@@ -58,12 +59,39 @@ export const setUserToken = async (token) => {
 };
 
 /**
+ * Get user profile from storage
+ * @returns {Promise<Object|null>} User profile object or null
+ */
+export const getUserProfile = async () => {
+  try {
+    const profile = await AsyncStorage.getItem(USER_PROFILE_KEY);
+    return profile ? JSON.parse(profile) : null;
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    return null;
+  }
+};
+
+/**
+ * Set user profile in storage
+ * @param {Object} profile - User profile object
+ */
+export const setUserProfile = async (profile) => {
+  try {
+    await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+  } catch (error) {
+    console.error('Error setting user profile:', error);
+  }
+};
+
+/**
  * Clear user data from storage (on logout)
  */
 export const clearUserData = async () => {
   try {
     await AsyncStorage.removeItem(USER_ID_KEY);
     await AsyncStorage.removeItem(USER_TOKEN_KEY);
+    await AsyncStorage.removeItem(USER_PROFILE_KEY);
   } catch (error) {
     console.error('Error clearing user data:', error);
   }

@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Alert } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { uploadHostProfilePicture } from '../services/mediaService';
+import { useHost } from '../utils/HostContext';
+import { logoutHost } from '../services/authService';
 
 export default function ProfileScreen({ navigation }) {
-  // TODO: Replace with actual user data
-  const [userData, setUserData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
-    idNumber: '1234567890',
-    profileImage: null, // Will be replaced with actual image
-  });
+  const { host, logout, refreshProfile, updateHost } = useHost();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Refresh profile when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadProfile = async () => {
+        setIsRefreshing(true);
+        await refreshProfile();
+        setIsRefreshing(false);
+      };
+      loadProfile();
+    }, [refreshProfile])
+  );
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -31,7 +41,36 @@ export default function ProfileScreen({ navigation }) {
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const uri = result.assets[0].uri;
-      setUserData((prev) => ({ ...prev, profileImage: uri }));
+      
+      try {
+        if (!host?.id) {
+          Alert.alert('Error', 'Unable to upload. Please try logging in again.');
+          return;
+        }
+
+        const file = {
+          uri: uri,
+          name: 'profile.jpg',
+          type: 'image/jpeg',
+        };
+
+        const uploadResult = await uploadHostProfilePicture(file, host.id.toString());
+        if (uploadResult.success) {
+          // Refresh profile from backend to get new avatar_url
+          const refreshResult = await refreshProfile();
+          if (refreshResult.success) {
+            Alert.alert('Success', 'Profile picture updated successfully!');
+          } else {
+            // Upload succeeded but refresh failed - still show success
+            Alert.alert('Success', 'Profile picture uploaded! Refresh the screen to see changes.');
+          }
+        } else {
+          Alert.alert('Upload Failed', uploadResult.error || 'Failed to upload profile picture');
+        }
+      } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
+      }
     }
   };
 
@@ -42,16 +81,31 @@ export default function ProfileScreen({ navigation }) {
     setShowLogoutConfirm(true);
   };
 
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setShowLogoutConfirm(false);
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Landing' }],
-    });
+    try {
+      // Call backend logout and clear storage
+      await logoutHost();
+      // Clear context
+      await logout();
+      // Navigate to landing
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Landing' }],
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still navigate even if backend call fails
+      await logout();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Landing' }],
+      });
+    }
   };
 
   const handleEditProfile = () => {
-    navigation.navigate('UpdateProfile', { userData });
+    navigation.navigate('UpdateProfile', { hostData: host });
   };
 
   return (
@@ -67,9 +121,9 @@ export default function ProfileScreen({ navigation }) {
         {/* Profile Card with Image and Details */}
         <View style={styles.profileCard}>
           <View style={styles.profileImageContainer}>
-            {userData.profileImage ? (
+            {host?.avatar_url ? (
               <Image 
-                source={{ uri: userData.profileImage }} 
+                source={{ uri: host.avatar_url }} 
                 style={styles.profileImage}
               />
             ) : (
@@ -82,9 +136,12 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
           <View style={styles.profileDetails}>
-            <Text style={styles.profileName}>{userData.name}</Text>
-            <Text style={styles.profileEmail}>{userData.email}</Text>
-            <Text style={styles.profilePhone}>{userData.phone}</Text>
+            <Text style={styles.profileName}>{host?.full_name || 'Host User'}</Text>
+            <Text style={styles.profileEmail}>{host?.email || ''}</Text>
+            <Text style={styles.profilePhone}>{host?.phone || ''}</Text>
+            {isRefreshing && (
+              <ActivityIndicator size="small" color={COLORS.text} style={{ marginTop: 8 }} />
+            )}
           </View>
         </View>
 

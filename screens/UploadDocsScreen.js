@@ -1,18 +1,22 @@
 import React, { useState, useLayoutEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Alert } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { uploadHostDocument } from '../services/mediaService';
+import { useHost } from '../utils/HostContext';
 
 export default function UploadDocsScreen({ navigation: nav }) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const [docType, setDocType] = useState('id'); // 'id' or 'dl'
+  const { refreshProfile } = useHost();
+  const [docType, setDocType] = useState('id');
   const [idFrontImage, setIdFrontImage] = useState(null);
   const [dlImage, setDlImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -64,8 +68,7 @@ export default function UploadDocsScreen({ navigation: nav }) {
     }
   };
 
-  // Handle save
-  const handleSave = () => {
+  const handleSave = async () => {
     if (docType === 'id' && !idFrontImage) {
       Alert.alert('Missing Image', 'Please upload ID front picture before saving.');
       return;
@@ -76,13 +79,38 @@ export default function UploadDocsScreen({ navigation: nav }) {
       return;
     }
 
-    // TODO: Save to API
-    if (docType === 'id') {
-      console.log('Saving ID front image:', idFrontImage);
-      Alert.alert('Success', 'ID front picture saved successfully!');
-    } else {
-      console.log('Saving DL image:', dlImage);
-      Alert.alert('Success', 'Driver\'s License picture saved successfully!');
+    setUploading(true);
+    try {
+      const file = {
+        uri: docType === 'id' ? idFrontImage : dlImage,
+        name: docType === 'id' ? 'id_front.jpg' : 'drivers_license.jpg',
+        type: 'image/jpeg',
+      };
+
+      console.log('Starting document upload...', { documentType: docType, fileUri: file.uri });
+      const documentType = docType === 'id' ? 'id' : 'license';
+      const result = await uploadHostDocument(file, documentType);
+
+      if (result.success) {
+        // Refresh profile to get updated document URLs
+        console.log('Upload successful, refreshing profile...');
+        await refreshProfile();
+        Alert.alert('Success', `${docType === 'id' ? 'ID' : 'Driver\'s License'} uploaded successfully!`);
+      } else {
+        console.error('Upload failed:', result.error);
+        Alert.alert(
+          'Upload Failed', 
+          result.error || 'Failed to upload document. Please check:\n• Backend is running\n• Network connection\n• File is valid'
+        );
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      Alert.alert(
+        'Upload Error',
+        `${error.message || 'Failed to upload document'}\n\nPlease check:\n• Backend server is running\n• Network connection\n• IP address: 10.38.56.33:8000`
+      );
+    } finally {
+      setUploading(false);
     }
   };
 

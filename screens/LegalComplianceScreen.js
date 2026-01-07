@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { uploadDocument, uploadMultipleDocuments, getDocumentUrl } from '../services/documentUpload';
+import { uploadDocument, uploadMultipleDocuments, getDocumentUrl } from '../services/mediaService';
 import { getUserId } from '../utils/userStorage';
 
 const DocumentUpload = ({ 
