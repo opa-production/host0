@@ -28,17 +28,17 @@ export default function MyListingsScreen({ navigation }) {
       name: 'BMW M3',
       model: '2023 G80',
       image: require('../assets/images/bmw.jpg'),
-      status: 'active',
-      available: true,
-      price: 'KSh 15,000/day',
-      location: 'Nakuru, Kenya',
+      status: 'available',
+      plateNumber: 'KCA 123A',
+      pricePerDay: 15000,
+      location: 'Nakuru',
+      rating: 4.8,
       seats: 5,
       fuelType: 'Petrol',
       transmission: 'Automatic',
       activeRentals: 2,
       totalBookings: 12,
       description: 'Premium luxury sedan with exceptional performance and comfort. Perfect for long drives and special occasions.',
-      totalRatings: 4.8,
       ratingCount: 24,
     },
     {
@@ -46,45 +46,40 @@ export default function MyListingsScreen({ navigation }) {
       name: 'Toyota Corolla',
       model: '2022',
       image: require('../assets/images/bm.jpg'),
-      status: 'listed',
-      available: false,
-      price: 'KSh 8,000/day',
-      location: 'Nakuru, Kenya',
+      status: 'booked',
+      plateNumber: 'KBZ 456B',
+      pricePerDay: 8000,
+      location: 'Nakuru',
+      rating: null,
       seats: 5,
       fuelType: 'Petrol',
       transmission: 'Automatic',
       activeRentals: 0,
       totalBookings: 5,
       description: 'Reliable and fuel-efficient compact car, ideal for city driving and daily commutes.',
-      totalRatings: 4.5,
       ratingCount: 12,
     },
   ];
 
   const allListings = cars;
 
-  const toggleAvailability = (id) => {
-    // TODO: Update availability via API
-    console.log('Toggle availability for:', id);
-  };
-
-  const handleUpdate = (item) => {
-    // TODO: Navigate to update/edit screen
-    console.log('Update:', item);
-    // navigation.navigate('UpdateCar', { carId: item.id });
-  };
-
-  const getStatusText = (status) => {
+  const getStatusInfo = (status) => {
     switch (status) {
-      case 'active':
-        return 'Active';
-      case 'listed':
-        return 'Listed';
-      case 'inactive':
-        return 'Inactive';
+      case 'available':
+        return { emoji: '🟢', label: 'Available', color: '#34C759', bgColor: '#E8F5E9' };
+      case 'booked':
+        return { emoji: '🔵', label: 'Booked', color: '#007AFF', bgColor: '#E3F2FD' };
+      case 'pending':
+        return { emoji: '🟡', label: 'Pending approval', color: '#FF9500', bgColor: '#FFF3E0' };
+      case 'offline':
+        return { emoji: '🔴', label: 'Offline', color: '#FF3B30', bgColor: '#FFEBEE' };
       default:
-        return status;
+        return { emoji: '🟢', label: 'Available', color: '#34C759', bgColor: '#E8F5E9' };
     }
+  };
+
+  const formatPrice = (price) => {
+    return `KSh ${price.toLocaleString()}/day`;
   };
 
   const handleCardPress = (item) => {
@@ -92,47 +87,56 @@ export default function MyListingsScreen({ navigation }) {
   };
 
   const renderCarCard = ({ item }) => {
+    const statusInfo = getStatusInfo(item.status);
+    
     return (
       <TouchableOpacity 
         style={styles.listCard}
         onPress={() => handleCardPress(item)}
         activeOpacity={1}
       >
-        <View style={styles.listLeft}>
+        <View style={styles.carImageContainer}>
           {item.image ? (
-            <Image source={item.image} style={styles.avatarImage} />
+            <Image source={item.image} style={styles.carImage} />
           ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Ionicons name="car-outline" size={22} color="#C7C7CC" />
+            <View style={styles.carImagePlaceholder}>
+              <Ionicons name="car-outline" size={32} color="#C7C7CC" />
             </View>
           )}
         </View>
 
-        <View style={styles.listMiddle}>
-          <Text style={styles.listTitle}>{item.name}</Text>
-          <Text style={styles.listSubtitle}>{item.model ? item.model : item.location}</Text>
-          <Text style={styles.listMeta}>{item.price} • {item.location}</Text>
-        </View>
+        <View style={styles.carInfo}>
+          <View style={styles.carHeader}>
+            <View style={styles.carTitleContainer}>
+              <Text style={styles.carName}>{item.name}</Text>
+              <Text style={styles.carModel}>{item.model} • {item.plateNumber}</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
+              <Text style={styles.statusEmoji}>{statusInfo.emoji}</Text>
+              <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+            </View>
+          </View>
 
-        <View style={styles.listRight}>
-          <Switch
-            value={!!item.available}
-            onValueChange={(value) => {
-              toggleAvailability(item.id);
-            }}
-            trackColor={{ false: '#E5E5EA', true: COLORS.brand }}
-            thumbColor="#FFFFFF"
-          />
-          <TouchableOpacity 
-            onPress={(e) => {
-              e.stopPropagation();
-              navigation.navigate('CarDetails', { car: item });
-            }} 
-            style={styles.editPill} 
-            activeOpacity={0.9}
-          >
-            <Text style={styles.editPillText}>View</Text>
-          </TouchableOpacity>
+          <View style={styles.carMetrics}>
+            <View style={styles.metricItem}>
+              <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
+              <Text style={styles.metricText}>{formatPrice(item.pricePerDay)}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <Ionicons name="location-outline" size={14} color="#1C1C1E" />
+              <Text style={styles.metricText}>{item.location}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              {item.rating ? (
+                <>
+                  <Text style={styles.ratingText}>⭐</Text>
+                  <Text style={styles.metricText}>{item.rating}</Text>
+                </>
+              ) : (
+                <Text style={styles.newBadgeText}>New</Text>
+              )}
+            </View>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -204,7 +208,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
-    padding: 12,
+    padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
     marginBottom: 12,
@@ -217,47 +221,91 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 5,
   },
-  listLeft: {
+  carImageContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F2F2F7',
+    overflow: 'hidden',
     marginRight: 12,
   },
-  avatarImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  carImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
-  avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F2F2F7',
-    alignItems: 'center',
+  carImagePlaceholder: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#E5E5EA',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
   },
-  listMiddle: {
+  carInfo: {
     flex: 1,
   },
-  listTitle: {
+  carHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  carTitleContainer: {
+    flex: 1,
+  },
+  carName: {
     ...TYPE.bodyStrong,
-    fontSize: 13,
+    fontSize: 15,
     color: '#1C1C1E',
   },
-  listSubtitle: {
+  carModel: {
     ...TYPE.body,
-    fontSize: 12,
+    fontSize: 13,
     color: '#8E8E93',
     marginTop: 2,
   },
-  listMeta: {
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  statusEmoji: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+  },
+  carMetrics: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  metricItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metricText: {
     ...TYPE.body,
     fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 2,
+    color: '#1C1C1E',
   },
-  listRight: {
-    alignItems: 'flex-end',
-    gap: 8,
+  ratingText: {
+    fontSize: 12,
+  },
+  newBadgeText: {
+    fontSize: 11,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#007AFF',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   editPill: {
     paddingVertical: 6,

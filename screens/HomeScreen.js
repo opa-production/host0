@@ -144,7 +144,10 @@ export default function HomeScreen({ navigation }) {
           }}
           activeOpacity={0.95}
         >
-          <Text style={styles.financeCardTitle}>Financial Performance</Text>
+          <View style={styles.financeCardHeader}>
+            <Text style={styles.financeCardTitle}>Financial Performance</Text>
+            <Ionicons name="chevron-forward" size={20} color="rgba(255, 255, 255, 0.7)" />
+          </View>
 
           <Text style={styles.finHeadline}>
             This month {formatCurrency(financialData.currentEarnings)} earned
@@ -179,43 +182,71 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Today's Actions</Text>
           
-          <View style={styles.opsRow}>
+          <TouchableOpacity 
+            style={styles.opsRow}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('Bookings');
+            }}
+            activeOpacity={0.7}
+          >
             <View style={styles.opsLeft}>
               <View style={[styles.actionDot, styles.actionDotBlue]} />
               <Text style={styles.opsLabel}>Today's Pickups</Text>
             </View>
             <Text style={styles.opsValue}>{operationsData.pickups}</Text>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.opsDivider} />
 
-          <View style={styles.opsRow}>
+          <TouchableOpacity 
+            style={styles.opsRow}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('Bookings');
+            }}
+            activeOpacity={0.7}
+          >
             <View style={styles.opsLeft}>
               <View style={[styles.actionDot, styles.actionDotGreen]} />
               <Text style={styles.opsLabel}>Car Returns</Text>
             </View>
             <Text style={styles.opsValue}>{operationsData.returns}</Text>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.opsDivider} />
 
-          <View style={styles.opsRow}>
+          <TouchableOpacity 
+            style={styles.opsRow}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('Bookings');
+            }}
+            activeOpacity={0.7}
+          >
             <View style={styles.opsLeft}>
               <View style={[styles.actionDot, styles.actionDotOrange]} />
               <Text style={styles.opsLabel}>Active Rentals</Text>
             </View>
             <Text style={styles.opsValue}>{operationsData.activeRentals}</Text>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.opsDivider} />
 
-          <View style={styles.opsRow}>
+          <TouchableOpacity 
+            style={styles.opsRow}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('Bookings');
+            }}
+            activeOpacity={0.7}
+          >
             <View style={styles.opsLeft}>
               <View style={[styles.actionDot, styles.actionDotRed]} />
               <Text style={styles.opsLabel}>Pending Requests</Text>
             </View>
             <Text style={styles.opsValue}>{operationsData.pendingRequests}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         </ScrollView>
@@ -353,10 +384,15 @@ const styles = StyleSheet.create({
     padding: SPACING.l,
     marginBottom: 24,
   },
+  financeCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   financeCardTitle: {
     ...TYPE.section,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 20,
   },
   metricsRow: {
     flexDirection: 'row',

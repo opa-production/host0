@@ -12,10 +12,11 @@ export default function HostScreen({ navigation }) {
       name: 'BMW M3',
       model: '2023 G80',
       image: require('../assets/images/bmw.jpg'),
-      status: 'active',
-      available: true,
-      price: 'KSh 15,000/day',
-      location: 'Nakuru, Kenya',
+      status: 'available',
+      plateNumber: 'KCA 123A',
+      pricePerDay: 15000,
+      location: 'Nakuru',
+      rating: 4.8,
       seats: 5,
       fuelType: 'Petrol',
       transmission: 'Automatic',
@@ -25,10 +26,11 @@ export default function HostScreen({ navigation }) {
       name: 'Toyota Corolla',
       model: '2022',
       image: require('../assets/images/bm.jpg'),
-      status: 'listed',
-      available: false,
-      price: 'KSh 8,000/day',
-      location: 'Nakuru, Kenya',
+      status: 'booked',
+      plateNumber: 'KBZ 456B',
+      pricePerDay: 8000,
+      location: 'Nakuru',
+      rating: null,
       seats: 5,
       fuelType: 'Petrol',
       transmission: 'Automatic',
@@ -40,62 +42,84 @@ export default function HostScreen({ navigation }) {
     navigation.navigate('HostVehicle');
   };
 
-  const toggleAvailability = (id) => {
-    setCars(prevCars => 
-      prevCars.map(car => 
-        car.id === id ? { ...car, available: !car.available } : car
-      )
-    );
+  const getStatusInfo = (status) => {
+    switch (status) {
+      case 'available':
+        return { emoji: '🟢', label: 'Available', color: '#34C759', bgColor: '#E8F5E9' };
+      case 'booked':
+        return { emoji: '🔵', label: 'Booked', color: '#007AFF', bgColor: '#E3F2FD' };
+      case 'pending':
+        return { emoji: '🟡', label: 'Pending approval', color: '#FF9500', bgColor: '#FFF3E0' };
+      case 'offline':
+        return { emoji: '🔴', label: 'Offline', color: '#FF3B30', bgColor: '#FFEBEE' };
+      default:
+        return { emoji: '🟢', label: 'Available', color: '#34C759', bgColor: '#E8F5E9' };
+    }
+  };
+
+  const formatPrice = (price) => {
+    return `KSh ${price.toLocaleString()}/day`;
   };
 
   const handleCardPress = (item) => {
     navigation.navigate('CarDetails', { car: item });
   };
 
-  const renderCarCard = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.carCard}
-      onPress={() => handleCardPress(item)}
-      activeOpacity={1}
-    >
-      <View style={styles.carImageContainer}>
-        {item.image ? (
-          <Image source={item.image} style={styles.carImage} />
-        ) : (
-          <View style={styles.carImagePlaceholder}>
-            <Ionicons name="car-outline" size={24} color="#C7C7CC" />
-          </View>
-        )}
-      </View>
+  const renderCarCard = ({ item }) => {
+    const statusInfo = getStatusInfo(item.status);
+    
+    return (
+      <TouchableOpacity 
+        style={styles.carCard}
+        onPress={() => handleCardPress(item)}
+        activeOpacity={1}
+      >
+        <View style={styles.carImageContainer}>
+          {item.image ? (
+            <Image source={item.image} style={styles.carImage} />
+          ) : (
+            <View style={styles.carImagePlaceholder}>
+              <Ionicons name="car-outline" size={32} color="#C7C7CC" />
+            </View>
+          )}
+        </View>
 
-      <View style={styles.carInfo}>
-        <View style={styles.carTitleRow}>
-          <View style={styles.carTitleContainer}>
-            <Text style={styles.carName}>{item.name}</Text>
-            <Text style={styles.carModel}>{item.model}</Text>
+        <View style={styles.carInfo}>
+          <View style={styles.carHeader}>
+            <View style={styles.carTitleContainer}>
+              <Text style={styles.carName}>{item.name}</Text>
+              <Text style={styles.carModel}>{item.model} • {item.plateNumber}</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
+              <Text style={styles.statusEmoji}>{statusInfo.emoji}</Text>
+              <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+            </View>
           </View>
-          <Switch
-            value={!!item.available}
-            onValueChange={() => toggleAvailability(item.id)}
-            trackColor={{ false: '#E5E5EA', true: COLORS.brand }}
-            thumbColor="#FFFFFF"
-            style={styles.switch}
-          />
+
+          <View style={styles.carMetrics}>
+            <View style={styles.metricItem}>
+              <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
+              <Text style={styles.metricText}>{formatPrice(item.pricePerDay)}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <Ionicons name="location-outline" size={14} color="#1C1C1E" />
+              <Text style={styles.metricText}>{item.location}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              {item.rating ? (
+                <>
+                  <Text style={styles.ratingText}>⭐</Text>
+                  <Text style={styles.metricText}>{item.rating}</Text>
+                </>
+              ) : (
+                <Text style={styles.newBadgeText}>New</Text>
+              )}
+            </View>
+          </View>
         </View>
-        
-        <View style={styles.carDetails}>
-          <View style={styles.carDetailItem}>
-            <Ionicons name="location-outline" size={12} color="#8E8E93" />
-            <Text style={styles.carDetailText}>{item.location}</Text>
-          </View>
-          <View style={styles.carDetailItem}>
-            <Ionicons name="cash-outline" size={12} color="#8E8E93" />
-            <Text style={styles.carDetailText}>{item.price}</Text>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -168,7 +192,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
-    padding: 12,
+    padding: 16,
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
@@ -204,7 +228,7 @@ const styles = StyleSheet.create({
   carInfo: {
     flex: 1,
   },
-  carTitleRow: {
+  carHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -218,29 +242,54 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1C1C1E',
   },
-  switch: {
-    transform: [{ scale: 0.8 }],
-    marginLeft: 8,
-  },
   carModel: {
     ...TYPE.body,
     fontSize: 13,
     color: '#8E8E93',
     marginTop: 2,
   },
-  carDetails: {
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  statusEmoji: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+  },
+  carMetrics: {
     flexDirection: 'row',
     gap: 12,
   },
-  carDetailItem: {
+  metricItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  carDetailText: {
+  metricText: {
     ...TYPE.body,
     fontSize: 12,
-    color: '#8E8E93',
+    color: '#1C1C1E',
+  },
+  ratingText: {
+    fontSize: 12,
+  },
+  newBadgeText: {
+    fontSize: 11,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#007AFF',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   emptyState: {
     flex: 1,
