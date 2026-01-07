@@ -145,6 +145,9 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
+        {/* Separator Line */}
+        <View style={styles.profileSeparator} />
+
         {/* Account Information Link */}
         <View style={styles.section}>
           <View style={styles.sectionDivider} />

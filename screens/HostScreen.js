@@ -56,7 +56,7 @@ export default function HostScreen({ navigation }) {
     <TouchableOpacity 
       style={styles.carCard}
       onPress={() => handleCardPress(item)}
-      activeOpacity={0.7}
+      activeOpacity={1}
     >
       <View style={styles.carImageContainer}>
         {item.image ? (
@@ -172,6 +172,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
   carImageContainer: {
     width: 60,

@@ -87,7 +87,7 @@ export default function PastBookingsScreen({ navigation }) {
             <TouchableOpacity
               key={b.id}
               style={styles.listCard}
-              activeOpacity={0.9}
+              activeOpacity={1}
               onPress={() => navigation.navigate('PastBookingDetail', { booking: {
                 vehicleName: b.vehicleName,
                 vehicleImage: b.vehicleImage,

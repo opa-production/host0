@@ -96,7 +96,7 @@ export default function MyListingsScreen({ navigation }) {
       <TouchableOpacity 
         style={styles.listCard}
         onPress={() => handleCardPress(item)}
-        activeOpacity={0.7}
+        activeOpacity={1}
       >
         <View style={styles.listLeft}>
           {item.image ? (
@@ -208,6 +208,14 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
     marginBottom: 12,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
   listLeft: {
     marginRight: 12,

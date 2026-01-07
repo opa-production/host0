@@ -8,7 +8,6 @@ const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [fadeAnim] = useState(new Animated.Value(0));
 
   // Mock Data - Replace with actual API data
   const userName = 'Deon';
@@ -31,11 +30,6 @@ export default function HomeScreen({ navigation }) {
     // Simulate loading
     const timer = setTimeout(() => {
       setIsLoading(false);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
     }, 1000);
 
     return () => clearTimeout(timer);
@@ -74,49 +68,43 @@ export default function HomeScreen({ navigation }) {
             <SkeletonBox width={150} height={14} style={{ marginBottom: 10, borderRadius: 6 }} />
             <SkeletonBox width={200} height={34} style={{ marginBottom: 24, borderRadius: 10 }} />
 
-            <View style={[styles.skeletonCard, { paddingBottom: 12 }]}>
-              <View style={styles.cardHeader}>
-                <SkeletonBox width={160} height={16} style={{ borderRadius: 8 }} />
-                <SkeletonBox width={26} height={16} style={{ borderRadius: 8 }} />
+            {/* Financial Performance Skeleton */}
+            <View style={styles.skeletonFinanceCard}>
+              <SkeletonBox width={180} height={16} style={{ marginBottom: 20, borderRadius: 8 }} />
+              <SkeletonBox width={220} height={24} style={{ marginBottom: 20, borderRadius: 10 }} />
+              <View style={styles.skelRow}>
+                <SkeletonBox width={110} height={12} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={90} height={12} style={{ borderRadius: 8 }} />
               </View>
-              <View style={{ paddingTop: 8 }}>
-                <View style={styles.skelRow}>
-                  <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
-                  <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
-                </View>
-                <View style={styles.opsDivider} />
-                <View style={styles.skelRow}>
-                  <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
-                  <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
-                </View>
-                <View style={styles.opsDivider} />
-                <View style={styles.skelRow}>
-                  <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
-                  <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
-                </View>
-                <View style={styles.opsDivider} />
-                <View style={styles.skelRow}>
-                  <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
-                  <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
-                </View>
+              <View style={styles.financeMetricsDivider} />
+              <View style={styles.skelRow}>
+                <SkeletonBox width={110} height={12} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={90} height={12} style={{ borderRadius: 8 }} />
               </View>
+              <SkeletonBox width="100%" height={48} style={{ marginTop: 16, borderRadius: 16 }} />
             </View>
 
-            <View style={[styles.skeletonCard, { marginTop: 24 }]}>
-              <View style={styles.cardHeader}>
-                <SkeletonBox width={180} height={16} style={{ borderRadius: 8 }} />
-                <SkeletonBox width={22} height={16} style={{ borderRadius: 8 }} />
+            {/* Today's Actions Skeleton */}
+            <View style={styles.skeletonCard}>
+              <SkeletonBox width={140} height={16} style={{ marginBottom: 20, borderRadius: 8 }} />
+              <View style={styles.skelRow}>
+                <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
               </View>
-              <View style={{ marginTop: 8 }}>
-                <View style={styles.skelRow}>
-                  <SkeletonBox width={110} height={12} style={{ borderRadius: 8 }} />
-                  <SkeletonBox width={90} height={12} style={{ borderRadius: 8 }} />
-                </View>
-                <View style={styles.metricsDivider} />
-                <View style={styles.skelRow}>
-                  <SkeletonBox width={110} height={12} style={{ borderRadius: 8 }} />
-                  <SkeletonBox width={90} height={12} style={{ borderRadius: 8 }} />
-                </View>
+              <View style={styles.opsDivider} />
+              <View style={styles.skelRow}>
+                <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
+              </View>
+              <View style={styles.opsDivider} />
+              <View style={styles.skelRow}>
+                <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
+              </View>
+              <View style={styles.opsDivider} />
+              <View style={styles.skelRow}>
+                <SkeletonBox width={120} height={12} style={{ borderRadius: 8 }} />
+                <SkeletonBox width={36} height={12} style={{ borderRadius: 8 }} />
               </View>
             </View>
           </View>
@@ -135,11 +123,10 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-      <Animated.View style={{ opacity: fadeAnim }}>
-        <ScrollView 
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header with Greeting */}
         <View style={styles.header}>
           <View style={styles.greetingContainer}>
@@ -232,10 +219,9 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         </ScrollView>
-      </Animated.View>
-    </View>
-  );
-}
+      </View>
+    );
+  }
 
 const styles = StyleSheet.create({
   container: {
@@ -293,6 +279,20 @@ const styles = StyleSheet.create({
   },
   skeletonCard: {
     backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  skeletonFinanceCard: {
+    backgroundColor: COLORS.text,
     borderRadius: RADIUS.card,
     padding: SPACING.l,
     marginBottom: 24,

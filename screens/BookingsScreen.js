@@ -6,7 +6,6 @@ import { lightHaptic } from '../ui/haptics';
 
 export default function BookingsScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [fadeAnim] = useState(new Animated.Value(0));
 
   // Mock booking data
   const mockBooking = {
@@ -27,11 +26,6 @@ export default function BookingsScreen({ navigation }) {
     // Simulate loading
     const timer = setTimeout(() => {
       setIsLoading(false);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
     }, 1500);
 
     return () => clearTimeout(timer);
@@ -144,7 +138,7 @@ export default function BookingsScreen({ navigation }) {
   }
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       <ScrollView 
         contentContainerStyle={styles.content}
@@ -190,7 +184,7 @@ export default function BookingsScreen({ navigation }) {
               lightHaptic();
               navigation.navigate('ActiveBooking');
             }}
-            activeOpacity={0.7}
+            activeOpacity={1}
           >
             <View style={styles.gridHeaderRow}>
               <Image source={booking.vehicleImage} style={styles.vehicleAvatar} />
@@ -212,7 +206,7 @@ export default function BookingsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -423,6 +417,14 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
   gridHeaderRow: {
     flexDirection: 'row',

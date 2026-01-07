@@ -1,77 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, Animated } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar } from 'react-native';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import LandingIllustration from '../assets/icons/landing.svg';
 
 export default function LandingScreen({ navigation }) {
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const [currentIndex, setCurrentIndex] = useState(0);
-  
-  const phrases = [
-    'List your car. Earn daily',
-    'Your rules. Our platform'
-  ];
-
-  useEffect(() => {
-    const animate = () => {
-      Animated.sequence([
-        Animated.delay(3500),
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(slideAnim, {
-            toValue: -30,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.delay(100),
-      ]).start(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % phrases.length);
-        slideAnim.setValue(30);
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          animate();
-        });
-      });
-    };
-
-    animate();
-  }, []);
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
       <View style={styles.hero}>
         <LandingIllustration width={260} height={210} />
-        <View style={styles.taglineContainer}>
-          <Animated.Text 
-            style={[
-              styles.tagline,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              }
-            ]}
-          >
-            {phrases[currentIndex]}
-          </Animated.Text>
-        </View>
       </View>
 
       <View style={styles.ctaSection}>
@@ -98,21 +36,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 30,
-  },
-  taglineContainer: {
-    height: 80,
-    marginTop: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  tagline: {
-    fontSize: 32,
-    lineHeight: 40,
-    fontFamily: 'Nunito-Bold',
-    color: COLORS.text,
-    textAlign: 'center',
-    maxWidth: 340,
   },
   ctaSection: {
     paddingBottom: 40,

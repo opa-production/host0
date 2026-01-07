@@ -32,17 +32,11 @@ export default function LoginScreen({ navigation }) {
   const [checkingBiometric, setCheckingBiometric] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
-  const hasCheckedBiometric = useRef(false);
 
-  // Check for biometric authentication when screen is focused (only once)
+  // Check for biometric authentication when screen is focused
   useFocusEffect(
     React.useCallback(() => {
-      if (hasCheckedBiometric.current) {
-        return;
-      }
-
       const checkAndPromptBiometric = async () => {
-        hasCheckedBiometric.current = true;
         setCheckingBiometric(true);
         const enabled = await isBiometricEnabled();
         
@@ -73,6 +67,11 @@ export default function LoginScreen({ navigation }) {
       };
 
       checkAndPromptBiometric();
+      
+      // Reset check when leaving screen
+      return () => {
+        setCheckingBiometric(false);
+      };
     }, [navigation])
   );
 
