@@ -27,61 +27,69 @@ export default function SignUpScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+
+  const validateName = (name) => {
+    if (!name) return 'Full name is required';
+    if (name.length < 2) return 'Name must be at least 2 characters';
+    return '';
+  };
+
+  const validateEmail = (email) => {
+    if (!email) return 'Email is required';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return 'Please enter a valid email';
+    return '';
+  };
+
+  const validatePassword = (password) => {
+    if (!password) return 'Password is required';
+    if (password.length < 8) return 'Password must be at least 8 characters';
+    return '';
+  };
+
+  const validateConfirmPassword = (confirmPassword, password) => {
+    if (!confirmPassword) return 'Please confirm your password';
+    if (confirmPassword !== password) return 'Passwords do not match';
+    return '';
+  };
 
   const handleSignUp = async () => {
-    // Validation
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Missing Fields', 'Please fill in all fields.');
-      return;
-    }
+    const nameError = validateName(name);
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+    const confirmPasswordError = validateConfirmPassword(confirmPassword, password);
 
-    if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'Passwords do not match.');
-      return;
-    }
+    setErrors({ 
+      name: nameError, 
+      email: emailError, 
+      password: passwordError, 
+      confirmPassword: confirmPasswordError 
+    });
 
-    if (password.length < 8) {
-      Alert.alert('Weak Password', 'Password must be at least 8 characters long.');
+    if (nameError || emailError || passwordError || confirmPasswordError) {
       return;
     }
 
     setIsLoading(true);
 
-    try {
-      // Register the host
-      const registerResult = await registerHost(name, email, password, confirmPassword);
-      
-      if (!registerResult.success) {
-        Alert.alert('Registration Failed', registerResult.error || 'Please try again.');
-        setIsLoading(false);
-        return;
-      }
+    // Bypass authentication - create mock profile and sign up
+    const mockProfile = {
+      id: '1',
+      email: email,
+      full_name: name,
+      phone: '+254712345678',
+      avatar_url: null,
+      bio: 'New host on OpaHost',
+      created_at: new Date().toISOString(),
+    };
 
-      // Auto-login after successful registration
-      const loginResult = await loginHost(email, password);
-      
-      if (loginResult.success) {
-        // Update host context with profile
-        await login(loginResult.host);
-        
-        console.log('Registration and login successful:', loginResult.host.email);
-        
-        // Navigate to main app
-        navigation.replace('MainTabs');
-      } else {
-        // Registration succeeded but login failed - navigate to login screen
-        Alert.alert(
-          'Account Created',
-          'Your account has been created successfully. Please login.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-        );
-      }
-    } catch (error) {
-      console.error('Signup error:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-    } finally {
+    await login(mockProfile);
+
+    setTimeout(() => {
       setIsLoading(false);
-    }
+      navigation.replace('MainTabs');
+    }, 500);
   };
 
   const handleGoogleSignUp = () => {
@@ -113,44 +121,55 @@ export default function SignUpScreen({ navigation }) {
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, errors.name && styles.inputError]}>
               <Ionicons name="person-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Full Name"
                 placeholderTextColor="#C7C7CC"
                 value={name}
-                onChangeText={setName}
+                onChangeText={(text) => {
+                  setName(text);
+                  if (errors.name) setErrors({ ...errors, name: '' });
+                }}
                 autoCapitalize="words"
               />
             </View>
+            {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
 
             <View style={styles.separator} />
 
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, errors.email && styles.inputError]}>
               <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
                 placeholderTextColor="#C7C7CC"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) setErrors({ ...errors, email: '' });
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
               />
             </View>
+            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
             <View style={styles.separator} />
 
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, errors.password && styles.inputError]}>
               <Ionicons name="lock-closed-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
                 placeholderTextColor="#C7C7CC"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) setErrors({ ...errors, password: '' });
+                }}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />
@@ -165,17 +184,21 @@ export default function SignUpScreen({ navigation }) {
                 />
               </TouchableOpacity>
             </View>
+            {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
 
             <View style={styles.separator} />
 
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, errors.confirmPassword && styles.inputError]}>
               <Ionicons name="lock-closed-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Confirm Password"
                 placeholderTextColor="#C7C7CC"
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: '' });
+                }}
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
               />
@@ -190,6 +213,7 @@ export default function SignUpScreen({ navigation }) {
                 />
               </TouchableOpacity>
             </View>
+            {errors.confirmPassword ? <Text style={styles.errorText}>{errors.confirmPassword}</Text> : null}
           </View>
 
           <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} activeOpacity={1} disabled={isLoading}>
@@ -270,7 +294,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     overflow: 'hidden',
-    marginBottom: 24,
+    marginBottom: 8,
+  },
+  inputError: {
+    borderColor: '#FF3B30',
+    borderWidth: 1,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF3B30',
+    fontFamily: 'Nunito-Regular',
+    marginTop: 4,
+    marginBottom: 12,
+    marginLeft: 4,
   },
   inputContainer: {
     flexDirection: 'row',

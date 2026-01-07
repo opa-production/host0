@@ -17,31 +17,23 @@ export const HostProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Initialize: Check for existing auth session
+  // Initialize: Check for existing auth session (bypassed for development)
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const token = await getUserToken();
+        // Bypass authentication - check for locally stored profile only
+        const storedProfile = await getUserProfile();
         
-        if (token) {
-          // Verify token is still valid by fetching current profile
-          const result = await getCurrentHost();
-          
-          if (result.success) {
-            setHost(result.host);
-            setIsAuthenticated(true);
-            // Store profile locally
-            await setUserProfile(result.host);
-          } else {
-            // Token expired or invalid
-            await clearUserData();
-            setHost(null);
-            setIsAuthenticated(false);
-          }
+        if (storedProfile) {
+          setHost(storedProfile);
+          setIsAuthenticated(true);
+        } else {
+          // No stored profile, user needs to login
+          setHost(null);
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        await clearUserData();
         setHost(null);
         setIsAuthenticated(false);
       } finally {
@@ -75,14 +67,14 @@ export const HostProvider = ({ children }) => {
 
   const refreshProfile = async () => {
     try {
-      const result = await getCurrentHost();
+      // Bypass API call - just return stored profile
+      const storedProfile = await getUserProfile();
       
-      if (result.success) {
-        setHost(result.host);
-        await setUserProfile(result.host);
+      if (storedProfile) {
+        setHost(storedProfile);
         return { success: true };
       } else {
-        return { success: false, error: result.error };
+        return { success: false, error: 'No profile found' };
       }
     } catch (error) {
       console.error('Refresh profile error:', error);

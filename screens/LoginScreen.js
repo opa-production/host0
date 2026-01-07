@@ -29,8 +29,9 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [checkingBiometric, setCheckingBiometric] = useState(true);
+  const [checkingBiometric, setCheckingBiometric] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({ email: '', password: '' });
   const hasCheckedBiometric = useRef(false);
 
   // Check for biometric authentication when screen is focused (only once)
@@ -75,34 +76,48 @@ export default function LoginScreen({ navigation }) {
     }, [navigation])
   );
 
+  const validateEmail = (email) => {
+    if (!email) return 'Email is required';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return 'Please enter a valid email';
+    return '';
+  };
+
+  const validatePassword = (password) => {
+    if (!password) return 'Password is required';
+    if (password.length < 6) return 'Password must be at least 6 characters';
+    return '';
+  };
+
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Missing Fields', 'Please enter both email and password.');
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+
+    setErrors({ email: emailError, password: passwordError });
+
+    if (emailError || passwordError) {
       return;
     }
 
     setIsLoading(true);
 
-    try {
-      const result = await loginHost(email, password);
-      
-      if (result.success) {
-        // Update host context with profile
-        await login(result.host);
-        
-        console.log('Login successful:', result.host.email);
-        
-        // Navigate to main app
-        navigation.replace('MainTabs');
-      } else {
-        Alert.alert('Login Failed', result.error || 'Please check your credentials and try again.');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-    } finally {
+    // Bypass authentication - create mock profile and log in
+    const mockProfile = {
+      id: '1',
+      email: email,
+      full_name: email.split('@')[0],
+      phone: '+254712345678',
+      avatar_url: null,
+      bio: 'Host on OpaHost',
+      created_at: new Date().toISOString(),
+    };
+
+    await login(mockProfile);
+
+    setTimeout(() => {
       setIsLoading(false);
-    }
+      navigation.replace('MainTabs');
+    }, 500);
   };
 
   const handleGoogleLogin = () => {
@@ -140,30 +155,37 @@ export default function LoginScreen({ navigation }) {
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, errors.email && styles.inputError]}>
               <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
                 placeholderTextColor="#C7C7CC"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) setErrors({ ...errors, email: '' });
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
               />
             </View>
+            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
             
             <View style={styles.separator} />
 
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, errors.password && styles.inputError]}>
               <Ionicons name="lock-closed-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
                 placeholderTextColor="#C7C7CC"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) setErrors({ ...errors, password: '' });
+                }}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />
@@ -178,6 +200,7 @@ export default function LoginScreen({ navigation }) {
                 />
               </TouchableOpacity>
             </View>
+            {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
           </View>
 
           <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ResetPassword')}>
@@ -263,7 +286,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: 8,
+  },
+  inputError: {
+    borderColor: '#FF3B30',
+    borderWidth: 1,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF3B30',
+    fontFamily: 'Nunito-Regular',
+    marginTop: 4,
+    marginBottom: 12,
+    marginLeft: 4,
   },
   inputContainer: {
     flexDirection: 'row',

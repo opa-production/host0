@@ -22,7 +22,7 @@ export default function ProfileScreen({ navigation }) {
         setIsRefreshing(false);
       };
       loadProfile();
-    }, [refreshProfile])
+    }, [])
   );
 
   const pickImage = async () => {
