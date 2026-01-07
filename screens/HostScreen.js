@@ -90,7 +90,7 @@ export default function HostScreen({ navigation }) {
               <Text style={styles.carName}>{item.name}</Text>
               <Text style={styles.carModel}>{item.model} • {item.plateNumber}</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
+            <View style={styles.statusBadge}>
               <Text style={styles.statusEmoji}>{statusInfo.emoji}</Text>
               <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
             </View>

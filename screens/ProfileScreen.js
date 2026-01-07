@@ -128,7 +128,7 @@ export default function ProfileScreen({ navigation }) {
               />
             ) : (
               <View style={styles.profileImagePlaceholder}>
-                <Ionicons name="person" size={40} color="#999999" />
+                <Ionicons name="person" size={46} color="#999999" />
               </View>
             )}
             <TouchableOpacity style={styles.cameraButton} onPress={() => { lightHaptic(); pickImage(); }} activeOpacity={0.85}>
@@ -138,7 +138,6 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.profileDetails}>
             <Text style={styles.profileName}>{host?.full_name || 'Host User'}</Text>
             <Text style={styles.profileEmail}>{host?.email || ''}</Text>
-            <Text style={styles.profilePhone}>{host?.phone || ''}</Text>
             {isRefreshing && (
               <ActivityIndicator size="small" color={COLORS.text} style={{ marginTop: 8 }} />
             )}
@@ -293,25 +292,24 @@ const styles = StyleSheet.create({
     marginTop: SPACING.l,
     marginBottom: SPACING.m,
     paddingVertical: SPACING.xl,
-    flexDirection: 'row',
     alignItems: 'center',
   },
   profileImageContainer: {
     position: 'relative',
-    marginRight: 16,
+    marginBottom: 16,
   },
   profileDetails: {
-    flex: 1,
+    alignItems: 'center',
   },
   profileImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
   },
   profileImagePlaceholder: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -347,11 +345,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8E8E93',
     marginBottom: 2,
-  },
-  profilePhone: {
-    ...TYPE.body,
-    fontSize: 13,
-    color: '#8E8E93',
   },
   section: {
     paddingHorizontal: SPACING.l,

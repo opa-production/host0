@@ -9,7 +9,17 @@ export default function LandingScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
       <View style={styles.hero}>
-        <LandingIllustration width={260} height={210} />
+        <View style={styles.brandSection}>
+          <Text style={styles.appName}>Ardena</Text>
+          <Text style={styles.appSubtitle}>Host</Text>
+        </View>
+        
+        <LandingIllustration width={280} height={220} />
+        
+        <View style={styles.textSection}>
+          {/* <Text style={styles.tagline}>Idle cars don't pay bills</Text> */}
+          <Text style={styles.subtitle}>Turn your parked car into a revenue stream. Start hosting today.</Text>
+        </View>
       </View>
 
       <View style={styles.ctaSection}>
@@ -34,8 +44,45 @@ const styles = StyleSheet.create({
   hero: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 30,
+    justifyContent: 'space-evenly',
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  brandSection: {
+    alignItems: 'center',
+  },
+  appName: {
+    fontSize: 48,
+    fontFamily: 'Nunito-Bold',
+    color: COLORS.brand,
+    letterSpacing: 2,
+  },
+  appSubtitle: {
+    fontSize: 16,
+    fontFamily: 'Nunito-SemiBold',
+    color: COLORS.text,
+    letterSpacing: 4,
+    marginTop: -4,
+    opacity: 0.7,
+  },
+  textSection: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  tagline: {
+    fontSize: 28,
+    fontFamily: 'Nunito-Bold',
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 36,
+  },
+  subtitle: {
+    ...TYPE.body,
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    lineHeight: 24,
   },
   ctaSection: {
     paddingBottom: 40,
