@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -76,65 +76,108 @@ export default function HostScreen({ navigation }) {
     navigation.navigate('CarDetails', { car: item });
   };
 
+  const handleDeleteCar = (carId, carName) => {
+    lightHaptic();
+    Alert.alert(
+      'Delete Car',
+      `Are you sure you want to delete ${carName}? This action cannot be undone.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const HOST_CARS_KEY = '@host_cars';
+              const storedCars = await AsyncStorage.getItem(HOST_CARS_KEY);
+              const cars = storedCars ? JSON.parse(storedCars) : [];
+              const updatedCars = cars.filter(car => car.id !== carId);
+              await AsyncStorage.setItem(HOST_CARS_KEY, JSON.stringify(updatedCars));
+              setCars(updatedCars);
+              lightHaptic();
+            } catch (error) {
+              console.error('Error deleting car:', error);
+              Alert.alert('Error', 'Failed to delete car. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderCarCard = ({ item, index }) => {
     const statusInfo = getStatusInfo(item.status);
     const isLastItem = index === cars.length - 1;
     
     return (
-      <TouchableOpacity 
-        style={[styles.carCard, isLastItem && styles.carCardLast]}
-        onPress={() => handleCardPress(item)}
-        activeOpacity={1}
-      >
-        <View style={styles.carImageContainer}>
-          {item.coverPhoto || item.image ? (
-            <Image 
-              source={typeof (item.coverPhoto || item.image) === 'string' 
-                ? { uri: item.coverPhoto || item.image } 
-                : (item.coverPhoto || item.image)} 
-              style={styles.carImage} 
-            />
-          ) : (
-            <View style={styles.carImagePlaceholder}>
-              <Ionicons name="car-outline" size={24} color="#C7C7CC" />
-            </View>
-          )}
-        </View>
-
-        <View style={styles.carInfo}>
-          <View style={styles.carHeader}>
-            <Text style={styles.carName}>{item.name}</Text>
-            <Text style={styles.carModel}>
-              {item.model}{item.plateNumber ? ` • ${item.plateNumber}` : ''}
-            </Text>
+      <View style={[styles.carCard, isLastItem && styles.carCardLast]}>
+        <TouchableOpacity 
+          style={styles.carCardContent}
+          onPress={() => handleCardPress(item)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.carImageContainer}>
+            {item.coverPhoto || item.image ? (
+              <Image 
+                source={typeof (item.coverPhoto || item.image) === 'string' 
+                  ? { uri: item.coverPhoto || item.image } 
+                  : (item.coverPhoto || item.image)} 
+                style={styles.carImage} 
+              />
+            ) : (
+              <View style={styles.carImagePlaceholder}>
+                <Ionicons name="car-outline" size={24} color="#C7C7CC" />
+              </View>
+            )}
           </View>
 
-          <View style={styles.carMetrics}>
-            <View style={styles.metricItem}>
-              <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
-              <Text style={styles.metricText}>{formatPrice(item.pricePerDay)}</Text>
+          <View style={styles.carInfo}>
+            <View style={styles.carHeader}>
+              <Text style={styles.carName}>{item.name}</Text>
+              <Text style={styles.carModel}>
+                {item.model}{item.plateNumber ? ` • ${item.plateNumber}` : ''}
+              </Text>
             </View>
-            <View style={styles.metricItem}>
-              <Ionicons name="car-outline" size={14} color="#1C1C1E" />
-              <Text style={styles.metricText}>{item.totalTrips || 0} trips</Text>
-            </View>
-            <View style={styles.metricItem}>
-              <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
-              <Text style={styles.metricText}>{statusInfo.label}</Text>
-            </View>
-            <View style={styles.metricItem}>
-              {item.rating ? (
-                <>
-                  <Text style={styles.ratingText}>⭐</Text>
-                  <Text style={styles.metricText}>{item.rating}</Text>
-                </>
-              ) : (
-                <Text style={styles.newBadgeText}>New</Text>
-              )}
+
+            <View style={styles.carMetrics}>
+              <View style={styles.metricItem}>
+                <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
+                <Text style={styles.metricText}>{formatPrice(item.pricePerDay)}</Text>
+              </View>
+              <View style={styles.metricItem}>
+                <Ionicons name="car-outline" size={14} color="#1C1C1E" />
+                <Text style={styles.metricText}>{item.totalTrips || 0} trips</Text>
+              </View>
+              <View style={styles.metricItem}>
+                <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
+                <Text style={styles.metricText}>{statusInfo.label}</Text>
+              </View>
+              <View style={styles.metricItem}>
+                {item.rating ? (
+                  <>
+                    <Text style={styles.ratingText}>⭐</Text>
+                    <Text style={styles.metricText}>{item.rating}</Text>
+                  </>
+                ) : (
+                  <Text style={styles.newBadgeText}>New</Text>
+                )}
+              </View>
             </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+        
+        {/* Delete Button */}
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteCar(item.id, item.name)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="close-circle" size={24} color="#FF3B30" />
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -168,14 +211,16 @@ export default function HostScreen({ navigation }) {
       )}
 
       {/* Floating Add Button */}
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={handleAddVehicle}
-        activeOpacity={0.9}
-      >
-        <Ionicons name="car-sport" size={20} color="#FFFFFF" />
-        <Ionicons name="add" size={16} color="#FFFFFF" style={styles.plusIcon} />
-      </TouchableOpacity>
+      {cars.length < 2 && (
+        <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={handleAddVehicle}
+          activeOpacity={0.9}
+        >
+          <Ionicons name="car-sport" size={20} color="#FFFFFF" />
+          <Ionicons name="add" size={16} color="#FFFFFF" style={styles.plusIcon} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -205,16 +250,26 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   carCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    position: 'relative',
     borderWidth: 1,
     borderColor: COLORS.borderStrong,
     borderRadius: 12,
-    padding: 12,
     marginBottom: 16,
   },
   carCardLast: {
     marginBottom: 0,
+  },
+  carCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 10,
+    padding: 4,
   },
   carImageContainer: {
     width: 80,
