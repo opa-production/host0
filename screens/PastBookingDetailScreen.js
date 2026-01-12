@@ -11,62 +11,51 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   const [rating, setRating] = useState(0);
   const [note, setNote] = useState('');
 
-  const defaultBooking = {
-    vehicleName: 'BMW M3 Competition',
-    vehicleImage: require('../assets/images/bmw.jpg'),
-    plate: 'KDA 452M',
-    location: 'Nakuru, Kenya',
-    startDate: 'Jan 15, 2024',
-    endDate: 'Jan 20, 2024',
-    startTime: '09:00',
-    endTime: '11:00',
-    duration: '5 days',
-    status: 'Completed',
-    payout: 36250,
-    totalPaid: 45000,
-    commission: 8750,
-    dailyRate: 9000,
-    renter: {
-      name: 'Deon Orna',
-      bio: 'Experienced driver with excellent track record. Always returns cars in pristine condition.',
-      rating: 4.9,
-      trips: 24,
-      avatar: 'https://i.pravatar.cc/150?img=12',
-    },
-  };
-
   const routeBooking = route?.params?.booking || {};
   
   // Convert payout to number if it's a string
-  let payout = defaultBooking.payout;
+  let payout = 0;
   if (routeBooking.payout !== undefined) {
     if (typeof routeBooking.payout === 'string') {
       const numStr = routeBooking.payout.replace(/[^\d]/g, '');
-      payout = parseInt(numStr, 10) || defaultBooking.payout;
+      payout = parseInt(numStr, 10) || 0;
     } else {
-      payout = routeBooking.payout || defaultBooking.payout;
+      payout = routeBooking.payout || 0;
     }
   }
   
   // Convert totalPaid to number if it's a string
-  let totalPaid = defaultBooking.totalPaid;
+  let totalPaid = 0;
   if (routeBooking.totalPaid !== undefined) {
     if (typeof routeBooking.totalPaid === 'string') {
       const numStr = routeBooking.totalPaid.replace(/[^\d]/g, '');
-      totalPaid = parseInt(numStr, 10) || defaultBooking.totalPaid;
+      totalPaid = parseInt(numStr, 10) || 0;
     } else {
-      totalPaid = routeBooking.totalPaid || defaultBooking.totalPaid;
+      totalPaid = routeBooking.totalPaid || 0;
     }
   }
   
   const booking = {
-    ...defaultBooking,
-    ...routeBooking,
+    vehicleName: routeBooking.vehicleName || '',
+    vehicleImage: routeBooking.vehicleImage || null,
+    plate: routeBooking.plate || '',
+    location: routeBooking.location || '',
+    startDate: routeBooking.startDate || '',
+    endDate: routeBooking.endDate || '',
+    startTime: routeBooking.startTime || '',
+    endTime: routeBooking.endTime || '',
+    duration: routeBooking.duration || '',
+    status: routeBooking.status || '',
     payout,
     totalPaid,
+    commission: routeBooking.commission || 0,
+    dailyRate: routeBooking.dailyRate || 0,
     renter: {
-      ...defaultBooking.renter,
-      ...(routeBooking.renter || {}),
+      name: routeBooking.renter?.name || '',
+      bio: routeBooking.renter?.bio || '',
+      rating: routeBooking.renter?.rating || 0,
+      trips: routeBooking.renter?.trips || 0,
+      avatar: routeBooking.renter?.avatar || null,
     },
   };
 
@@ -128,20 +117,34 @@ export default function PastBookingDetailScreen({ navigation, route }) {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Vehicle Info */}
-        <View style={styles.heroCard}>
-          <Image source={booking.vehicleImage} style={styles.heroAvatar} resizeMode="cover" />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.heroTitle} numberOfLines={1}>{booking.vehicleName}</Text>
-            <Text style={styles.heroSub}>{booking.location}</Text>
-            {booking.plate && (
-              <View style={styles.plateRow}>
-                <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
-                <Text style={styles.plateText}>{booking.plate}</Text>
-              </View>
-            )}
+        {!booking.vehicleName ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="document-text-outline" size={64} color="#C7C7CC" />
+            <Text style={styles.emptyStateTitle}>No booking details</Text>
+            <Text style={styles.emptyStateText}>Booking information will appear here</Text>
           </View>
-        </View>
+        ) : (
+          <>
+            {/* Vehicle Info */}
+            <View style={styles.heroCard}>
+              {booking.vehicleImage ? (
+                <Image source={booking.vehicleImage} style={styles.heroAvatar} resizeMode="cover" />
+              ) : (
+                <View style={styles.heroAvatar}>
+                  <Ionicons name="car-outline" size={24} color={COLORS.subtle} />
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.heroTitle} numberOfLines={1}>{booking.vehicleName}</Text>
+                {booking.location && <Text style={styles.heroSub}>{booking.location}</Text>}
+                {booking.plate && (
+                  <View style={styles.plateRow}>
+                    <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
+                    <Text style={styles.plateText}>{booking.plate}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
 
         {/* Booking Dates */}
         <View style={styles.card}>
@@ -235,6 +238,8 @@ export default function PastBookingDetailScreen({ navigation, route }) {
             <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
           </TouchableOpacity>
         </View>
+          </>
+        )}
       </ScrollView>
 
       <Modal
@@ -638,5 +643,23 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#ffffff',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+  },
+  emptyStateTitle: {
+    ...TYPE.section,
+    fontSize: 18,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    textAlign: 'center',
   },
 });

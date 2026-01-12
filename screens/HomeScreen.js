@@ -8,22 +8,23 @@ const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
+  const [isBalanceVisible, setIsBalanceVisible] = useState(true);
 
-  // Mock Data - Replace with actual API data
+  // Data - Replace with actual API data
   const userName = 'Deon';
   
   const operationsData = {
-    activeRentals: 8,
-    pickups: 3,
-    returns: 2,
-    pendingRequests: 4,
+    activeRentals: 0,
+    pickups: 0,
+    returns: 0,
+    pendingRequests: 0,
   };
 
   const financialData = {
-    currentEarnings: 4250,
-    previousEarnings: 3800,
-    utilization: 82,
-    nextPayout: { amount: 1250, date: 'Friday' }
+    currentEarnings: 0,
+    previousEarnings: 0,
+    utilization: 0,
+    nextPayout: { amount: 0, date: '' }
   };
 
   useEffect(() => {
@@ -115,10 +116,13 @@ export default function HomeScreen({ navigation }) {
 
   const formatCurrency = (amount) => {
     const numericAmount = Number(amount) || 0;
-    return `KSh ${numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+    return numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
-  const pendingAmount = Math.max(0, (Number(financialData.currentEarnings) || 0) - (Number(financialData.nextPayout.amount) || 0));
+  // Calculate financial breakdown
+  const withdrawable = financialData.nextPayout.amount || 0;
+  const netEarnings = 0; // This should come from backend
+  const commission = 0; // This should come from backend
 
   return (
     <View style={styles.container}>
@@ -145,24 +149,42 @@ export default function HomeScreen({ navigation }) {
           activeOpacity={0.95}
         >
           <View style={styles.financeCardHeader}>
-            <Text style={styles.financeCardTitle}>Financial Performance</Text>
-            <Ionicons name="chevron-forward" size={20} color="rgba(255, 255, 255, 0.7)" />
+            <Text style={styles.financeCardTitle}>Balance</Text>
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                lightHaptic();
+                setIsBalanceVisible(!isBalanceVisible);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name={isBalanceVisible ? "eye-outline" : "eye-off-outline"} 
+                size={20} 
+                color="rgba(255, 255, 255, 0.8)" 
+              />
+            </TouchableOpacity>
           </View>
 
-          <Text style={styles.finHeadline}>
-            This month {formatCurrency(financialData.currentEarnings)} earned
-          </Text>
-
-          <View style={styles.metricsRow}>
-            <Text style={styles.financeMetricsLabel}>Withdrawable</Text>
-            <Text style={styles.financeMetricsValue}>{formatCurrency(financialData.nextPayout.amount)}</Text>
-          </View>
-
-          <View style={styles.financeMetricsDivider} />
-
-          <View style={styles.metricsRow}>
-            <Text style={styles.financeMetricsLabel}>Pending</Text>
-            <Text style={styles.financeMetricsValue}>{formatCurrency(pendingAmount)}</Text>
+          <View style={styles.balanceContainer}>
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceLabel}>Net earnings</Text>
+              <Text style={styles.balanceLabelValue}>
+                {isBalanceVisible ? `KSh ${formatCurrency(netEarnings)}` : '••••'}
+              </Text>
+            </View>
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceLabel}>Commission</Text>
+              <Text style={[styles.balanceLabelValue, styles.commissionText]}>
+                {isBalanceVisible ? `- KSh ${formatCurrency(commission)}` : '••••'}
+              </Text>
+            </View>
+            <View style={styles.withdrawableContainer}>
+              <Text style={styles.withdrawableLabel}>Withdrawable</Text>
+              <Text style={styles.withdrawableValue}>
+                {isBalanceVisible ? `KSh ${formatCurrency(withdrawable)}` : '••••••'}
+              </Text>
+            </View>
           </View>
 
           <TouchableOpacity 
@@ -394,6 +416,49 @@ const styles = StyleSheet.create({
     ...TYPE.section,
     color: 'rgba(255, 255, 255, 0.9)',
   },
+  balanceContainer: {
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  balanceLabel: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  balanceLabelValue: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
+  commissionText: {
+    color: '#FF3B30',
+  },
+  withdrawableContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  withdrawableLabel: {
+    ...TYPE.micro,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.6)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  withdrawableValue: {
+    fontSize: 32,
+    lineHeight: 40,
+    fontFamily: 'Nunito-Bold',
+    color: '#FFFFFF',
+  },
   metricsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -427,13 +492,6 @@ const styles = StyleSheet.create({
   financeMetricsDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  finHeadline: {
-    fontSize: 18,
-    lineHeight: 24,
-    fontFamily: 'Nunito-Bold',
-    color: '#FFFFFF',
-    marginBottom: 20,
   },
   withdrawButton: {
     backgroundColor: '#FFFFFF',

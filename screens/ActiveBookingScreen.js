@@ -1,27 +1,34 @@
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 export default function ActiveBookingScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const carouselRef = useRef(null);
+  
   const booking = {
     vehicleName: 'BMW M3 Competition',
-    vehicleImage: require('../assets/images/bmw.jpg'),
+    vehicleImages: [
+      require('../assets/images/bmw.jpg'),
+      require('../assets/images/bmw.jpg'), // Add more images when available
+    ],
     plate: 'KDA 452M',
-    location: 'Nakuru, Kenya',
     startDate: 'Jan 15, 2024 • 09:00',
     endDate: 'Jan 20, 2024 • 11:00',
-    status: 'Active',
     renter: {
       name: 'John Doe',
-      bio: 'Loves road trips, 5-star renter rating.',
+      phone: '+254 712 345 678',
       avatar: null,
+      rating: 4.8,
+      trips: 12,
     },
     price: {
-      daily: 'KSh 9,000',
       days: 5,
       commission: 'KSh 8,750',
       total: 'KSh 45,000',
@@ -29,191 +36,173 @@ export default function ActiveBookingScreen({ navigation }) {
     },
   };
 
+  const renderCarouselItem = ({ item, index }) => (
+    <View style={styles.carouselItem}>
+      <Image source={item} style={styles.carouselImage} resizeMode="cover" />
+    </View>
+  );
+
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    if (viewableItems.length > 0) {
+      setCurrentImageIndex(viewableItems[0].index || 0);
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+  }).current;
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+      <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+      {/* Car Image Carousel */}
+      <View style={styles.carouselContainer}>
+        {/* Floating Back Button */}
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.floatingBackButton, { top: insets.top + 10 }]}
           onPress={() => {
             lightHaptic();
             navigation.goBack();
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <View style={styles.backButtonCircle}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          </View>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Active Booking</Text>
-        <View style={styles.backButton} />
+        <FlatList
+          ref={carouselRef}
+          data={booking.vehicleImages}
+          renderItem={renderCarouselItem}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item, index) => index.toString()}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+        />
+        {booking.vehicleImages.length > 1 && (
+          <View style={styles.carouselIndicators}>
+            {booking.vehicleImages.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.indicator,
+                  index === currentImageIndex && styles.indicatorActive,
+                ]}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Hero */}
-        <View style={styles.heroCard}>
-          <Image source={booking.vehicleImage} style={styles.heroAvatar} resizeMode="cover" />
-          <View style={styles.heroInfo}>
-            <Text style={styles.heroTitle}>{booking.vehicleName}</Text>
-            <Text style={styles.heroSubtitle}>{booking.location}</Text>
-            <View style={styles.badgeRow}>
-              <View style={styles.badge}>
-                <Ionicons name="car-sport-outline" size={14} color={COLORS.text} />
-                <Text style={styles.badgeText}>{booking.plate}</Text>
-              </View>
-              <View style={[styles.badge, styles.badgeAlt]}>
-                <Ionicons name="radio-button-on-outline" size={14} color={COLORS.text} />
-                <Text style={[styles.badgeText, styles.badgeTextAlt]}>{booking.status}</Text>
-              </View>
+        {/* Booking details */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Booking Details</Text>
+          <View style={styles.vehicleNameRow}>
+            <Text style={styles.vehicleName}>{booking.vehicleName}</Text>
+            <View style={styles.plateRow}>
+              <Ionicons name="car-sport-outline" size={14} color={COLORS.text} />
+              <Text style={styles.plateText}>{booking.plate}</Text>
             </View>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Duration</Text>
+            <Text style={styles.detailValue}>{booking.price.days} days</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Start</Text>
+            <Text style={styles.detailValue}>{booking.startDate}</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>End</Text>
+            <Text style={styles.detailValue}>{booking.endDate}</Text>
           </View>
         </View>
 
         {/* Renter profile */}
         <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Renter</Text>
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => navigation.navigate('Messages')}
-              activeOpacity={0.9}
-            >
-              <Ionicons name="chatbubble-ellipses-outline" size={18} color="#222222" />
-              <Text style={styles.secondaryButtonText}>Message renter</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.sectionTitle}>Renter</Text>
           <View style={styles.renterRow}>
             {booking.renter.avatar ? (
               <Image source={{ uri: booking.renter.avatar }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={28} color="#999999" />
+                <Ionicons name="person" size={28} color={COLORS.subtle} />
               </View>
             )}
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.renterName}>{booking.renter.name}</Text>
-              <Text style={styles.renterBio}>{booking.renter.bio}</Text>
+              {booking.renter.rating && (
+                <View style={styles.renterRating}>
+                  <Text style={styles.ratingText}>⭐</Text>
+                  <Text style={styles.ratingValue}>{booking.renter.rating}</Text>
+                  {booking.renter.trips && (
+                    <Text style={styles.tripsText}>• {booking.renter.trips} trips</Text>
+                  )}
+                </View>
+              )}
             </View>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="call-outline" size={20} color="#222222" />
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => {
+                lightHaptic();
+                navigation.navigate('Messages');
+              }}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={20} color={COLORS.text} />
             </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Booking details */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Booking details</Text>
-          <View style={styles.detailRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="time-outline" size={18} color="#222222" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.detailLabel}>Duration</Text>
-              <Text style={styles.detailValue}>{booking.price.days} days</Text>
-            </View>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.detailRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="calendar-outline" size={18} color="#222222" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.detailLabel}>Start</Text>
-              <Text style={styles.detailValue}>{booking.startDate}</Text>
-            </View>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.detailRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="calendar-outline" size={18} color="#222222" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.detailLabel}>End</Text>
-              <Text style={styles.detailValue}>{booking.endDate}</Text>
-            </View>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.detailRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="checkmark-circle-outline" size={18} color="#222222" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.detailLabel}>Pick up status</Text>
-              <Text style={styles.detailValue}>Completed</Text>
-            </View>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.timelineRow}>
-            <View style={styles.timelineChip}>
-              <Ionicons name="location-outline" size={16} color="#666" />
-              <Text style={styles.timelineText}>{booking.location}</Text>
-            </View>
+            {booking.renter.phone && (
+              <TouchableOpacity 
+                style={styles.iconButton}
+                onPress={() => {
+                  lightHaptic();
+                  // TODO: Implement phone call
+                }}
+              >
+                <Ionicons name="call-outline" size={20} color={COLORS.text} />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
         {/* Payment breakdown */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Payments</Text>
+          <Text style={styles.sectionTitle}>Payment</Text>
           <View style={styles.rowBetween}>
-            <Text style={styles.label}>Daily rate</Text>
-            <Text style={styles.value}>{booking.price.daily}</Text>
-          </View>
-          <View style={styles.rowBetween}>
-            <Text style={styles.label}>Days</Text>
-            <Text style={styles.value}>{booking.price.days}</Text>
-          </View>
-          <View style={styles.rowBetween}>
-            <Text style={styles.label}>Platform commission</Text>
-            <Text style={[styles.value, styles.valueMuted]}>- {booking.price.commission}</Text>
+            <Text style={styles.label}>Total paid</Text>
+            <Text style={styles.value}>{booking.price.total}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.rowBetween}>
-            <Text style={[styles.label, styles.bold]}>Total paid</Text>
-            <Text style={[styles.value, styles.bold]}>{booking.price.total}</Text>
+            <Text style={styles.label}>Platform commission</Text>
+            <Text style={[styles.value, styles.commissionValue]}>- {booking.price.commission}</Text>
           </View>
+          <View style={styles.divider} />
           <View style={styles.rowBetween}>
-            <Text style={[styles.label, styles.accent]}>Your payout</Text>
-            <Text style={[styles.value, styles.accent]}>{booking.price.payout}</Text>
+            <Text style={[styles.label, styles.bold]}>Your payout</Text>
+            <Text style={[styles.value, styles.bold]}>{booking.price.payout}</Text>
           </View>
         </View>
 
         {/* Actions */}
-        <View style={styles.card}>
-          <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('Map', {
-                title: booking.vehicleName,
-                plate: booking.plate,
-                initialRegion: {
-                  latitude: -0.3031,
-                  longitude: 36.08,
-                  latitudeDelta: 0.06,
-                  longitudeDelta: 0.06,
-                }
-              })}
-            >
-              <Ionicons name="location" size={24} color="#222222" />
-              <Text style={styles.actionButtonText}>Track car</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('ExtendBooking', { bookingRef: `${booking.vehicleName} • ${booking.plate}` })}
-            >
-              <Ionicons name="time" size={24} color="#222222" />
-              <Text style={styles.actionButtonText}>Extend booking</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('ReportIssue', { bookingRef: `${booking.vehicleName} • ${booking.plate}` })}
-            >
-              <Ionicons name="alert-circle" size={24} color="#222222" />
-              <Text style={styles.actionButtonText}>Report</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.actionsCard}>
+          <TouchableOpacity
+            style={styles.actionLink}
+            activeOpacity={0.7}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('ReportIssue', { bookingRef: `${booking.vehicleName} • ${booking.plate}` });
+            }}
+          >
+            <Text style={styles.actionLinkText}>Report</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.text} />
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -225,90 +214,88 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.l,
-    paddingBottom: 12,
-    backgroundColor: COLORS.bg,
+  floatingBackButton: {
+    position: 'absolute',
+    left: SPACING.l,
+    zIndex: 10,
   },
-  backButton: {
+  backButtonCircle: {
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  headerTitle: {
-    ...TYPE.largeTitle,
-    fontSize: 20,
-    color: COLORS.text,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   content: {
-    padding: SPACING.l,
-    paddingTop: SPACING.m,
+    paddingTop: 16,
     paddingBottom: 110,
-    gap: 16,
   },
-  heroCard: {
+  carouselContainer: {
+    width: SCREEN_WIDTH,
+    height: 280,
+    position: 'relative',
+  },
+  carouselItem: {
+    width: SCREEN_WIDTH,
+    height: 250,
+  },
+  carouselImage: {
+    width: '100%',
+    height: '100%',
+  },
+  carouselIndicators: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.m,
+    justifyContent: 'center',
+    gap: 8,
   },
-  heroAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.bg,
-    marginRight: 14,
+  indicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
-  heroInfo: {
-    flex: 1,
+  indicatorActive: {
+    backgroundColor: '#FFFFFF',
   },
-  heroTitle: {
+  vehicleNameRow: {
+    marginBottom: 12,
+  },
+  vehicleName: {
     ...TYPE.title,
     fontSize: 18,
     color: COLORS.text,
+    marginBottom: 6,
   },
-  heroSubtitle: {
-    ...TYPE.body,
-    color: COLORS.subtle,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-  },
-  badge: {
+  plateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
   },
-  badgeAlt: {
-  },
-  badgeText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-SemiBold',
-    color: COLORS.text,
-  },
-  badgeTextAlt: {
-    color: COLORS.text,
+  plateText: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
   },
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.m,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    gap: 10,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 12,
+    padding: 12,
+    marginHorizontal: SPACING.l,
+    marginBottom: 16,
   },
   sectionTitle: {
     ...TYPE.title,
@@ -318,7 +305,7 @@ const styles = StyleSheet.create({
   renterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    marginTop: 12,
   },
   avatar: {
     width: 56,
@@ -339,12 +326,25 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 15,
     color: COLORS.text,
+    marginBottom: 4,
   },
-  renterBio: {
+  renterRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+  },
+  ratingValue: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.text,
+  },
+  tripsText: {
     ...TYPE.body,
     fontSize: 13,
     color: COLORS.subtle,
-    marginTop: 2,
   },
   iconButton: {
     width: 40,
@@ -354,23 +354,13 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
+    paddingVertical: 12,
   },
   detailLabel: {
-    ...TYPE.caption,
-    fontSize: 12,
+    ...TYPE.body,
+    fontSize: 14,
     color: COLORS.subtle,
   },
   detailValue: {
@@ -379,32 +369,15 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.border,
+    height: 1,
+    backgroundColor: COLORS.text,
     marginVertical: 6,
-  },
-  timelineRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  timelineChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  timelineText: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: COLORS.subtle,
   },
   rowBetween: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   label: {
     ...TYPE.body,
@@ -415,45 +388,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.text,
   },
-  valueMuted: {
-    color: COLORS.subtle,
+  commissionValue: {
+    color: COLORS.danger,
   },
   bold: {
     fontFamily: 'Nunito-Bold',
     fontSize: 16,
   },
-  accent: {
+  actionsCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    overflow: 'hidden',
+    marginHorizontal: SPACING.l,
+  },
+  actionLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: SPACING.m,
+  },
+  actionLinkText: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
     color: COLORS.text,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    gap: 16,
-  },
-  actionButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
-  },
-  actionButtonText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#222222',
-    textAlign: 'center',
-  },
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  secondaryButtonText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#111111',
+  actionDivider: {
+    height: 1,
+    backgroundColor: COLORS.text,
+    marginHorizontal: SPACING.m,
   },
 });

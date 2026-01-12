@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,14 +10,18 @@ export default function WithdrawScreen({ navigation, route }) {
   const withdrawable = route?.params?.withdrawable ?? 95000;
   const [amount, setAmount] = useState('');
   const [selectedMethod, setSelectedMethod] = useState(null);
+  const scrollViewRef = useRef(null);
+  const amountInputRef = useRef(null);
 
   const formattedCurrency = (value) => `KSh ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 
-  const paymentMethods = [
-    { id: 'mpesa', name: 'M-Pesa', icon: require('../assets/images/mpesa.png'), details: '254 712 345 678' },
-    { id: 'visa', name: 'Visa', icon: require('../assets/images/visa.png'), details: '•••• •••• •••• 4532' },
-    { id: 'mastercard', name: 'Mastercard', icon: require('../assets/images/mastercard.png'), details: '•••• •••• •••• 7890' },
-  ];
+  // Payment methods will be loaded from backend
+  const paymentMethods = [];
+
+  const handleAddPaymentMethod = () => {
+    lightHaptic();
+    navigation.navigate('AddPaymentMethod');
+  };
 
   const handleSubmit = () => {
     const numericAmount = Number(amount.replace(/,/g, ''));
@@ -33,8 +37,7 @@ export default function WithdrawScreen({ navigation, route }) {
       alert('Please select a payment method.');
       return;
     }
-    // TODO: Process withdrawal
-    alert(`Withdrawal request of ${formattedCurrency(numericAmount)} to ${paymentMethods.find(m => m.id === selectedMethod)?.name} sent.`);
+    // TODO: Process withdrawal with backend
     navigation.goBack();
   };
 
@@ -64,87 +67,106 @@ export default function WithdrawScreen({ navigation, route }) {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <ScrollView 
-          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
+          ref={scrollViewRef}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 300 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           {/* Payment Methods */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select Payment Method</Text>
-            <View style={styles.methodsContainer}>
-              {paymentMethods.map((method) => (
+            {paymentMethods.length > 0 ? (
+              <View style={styles.methodsCard}>
+                {paymentMethods.map((method, index) => (
+                  <React.Fragment key={method.id}>
+                    <TouchableOpacity
+                      style={styles.methodItem}
+                      onPress={() => {
+                        lightHaptic();
+                        setSelectedMethod(method.id);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Image source={method.icon} style={styles.methodIcon} resizeMode="contain" />
+                      <View style={styles.methodInfo}>
+                        <Text style={styles.methodName}>
+                          {method.name}
+                        </Text>
+                        <Text style={styles.methodDetails}>{method.details}</Text>
+                      </View>
+                      {selectedMethod === method.id && (
+                        <View style={styles.checkmark}>
+                          <Ionicons name="checkmark-circle" size={20} color="#000000" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                    {index < paymentMethods.length - 1 && (
+                      <View style={styles.divider} />
+                    )}
+                  </React.Fragment>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyStateCard}>
+                <Ionicons name="wallet-outline" size={48} color={COLORS.subtle} />
+                <Text style={styles.emptyStateTitle}>No Payment Methods</Text>
+                <Text style={styles.emptyStateSubtitle}>Add a payment method to withdraw your earnings</Text>
                 <TouchableOpacity
-                  key={method.id}
-                  style={[
-                    styles.methodCard,
-                    selectedMethod === method.id && styles.methodCardSelected
-                  ]}
-                  onPress={() => {
-                    lightHaptic();
-                    setSelectedMethod(method.id);
-                  }}
-                  activeOpacity={0.7}
+                  style={styles.addButton}
+                  onPress={handleAddPaymentMethod}
+                  activeOpacity={0.8}
                 >
-                  <Image source={method.icon} style={styles.methodIcon} resizeMode="contain" />
-                  <View style={styles.methodInfo}>
-                    <Text style={[
-                      styles.methodName,
-                      selectedMethod === method.id && styles.methodNameSelected
-                    ]}>
-                      {method.name}
-                    </Text>
-                    <Text style={styles.methodDetails}>{method.details}</Text>
-                  </View>
-                  {selectedMethod === method.id && (
-                    <View style={styles.checkmark}>
-                      <Ionicons name="checkmark-circle" size={20} color={COLORS.brand} />
-                    </View>
-                  )}
+                  <Ionicons name="add" size={20} color="#FFFFFF" />
+                  <Text style={styles.addButtonText}>Add Payment Method</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
+              </View>
+            )}
           </View>
 
-          {/* Amount Input */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Amount</Text>
-            <View style={styles.inputContainer}>
-              <Text style={styles.currencyPrefix}>KSh</Text>
-              <TextInput
-                value={amount}
-                onChangeText={(text) => {
-                  // Allow only numbers and commas
-                  const cleaned = text.replace(/[^0-9,]/g, '');
-                  setAmount(cleaned);
-                }}
-                placeholder="0"
-                placeholderTextColor={COLORS.subtle}
-                keyboardType="numeric"
-                style={styles.input}
-              />
+          {/* Amount Input and Withdraw Button */}
+          {paymentMethods.length > 0 && (
+            <View style={styles.amountSection}>
+              <Text style={styles.sectionTitle}>Amount</Text>
+              <View style={styles.amountCard}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.currencyPrefix}>KSh</Text>
+                  <TextInput
+                    ref={amountInputRef}
+                    value={amount}
+                    onChangeText={(text) => {
+                      // Allow only numbers and commas
+                      const cleaned = text.replace(/[^0-9,]/g, '');
+                      setAmount(cleaned);
+                    }}
+                    onFocus={() => {
+                      setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                      }, 300);
+                    }}
+                    placeholder="0"
+                    placeholderTextColor={COLORS.subtle}
+                    keyboardType="numeric"
+                    style={styles.input}
+                  />
+                </View>
+                <View style={styles.cardDivider} />
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.withdrawButton,
+                      (!amount || !selectedMethod) && styles.withdrawButtonDisabled
+                    ]} 
+                    onPress={handleSubmit}
+                    activeOpacity={0.8}
+                    disabled={!amount || !selectedMethod}
+                  >
+                    <Text style={styles.withdrawButtonText}>Withdraw</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
-            <Text style={styles.inputHint}>
-              Enter the amount you want to withdraw
-            </Text>
-          </View>
-
-          {/* Withdraw Button */}
-          <TouchableOpacity 
-            style={[
-              styles.withdrawButton,
-              (!amount || !selectedMethod) && styles.withdrawButtonDisabled
-            ]} 
-            onPress={handleSubmit}
-            activeOpacity={0.8}
-            disabled={!amount || !selectedMethod}
-          >
-            <Text style={styles.withdrawButtonText}>Withdraw</Text>
-          </TouchableOpacity>
-
-          {/* Footer Note */}
-          <Text style={styles.footerNote}>
-            Processing time: 1-3 business days. By withdrawing, you agree to our payout policies.
-          </Text>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -191,24 +213,26 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SPACING.m,
   },
-  methodsContainer: {
-    gap: SPACING.s,
+  methodsCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
   },
-  methodCard: {
+  methodItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingVertical: 14,
     paddingHorizontal: SPACING.m,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
     minHeight: 68,
     position: 'relative',
   },
-  methodCardSelected: {
-    borderColor: COLORS.text,
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.text,
+    marginHorizontal: SPACING.m,
   },
   methodIcon: {
     width: 48,
@@ -224,9 +248,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: 2,
   },
-  methodNameSelected: {
-    color: COLORS.text,
-  },
   methodDetails: {
     ...TYPE.caption,
     fontSize: 12,
@@ -236,15 +257,36 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: SPACING.m,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  amountSection: {
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.l,
+  },
+  amountSection: {
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.l,
+  },
+  amountCard: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.border,
+    overflow: 'hidden',
+    paddingVertical: SPACING.m,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING.m,
     height: 56,
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: COLORS.text,
+    marginVertical: SPACING.m,
+  },
+  buttonContainer: {
+    alignItems: 'center',
+    paddingHorizontal: SPACING.m,
   },
   currencyPrefix: {
     ...TYPE.bodyStrong,
@@ -258,19 +300,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: COLORS.text,
   },
-  inputHint: {
-    ...TYPE.caption,
-    color: COLORS.subtle,
-    marginTop: SPACING.s,
-  },
   withdrawButton: {
     backgroundColor: '#000000',
-    borderRadius: RADIUS.card,
-    paddingVertical: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 48,
+    borderRadius: RADIUS.button,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.m,
-    marginBottom: SPACING.m,
   },
   withdrawButtonDisabled: {
     backgroundColor: '#666666',
@@ -280,10 +316,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
   },
-  footerNote: {
-    ...TYPE.caption,
+  emptyStateCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 200,
+  },
+  emptyStateTitle: {
+    ...TYPE.section,
+    fontSize: 18,
+    color: COLORS.text,
+    marginTop: SPACING.l,
+    marginBottom: SPACING.s,
+  },
+  emptyStateSubtitle: {
+    ...TYPE.body,
+    fontSize: 14,
     color: COLORS.subtle,
     textAlign: 'center',
-    lineHeight: 16,
+    marginBottom: SPACING.l,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.brand,
+    borderRadius: RADIUS.button,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  addButtonText: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: '#FFFFFF',
   },
 });

@@ -15,6 +15,8 @@ export default function UpdateProfileScreen({ navigation, route }) {
   const initialData = route?.params?.hostData || host || {};
 
   const [formData, setFormData] = useState({
+    name: initialData.name || initialData.full_name || '',
+    email: initialData.email || '',
     bio: initialData.bio || '',
     mobile_number: initialData.mobile_number || '',
     id_number: initialData.id_number || '',
@@ -26,6 +28,10 @@ export default function UpdateProfileScreen({ navigation, route }) {
   // Validate form (all fields are optional but validate format if provided)
   const validateForm = () => {
     const newErrors = {};
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
 
     if (formData.bio && formData.bio.length > 2000) {
       newErrors.bio = 'Bio must not exceed 2000 characters';
@@ -55,6 +61,8 @@ export default function UpdateProfileScreen({ navigation, route }) {
     try {
       // Prepare data - only send non-empty fields
       const updateData = {};
+      if (formData.name?.trim()) updateData.name = formData.name.trim();
+      if (formData.email?.trim()) updateData.email = formData.email.trim();
       if (formData.bio?.trim()) updateData.bio = formData.bio.trim();
       if (formData.mobile_number?.trim()) updateData.mobile_number = formData.mobile_number.trim();
       if (formData.id_number?.trim()) updateData.id_number = formData.id_number.trim();
@@ -118,9 +126,56 @@ export default function UpdateProfileScreen({ navigation, route }) {
 
         {/* Form Card */}
         <View style={styles.formCard}>
+          {/* Name Input */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Name</Text>
+            <TextInput
+              style={[styles.input, errors.name && styles.inputError]}
+              placeholder="Enter your full name"
+              placeholderTextColor="#999999"
+              value={formData.name}
+              onChangeText={(text) => {
+                setFormData({ ...formData, name: text });
+                if (errors.name) {
+                  setErrors({ ...errors, name: '' });
+                }
+              }}
+              autoCapitalize="words"
+            />
+            {errors.name && (
+              <Text style={styles.errorText}>{errors.name}</Text>
+            )}
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Email Input */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={[styles.input, errors.email && styles.inputError]}
+              placeholder="Enter your email address"
+              placeholderTextColor="#999999"
+              value={formData.email}
+              onChangeText={(text) => {
+                setFormData({ ...formData, email: text });
+                if (errors.email) {
+                  setErrors({ ...errors, email: '' });
+                }
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
+          </View>
+
+          <View style={styles.divider} />
+
           {/* Bio Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Bio (Optional)</Text>
+            <Text style={styles.label}>Bio</Text>
             <TextInput
               style={[styles.textArea, errors.bio && styles.inputError]}
               placeholder="Tell others about yourself..."
@@ -146,7 +201,7 @@ export default function UpdateProfileScreen({ navigation, route }) {
 
           {/* Phone Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Mobile Number (Optional)</Text>
+            <Text style={styles.label}>Mobile Number</Text>
             <TextInput
               style={[styles.input, errors.mobile_number && styles.inputError]}
               placeholder="Enter your mobile number"
@@ -169,8 +224,7 @@ export default function UpdateProfileScreen({ navigation, route }) {
 
           {/* ID Number Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>ID Number (Optional)</Text>
-            <Text style={styles.helperText}>ID, passport, or driver's license number</Text>
+            <Text style={styles.label}>ID Number</Text>
             <TextInput
               style={[styles.input, errors.id_number && styles.inputError]}
               placeholder="Enter your ID number"
@@ -254,10 +308,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   label: {
-    ...TYPE.micro,
-    color: '#8E8E93',
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
     marginBottom: 8,
-    fontSize: 12,
   },
   input: {
     width: '100%',

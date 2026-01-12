@@ -24,32 +24,14 @@ export default function MessagesScreen({ navigation }) {
         </View>
         <Text style={styles.subtitle}>Your conversations</Text>
 
-        <TouchableOpacity
-          style={styles.threadCard}
-          activeOpacity={0.9}
-          onPress={() => {
-            lightHaptic();
-            navigation.navigate('Chat', { title: 'Brian' });
-          }}
-        >
-          <View style={styles.threadLeft}>
-            <View style={styles.avatar}>
-              <Ionicons name="person" size={22} color={COLORS.subtle} />
-            </View>
-          </View>
-
-          <View style={styles.threadBody}>
-            <View style={styles.threadTop}>
-              <Text style={styles.threadTitle} numberOfLines={1}>
-                Brian
-              </Text>
-              <Text style={styles.threadTime}>2:17 PM</Text>
-            </View>
-            <Text style={styles.threadPreview} numberOfLines={1}>
-              Perfect. I'll share the exact spot once I arrive.
-            </Text>
-          </View>
-        </TouchableOpacity>
+        {/* Messages will be loaded from backend */}
+        <View style={styles.emptyState}>
+          <Ionicons name="chatbubbles-outline" size={64} color={COLORS.subtle} />
+          <Text style={styles.emptyStateText}>No messages yet</Text>
+          <Text style={styles.emptyStateSubtext}>
+            Your conversations with guests will appear here
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -131,5 +113,24 @@ const styles = StyleSheet.create({
   headerIconButton: {
     padding: 8,
     borderRadius: 16,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    marginTop: 40,
+  },
+  emptyStateText: {
+    ...TYPE.section,
+    fontSize: 18,
+    color: COLORS.text,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    textAlign: 'center',
   },
 });

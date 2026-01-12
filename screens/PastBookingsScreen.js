@@ -8,28 +8,7 @@ import { lightHaptic } from '../ui/haptics';
 export default function PastBookingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   
-  const bookings = [
-    {
-      id: 'past-1',
-      vehicleName: 'BMW M3',
-      vehicleImage: require('../assets/images/bmw.jpg'),
-      startDate: '2023-12-10',
-      endDate: '2023-12-15',
-      status: 'completed',
-      totalAmount: 'KSh 38,000',
-      location: 'Nakuru, Kenya',
-    },
-    {
-      id: 'past-2',
-      vehicleName: 'Toyota Corolla',
-      vehicleImage: require('../assets/images/bm.jpg'),
-      startDate: '2023-11-02',
-      endDate: '2023-11-04',
-      status: 'completed',
-      totalAmount: 'KSh 14,000',
-      location: 'Nakuru, Kenya',
-    },
-  ];
+  const bookings = [];
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -81,43 +60,50 @@ export default function PastBookingsScreen({ navigation }) {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-
-        <View style={styles.list}>
-          {bookings.map((b) => (
-            <TouchableOpacity
-              key={b.id}
-              style={styles.listCard}
-              activeOpacity={1}
-              onPress={() => navigation.navigate('PastBookingDetail', { booking: {
-                vehicleName: b.vehicleName,
-                vehicleImage: b.vehicleImage,
-                location: b.location,
-                startDate: b.startDate,
-                endDate: b.endDate,
-                status: getStatusText(b.status),
-                totalPaid: typeof b.totalAmount === 'string' ? parseInt(b.totalAmount.replace(/[^\d]/g, ''), 10) || 0 : b.totalAmount,
-              } })}
-            >
-              <View style={styles.listLeft}>
-                <Image source={b.vehicleImage} style={styles.avatar} resizeMode="cover" />
-              </View>
-
-              <View style={styles.listMiddle}>
-                <View style={styles.rowTop}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>{b.vehicleName}</Text>
-                  <View style={[styles.statusPill, { backgroundColor: getStatusColor(b.status) + '1A' }]}>
-                    <Text style={[styles.statusPillText, { color: getStatusColor(b.status) }]}>
-                      {getStatusText(b.status)}
-                    </Text>
-                  </View>
+        {bookings.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="calendar-outline" size={64} color="#C7C7CC" />
+            <Text style={styles.emptyStateTitle}>No past bookings</Text>
+            <Text style={styles.emptyStateText}>Your completed bookings will appear here</Text>
+          </View>
+        ) : (
+          <View style={styles.list}>
+            {bookings.map((b) => (
+              <TouchableOpacity
+                key={b.id}
+                style={styles.listCard}
+                activeOpacity={1}
+                onPress={() => navigation.navigate('PastBookingDetail', { booking: {
+                  vehicleName: b.vehicleName,
+                  vehicleImage: b.vehicleImage,
+                  location: b.location,
+                  startDate: b.startDate,
+                  endDate: b.endDate,
+                  status: getStatusText(b.status),
+                  totalPaid: typeof b.totalAmount === 'string' ? parseInt(b.totalAmount.replace(/[^\d]/g, ''), 10) || 0 : b.totalAmount,
+                } })}
+              >
+                <View style={styles.listLeft}>
+                  <Image source={b.vehicleImage} style={styles.avatar} resizeMode="cover" />
                 </View>
-                <Text style={styles.cardSub}>
-                  {b.startDate} - {b.endDate}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+
+                <View style={styles.listMiddle}>
+                  <View style={styles.rowTop}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>{b.vehicleName}</Text>
+                    <View style={[styles.statusPill, { backgroundColor: getStatusColor(b.status) + '1A' }]}>
+                      <Text style={[styles.statusPillText, { color: getStatusColor(b.status) }]}>
+                        {getStatusText(b.status)}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.cardSub}>
+                    {b.startDate} - {b.endDate}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -224,5 +210,23 @@ const styles = StyleSheet.create({
   amount: {
     ...TYPE.bodyStrong,
     color: COLORS.text,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+  },
+  emptyStateTitle: {
+    ...TYPE.section,
+    fontSize: 18,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    textAlign: 'center',
   },
 });

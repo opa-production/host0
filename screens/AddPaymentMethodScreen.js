@@ -7,7 +7,7 @@ import { lightHaptic } from '../ui/haptics';
 
 export default function AddPaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [selectedType, setSelectedType] = useState(null); // 'mpesa' or 'card'
+  const [selectedType, setSelectedType] = useState(null); // 'mpesa', 'visa', or 'mastercard'
   const [savedMethods, setSavedMethods] = useState([]);
 
   // M-Pesa form state
@@ -25,20 +25,27 @@ export default function AddPaymentMethodScreen({ navigation }) {
     cvv: '',
   });
   const [cardErrors, setCardErrors] = useState({});
-  const [cardType, setCardType] = useState(null); // 'visa' or 'mastercard'
 
   const selectMpesa = () => {
     setSelectedType('mpesa');
-    setCardType(null);
     setCardForm({ name: '', cardNumber: '', expiry: '', cvv: '' });
     setCardErrors({});
   };
 
-  const selectCard = () => {
-    setSelectedType('card');
-    setCardType(null);
+  const selectVisa = () => {
+    setSelectedType('visa');
     setMpesaForm({ name: '', mobileNumber: '' });
     setMpesaErrors({});
+    setCardForm({ name: '', cardNumber: '', expiry: '', cvv: '' });
+    setCardErrors({});
+  };
+
+  const selectMastercard = () => {
+    setSelectedType('mastercard');
+    setMpesaForm({ name: '', mobileNumber: '' });
+    setMpesaErrors({});
+    setCardForm({ name: '', cardNumber: '', expiry: '', cvv: '' });
+    setCardErrors({});
   };
 
   // Format card number as XXXX XXXX XXXX XXXX
@@ -48,15 +55,16 @@ export default function AddPaymentMethodScreen({ navigation }) {
     return formatted.slice(0, 19); // Max 16 digits + 3 spaces
   };
 
-  // Detect card type from first digit
-  const detectCardType = (cardNumber) => {
+  // Validate card number matches selected type
+  const validateCardType = (cardNumber) => {
     const firstDigit = cardNumber.replace(/\s/g, '')[0];
-    if (firstDigit === '4') {
-      return 'visa';
-    } else if (firstDigit === '5') {
-      return 'mastercard';
+    if (selectedType === 'visa' && firstDigit !== '4') {
+      return false;
     }
-    return null;
+    if (selectedType === 'mastercard' && firstDigit !== '5') {
+      return false;
+    }
+    return true;
   };
 
   // Format expiry as MM/YY
@@ -111,9 +119,10 @@ export default function AddPaymentMethodScreen({ navigation }) {
     } else if (!/^\d+$/.test(cleanedCardNumber)) {
       errors.cardNumber = 'Card number must contain only digits';
     } else {
-      const detectedType = detectCardType(cleanedCardNumber);
-      if (!detectedType) {
-        errors.cardNumber = 'Card must start with 4 (Visa) or 5 (Mastercard)';
+      if (!validateCardType(cleanedCardNumber)) {
+        errors.cardNumber = selectedType === 'visa' 
+          ? 'Visa cards must start with 4'
+          : 'Mastercard must start with 5';
       }
     }
 
@@ -138,7 +147,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
       }
     }
 
-    const cvvLabel = cardType === 'visa' ? 'CVC' : 'CVV';
+    const cvvLabel = selectedType === 'visa' ? 'CVC' : 'CVV';
     if (!cardForm.cvv) {
       errors.cvv = `${cvvLabel} is required`;
     } else if (!/^\d{3,4}$/.test(cardForm.cvv)) {
@@ -153,14 +162,6 @@ export default function AddPaymentMethodScreen({ navigation }) {
   const handleCardNumberChange = (text) => {
     const formatted = formatCardNumber(text);
     setCardForm({ ...cardForm, cardNumber: formatted });
-    
-    const cleaned = formatted.replace(/\s/g, '');
-    if (cleaned.length > 0) {
-      const detected = detectCardType(cleaned);
-      setCardType(detected);
-    } else {
-      setCardType(null);
-    }
   };
 
   // Handle expiry input
@@ -216,12 +217,11 @@ export default function AddPaymentMethodScreen({ navigation }) {
 
       const newMethod = {
         id: Date.now().toString(),
-        type: 'card',
+        type: selectedType,
         name: cardForm.name.trim(),
-        cardType: cardType,
         lastFour: lastFour,
         expiry: cardForm.expiry,
-        logo: cardType === 'visa' 
+        logo: selectedType === 'visa' 
           ? require('../assets/images/visa.png')
           : require('../assets/images/mastercard.png'),
       };
@@ -230,7 +230,6 @@ export default function AddPaymentMethodScreen({ navigation }) {
       setSelectedType(null);
       setCardForm({ name: '', cardNumber: '', expiry: '', cvv: '' });
       setCardErrors({});
-      setCardType(null);
     }
   };
 
@@ -262,7 +261,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
       </View>
 
       <ScrollView 
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}
+        contentContainerStyle={[styles.content, { paddingBottom: SPACING.xl }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -270,38 +269,63 @@ export default function AddPaymentMethodScreen({ navigation }) {
         {/* Payment Type Selection */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Select Payment Method</Text>
-          <View style={styles.paymentTypeCards}>
+          <View style={styles.paymentMethodsCard}>
             <TouchableOpacity
-              style={[styles.paymentTypeCard, selectedType === 'mpesa' && styles.paymentTypeCardActive]}
+              style={styles.paymentMethodItem}
               onPress={selectMpesa}
-              activeOpacity={0.9}
+              activeOpacity={0.7}
             >
               <Image 
                 source={require('../assets/images/mpesa.png')} 
                 style={styles.paymentTypeLogoSmall}
                 resizeMode="contain"
               />
-              <Text style={styles.paymentTypeLabel}>Mobile money</Text>
+              <Text style={styles.paymentTypeLabel}>M-Pesa</Text>
+              {selectedType === 'mpesa' && (
+                <View style={styles.checkmark}>
+                  <Ionicons name="checkmark-circle" size={20} color="#000000" />
+                </View>
+              )}
             </TouchableOpacity>
 
+            <View style={styles.divider} />
+
             <TouchableOpacity
-              style={[styles.paymentTypeCard, selectedType === 'card' && styles.paymentTypeCardActive]}
-              onPress={selectCard}
-              activeOpacity={0.9}
+              style={styles.paymentMethodItem}
+              onPress={selectVisa}
+              activeOpacity={0.7}
             >
-              <View style={styles.cardLogosInline}>
-                <Image 
-                  source={require('../assets/images/visa.png')} 
-                  style={styles.cardLogoTiny}
-                  resizeMode="contain"
-                />
-                <Image 
-                  source={require('../assets/images/mastercard.png')} 
-                  style={styles.cardLogoTiny}
-                  resizeMode="contain"
-                />
-              </View>
-              <Text style={styles.paymentTypeLabel}>Card</Text>
+              <Image 
+                source={require('../assets/images/visa.png')} 
+                style={styles.paymentTypeLogoSmall}
+                resizeMode="contain"
+              />
+              <Text style={styles.paymentTypeLabel}>Visa</Text>
+              {selectedType === 'visa' && (
+                <View style={styles.checkmark}>
+                  <Ionicons name="checkmark-circle" size={20} color="#000000" />
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.paymentMethodItem}
+              onPress={selectMastercard}
+              activeOpacity={0.7}
+            >
+              <Image 
+                source={require('../assets/images/mastercard.png')} 
+                style={styles.paymentTypeLogoSmall}
+                resizeMode="contain"
+              />
+              <Text style={styles.paymentTypeLabel}>Mastercard</Text>
+              {selectedType === 'mastercard' && (
+                <View style={styles.checkmark}>
+                  <Ionicons name="checkmark-circle" size={20} color="#000000" />
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -311,12 +335,12 @@ export default function AddPaymentMethodScreen({ navigation }) {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Add M-Pesa</Text>
             
-            <View style={styles.form}>
+            <View style={styles.formCard}>
               {/* Name Input */}
-              <View style={styles.inputGroup}>
+              <View style={styles.formInputContainer}>
                 <Text style={styles.label}>Name on Account</Text>
                 <TextInput
-                  style={[styles.input, mpesaErrors.name && styles.inputError]}
+                  style={[styles.formInput, mpesaErrors.name && styles.inputError]}
                   placeholder="Enter full name"
                   placeholderTextColor="#999999"
                   value={mpesaForm.name}
@@ -333,11 +357,13 @@ export default function AddPaymentMethodScreen({ navigation }) {
                 )}
               </View>
 
+              <View style={styles.formDivider} />
+
               {/* Mobile Number Input */}
-              <View style={styles.inputGroup}>
+              <View style={styles.formInputContainer}>
                 <Text style={styles.label}>Mobile Number</Text>
                 <TextInput
-                  style={[styles.input, mpesaErrors.mobileNumber && styles.inputError]}
+                  style={[styles.formInput, mpesaErrors.mobileNumber && styles.inputError]}
                   placeholder="07XX XXX XXX or 2547XX XXX XXX"
                   placeholderTextColor="#999999"
                   value={mpesaForm.mobileNumber}
@@ -356,29 +382,33 @@ export default function AddPaymentMethodScreen({ navigation }) {
                 )}
               </View>
 
+              <View style={styles.formDivider} />
+
               {/* Submit Button */}
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleMpesaSubmit}
-                activeOpacity={1}
-              >
-                <Text style={styles.submitButtonText}>Add M-Pesa</Text>
-              </TouchableOpacity>
+              <View style={styles.buttonWrapper}>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleMpesaSubmit}
+                  activeOpacity={1}
+                >
+                  <Text style={styles.submitButtonText}>Add M-Pesa</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         )}
 
         {/* Card Form */}
-        {selectedType === 'card' && (
+        {(selectedType === 'visa' || selectedType === 'mastercard') && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Add Card</Text>
+            <Text style={styles.sectionTitle}>Add {selectedType === 'visa' ? 'Visa' : 'Mastercard'}</Text>
             
-            <View style={styles.form}>
+            <View style={styles.formCard}>
               {/* Name Input */}
-              <View style={styles.inputGroup}>
+              <View style={styles.formInputContainer}>
                 <Text style={styles.label}>Name on Card</Text>
                 <TextInput
-                  style={[styles.input, cardErrors.name && styles.inputError]}
+                  style={[styles.formInput, cardErrors.name && styles.inputError]}
                   placeholder="Enter name as on card"
                   placeholderTextColor="#999999"
                   value={cardForm.name}
@@ -395,12 +425,14 @@ export default function AddPaymentMethodScreen({ navigation }) {
                 )}
               </View>
 
+              <View style={styles.formDivider} />
+
               {/* Card Number Input */}
-              <View style={styles.inputGroup}>
+              <View style={styles.formInputContainer}>
                 <Text style={styles.label}>Card Number</Text>
                 <View style={styles.cardNumberContainer}>
                   <TextInput
-                    style={[styles.input, styles.cardNumberInput, cardErrors.cardNumber && styles.inputError]}
+                    style={[styles.formInput, styles.cardNumberInput, cardErrors.cardNumber && styles.inputError]}
                     placeholder="1234 5678 9012 3456"
                     placeholderTextColor="#999999"
                     value={cardForm.cardNumber}
@@ -408,9 +440,9 @@ export default function AddPaymentMethodScreen({ navigation }) {
                     keyboardType="number-pad"
                     maxLength={19}
                   />
-                  {cardType && (
+                  {selectedType && (
                     <Image 
-                      source={cardType === 'visa' 
+                      source={selectedType === 'visa' 
                         ? require('../assets/images/visa.png')
                         : require('../assets/images/mastercard.png')
                       } 
@@ -424,66 +456,74 @@ export default function AddPaymentMethodScreen({ navigation }) {
                 )}
               </View>
 
-              {/* Expiry and CVV Row */}
-              <View style={styles.row}>
-                {/* Expiry Input */}
-                <View style={[styles.inputGroup, styles.halfWidth]}>
-                  <Text style={styles.label}>Expiry Date</Text>
-                  <TextInput
-                    style={[styles.input, cardErrors.expiry && styles.inputError]}
-                    placeholder="MM/YY"
-                    placeholderTextColor="#999999"
-                    value={cardForm.expiry}
-                    onChangeText={(text) => {
-                      const formatted = formatExpiry(text);
-                      setCardForm({ ...cardForm, expiry: formatted });
-                      if (cardErrors.expiry) {
-                        setCardErrors({ ...cardErrors, expiry: '' });
-                      }
-                    }}
-                    keyboardType="number-pad"
-                    maxLength={5}
-                  />
-                  {cardErrors.expiry && (
-                    <Text style={styles.errorText}>{cardErrors.expiry}</Text>
-                  )}
-                </View>
+              <View style={styles.formDivider} />
 
-                {/* CVV/CVC Input */}
-                <View style={[styles.inputGroup, styles.halfWidth]}>
-                  <Text style={styles.label}>
-                    {cardType === 'visa' ? 'CVC' : 'CVV'}
-                  </Text>
-                  <TextInput
-                    style={[styles.input, cardErrors.cvv && styles.inputError]}
-                    placeholder={cardType === 'visa' ? '123' : '123'}
-                    placeholderTextColor="#999999"
-                    value={cardForm.cvv}
-                    onChangeText={(text) => {
-                      const cleaned = text.replace(/\D/g, '').slice(0, 4);
-                      setCardForm({ ...cardForm, cvv: cleaned });
-                      if (cardErrors.cvv) {
-                        setCardErrors({ ...cardErrors, cvv: '' });
-                      }
-                    }}
-                    keyboardType="number-pad"
-                    maxLength={4}
-                    secureTextEntry
-                  />
-                  {cardErrors.cvv && (
-                    <Text style={styles.errorText}>{cardErrors.cvv}</Text>
-                  )}
+              {/* Expiry and CVV Row */}
+              <View style={styles.formInputContainer}>
+                <View style={styles.row}>
+                  {/* Expiry Input */}
+                  <View style={styles.halfWidth}>
+                    <Text style={styles.label}>Expiry Date</Text>
+                    <TextInput
+                      style={[styles.formInput, cardErrors.expiry && styles.inputError]}
+                      placeholder="MM/YY"
+                      placeholderTextColor="#999999"
+                      value={cardForm.expiry}
+                      onChangeText={(text) => {
+                        const formatted = formatExpiry(text);
+                        setCardForm({ ...cardForm, expiry: formatted });
+                        if (cardErrors.expiry) {
+                          setCardErrors({ ...cardErrors, expiry: '' });
+                        }
+                      }}
+                      keyboardType="number-pad"
+                      maxLength={5}
+                    />
+                    {cardErrors.expiry && (
+                      <Text style={styles.errorText}>{cardErrors.expiry}</Text>
+                    )}
+                  </View>
+
+                  {/* CVV/CVC Input */}
+                  <View style={styles.halfWidth}>
+                    <Text style={styles.label}>
+                      {selectedType === 'visa' ? 'CVC' : 'CVV'}
+                    </Text>
+                    <TextInput
+                      style={[styles.formInput, cardErrors.cvv && styles.inputError]}
+                      placeholder="123"
+                      placeholderTextColor="#999999"
+                      value={cardForm.cvv}
+                      onChangeText={(text) => {
+                        const cleaned = text.replace(/\D/g, '').slice(0, 4);
+                        setCardForm({ ...cardForm, cvv: cleaned });
+                        if (cardErrors.cvv) {
+                          setCardErrors({ ...cardErrors, cvv: '' });
+                        }
+                      }}
+                      keyboardType="number-pad"
+                      maxLength={4}
+                      secureTextEntry
+                    />
+                    {cardErrors.cvv && (
+                      <Text style={styles.errorText}>{cardErrors.cvv}</Text>
+                    )}
+                  </View>
                 </View>
               </View>
 
+              <View style={styles.formDivider} />
+
               {/* Submit Button */}
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleCardSubmit}
-                activeOpacity={1}
-              >
-                <Text style={styles.submitButtonText}>Add Card</Text>
-              </TouchableOpacity>
+              <View style={styles.buttonWrapper}>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleCardSubmit}
+                  activeOpacity={1}
+                >
+                  <Text style={styles.submitButtonText}>Add {selectedType === 'visa' ? 'Visa' : 'Mastercard'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         )}
@@ -579,33 +619,30 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
     marginBottom: 10,
   },
-  paymentTypeCards: {
-    flexDirection: 'column',
-    gap: 12,
-  },
-  paymentTypeCard: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+  paymentMethodsCard: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
-    minHeight: 52,
+    overflow: 'hidden',
   },
-  paymentTypeCardActive: {
-    borderColor: '#000000',
+  paymentMethodItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingVertical: 14,
+    paddingHorizontal: SPACING.m,
+    minHeight: 56,
+    position: 'relative',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.text,
+    marginHorizontal: SPACING.m,
+  },
+  checkmark: {
+    position: 'absolute',
+    right: SPACING.m,
   },
   paymentTypeLabel: {
     ...TYPE.bodyStrong,
@@ -617,25 +654,35 @@ const styles = StyleSheet.create({
     width: 48,
     height: 20,
   },
-  cardLogosInline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  formCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+    overflow: 'hidden',
+    paddingVertical: SPACING.m,
   },
-  cardLogoTiny: {
-    width: 40,
-    height: 18,
+  formInputContainer: {
+    paddingHorizontal: SPACING.m,
+    paddingVertical: SPACING.m,
   },
-  form: {
-    gap: 12,
-  },
-  inputGroup: {
-    marginBottom: 4,
+  formDivider: {
+    height: 1,
+    backgroundColor: COLORS.text,
+    marginHorizontal: SPACING.m,
   },
   label: {
     ...TYPE.micro,
     color: '#8E8E93',
     marginBottom: 6,
+  },
+  formInput: {
+    width: '100%',
+    height: 48,
+    paddingHorizontal: 0,
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    color: '#000000',
   },
   input: {
     width: '100%',
@@ -648,6 +695,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Nunito-Regular',
     color: '#000000',
+  },
+  inputGroup: {
+    marginBottom: 4,
   },
   inputError: {
     borderColor: '#007AFF',
@@ -668,12 +718,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 60,
   },
-  cardTypeLogo: {
-    position: 'absolute',
-    right: 12,
-    width: 50,
-    height: 32,
-  },
   row: {
     flexDirection: 'row',
     gap: 12,
@@ -681,22 +725,24 @@ const styles = StyleSheet.create({
   halfWidth: {
     flex: 1,
   },
+  cardTypeLogo: {
+    position: 'absolute',
+    right: 12,
+    width: 50,
+    height: 32,
+  },
+  buttonWrapper: {
+    alignItems: 'center',
+    paddingHorizontal: SPACING.m,
+    paddingTop: SPACING.s,
+  },
   submitButton: {
-    width: '100%',
-    height: 46,
+    paddingVertical: 12,
+    paddingHorizontal: 48,
     backgroundColor: '#000000',
-    borderRadius: 16,
+    borderRadius: RADIUS.button,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
   },
   submitButtonText: {
     ...TYPE.bodyStrong,

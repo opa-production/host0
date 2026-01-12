@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, StatusBar } from 'react-native';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
-import LandingIllustration from '../assets/icons/landing.svg';
 
 export default function LandingScreen({ navigation }) {
   return (
@@ -9,15 +8,8 @@ export default function LandingScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
       <View style={styles.hero}>
-        <View style={styles.brandSection}>
-          <Text style={styles.appName}>Ardena</Text>
-          <Text style={styles.appSubtitle}>Host</Text>
-        </View>
-        
-        <LandingIllustration width={280} height={220} />
-        
         <View style={styles.textSection}>
-          {/* <Text style={styles.tagline}>Idle cars don't pay bills</Text> */}
+          <Text style={styles.title}>Host Your Car</Text>
           <Text style={styles.subtitle}>Turn your parked car into a revenue stream. Start hosting today.</Text>
         </View>
       </View>
@@ -44,38 +36,21 @@ const styles = StyleSheet.create({
   hero: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'space-evenly',
+    justifyContent: 'center',
     paddingTop: 60,
     paddingBottom: 20,
-  },
-  brandSection: {
-    alignItems: 'center',
-  },
-  appName: {
-    fontSize: 48,
-    fontFamily: 'Nunito-Bold',
-    color: COLORS.brand,
-    letterSpacing: 2,
-  },
-  appSubtitle: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: COLORS.text,
-    letterSpacing: 4,
-    marginTop: -4,
-    opacity: 0.7,
   },
   textSection: {
     alignItems: 'center',
     paddingHorizontal: 24,
   },
-  tagline: {
-    fontSize: 28,
+  title: {
+    fontSize: 32,
     fontFamily: 'Nunito-Bold',
     color: COLORS.text,
     textAlign: 'center',
-    marginBottom: 12,
-    lineHeight: 36,
+    marginBottom: 16,
+    lineHeight: 40,
   },
   subtitle: {
     ...TYPE.body,

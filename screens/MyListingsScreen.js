@@ -86,12 +86,13 @@ export default function MyListingsScreen({ navigation }) {
     navigation.navigate('CarDetails', { car: item });
   };
 
-  const renderCarCard = ({ item }) => {
+  const renderCarCard = ({ item, index }) => {
     const statusInfo = getStatusInfo(item.status);
+    const isLastItem = index === allListings.length - 1;
     
     return (
       <TouchableOpacity 
-        style={styles.listCard}
+        style={[styles.listCard, isLastItem && styles.listCardLast]}
         onPress={() => handleCardPress(item)}
         activeOpacity={1}
       >
@@ -100,21 +101,15 @@ export default function MyListingsScreen({ navigation }) {
             <Image source={item.image} style={styles.carImage} />
           ) : (
             <View style={styles.carImagePlaceholder}>
-              <Ionicons name="car-outline" size={32} color="#C7C7CC" />
+              <Ionicons name="car-outline" size={24} color="#C7C7CC" />
             </View>
           )}
         </View>
 
         <View style={styles.carInfo}>
           <View style={styles.carHeader}>
-            <View style={styles.carTitleContainer}>
-              <Text style={styles.carName}>{item.name}</Text>
-              <Text style={styles.carModel}>{item.model} • {item.plateNumber}</Text>
-            </View>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusEmoji}>{statusInfo.emoji}</Text>
-              <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
-            </View>
+            <Text style={styles.carName}>{item.name}</Text>
+            <Text style={styles.carModel}>{item.model} • {item.plateNumber}</Text>
           </View>
 
           <View style={styles.carMetrics}>
@@ -123,8 +118,12 @@ export default function MyListingsScreen({ navigation }) {
               <Text style={styles.metricText}>{formatPrice(item.pricePerDay)}</Text>
             </View>
             <View style={styles.metricItem}>
-              <Ionicons name="location-outline" size={14} color="#1C1C1E" />
-              <Text style={styles.metricText}>{item.location}</Text>
+              <Ionicons name="car-outline" size={14} color="#1C1C1E" />
+              <Text style={styles.metricText}>{item.totalBookings || 0} trips</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
+              <Text style={styles.metricText}>{statusInfo.label}</Text>
             </View>
             <View style={styles.metricItem}>
               {item.rating ? (
@@ -206,25 +205,19 @@ const styles = StyleSheet.create({
   listCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: COLORS.borderStrong,
-    marginBottom: 12,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  listCardLast: {
+    marginBottom: 0,
   },
   carImageContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#F2F2F7',
     overflow: 'hidden',
     marginRight: 12,
@@ -245,45 +238,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   carHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  carTitleContainer: {
-    flex: 1,
+    marginBottom: 8,
   },
   carName: {
     ...TYPE.bodyStrong,
     fontSize: 15,
     color: '#1C1C1E',
+    marginBottom: 2,
   },
   carModel: {
     ...TYPE.body,
-    fontSize: 13,
+    fontSize: 12,
     color: '#8E8E93',
-    marginTop: 2,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
-  statusEmoji: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-SemiBold',
   },
   carMetrics: {
-    flexDirection: 'row',
-    gap: 12,
+    flexDirection: 'column',
+    gap: 6,
   },
   metricItem: {
     flexDirection: 'row',
@@ -305,6 +275,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#E3F2FD',
     paddingHorizontal: 6,
     paddingVertical: 2,
+    borderRadius: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
     borderRadius: 4,
   },
   editPill: {

@@ -189,6 +189,9 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="AddPaymentMethod" 
           component={AddPaymentMethodScreen}
+          options={{
+            tabBarStyle: { display: 'none' },
+          }}
         />
 
         {/* Active Booking Screen */}

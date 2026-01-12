@@ -22,6 +22,17 @@ export default function BookingsScreen({ navigation }) {
 
   const booking = { ...mockBooking, status: 'active' };
 
+  // Calculate duration
+  const calculateDuration = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const duration = calculateDuration(booking.startDate, booking.endDate);
+
   useEffect(() => {
     // Simulate loading
     const timer = setTimeout(() => {
@@ -188,19 +199,41 @@ export default function BookingsScreen({ navigation }) {
           >
             <View style={styles.gridHeaderRow}>
               <Image source={booking.vehicleImage} style={styles.vehicleAvatar} />
-              <View style={{ flex: 1 }}>
+              <View style={styles.gridDetails}>
                 <Text style={styles.gridTitle}>{booking.vehicleName}</Text>
-                <Text style={styles.gridSub}>{booking.startDate} - {booking.endDate}</Text>
-              </View>
-              <View style={[styles.statusPill, { backgroundColor: getStatusColor(booking.status) + '1A' }]}>
-                <Text style={[styles.statusPillText, { color: getStatusColor(booking.status) }]}>{getStatusText(booking.status)}</Text>
-              </View>
-            </View>
-
-            <View style={styles.gridBottomRow}>
-              <Text style={styles.gridAmount}>{booking.totalAmount}</Text>
-              <View style={styles.viewPill}>
-                <Text style={styles.viewPillText}>View details</Text>
+                <View style={styles.gridMetrics}>
+                  <View style={styles.gridMetricItem}>
+                    <Ionicons name="play-circle-outline" size={14} color="#1C1C1E" />
+                    <Text style={styles.gridMetricText}>Start: {booking.startDate}</Text>
+                  </View>
+                  <View style={styles.gridMetricItem}>
+                    <Ionicons name="stop-circle-outline" size={14} color="#1C1C1E" />
+                    <Text style={styles.gridMetricText}>End: {booking.endDate}</Text>
+                  </View>
+                  <View style={styles.gridMetricItem}>
+                    <Ionicons name="time-outline" size={14} color="#1C1C1E" />
+                    <Text style={styles.gridMetricText}>{duration} {duration === 1 ? 'day' : 'days'}</Text>
+                  </View>
+                  <View style={styles.gridMetricItem}>
+                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
+                    <Text style={styles.gridMetricText}>{getStatusText(booking.status)}</Text>
+                  </View>
+                  <View style={styles.gridMetricItem}>
+                    <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
+                    <Text style={styles.gridMetricText}>{booking.totalAmount}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles.viewLink}
+                  onPress={() => {
+                    lightHaptic();
+                    navigation.navigate('ActiveBooking');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.viewLinkText}>View</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#007AFF" />
+                </TouchableOpacity>
               </View>
             </View>
           </TouchableOpacity>
@@ -412,50 +445,60 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   gridCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: 14,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: COLORS.borderStrong,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
   },
   gridHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
   },
   vehicleAvatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#F2F2F7',
+  },
+  gridDetails: {
+    flex: 1,
   },
   gridTitle: {
     ...TYPE.bodyStrong,
-    fontSize: 14,
+    fontSize: 15,
     color: '#1C1C1E',
+    marginBottom: 8,
   },
-  gridSub: {
-    ...TYPE.body,
-    fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 3,
+  gridMetrics: {
+    gap: 6,
   },
-  gridBottomRow: {
-    marginTop: 14,
+  gridMetricItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 6,
   },
-  gridAmount: {
-    ...TYPE.section,
+  gridMetricText: {
+    ...TYPE.body,
+    fontSize: 13,
     color: '#1C1C1E',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  viewLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+    gap: 4,
+  },
+  viewLinkText: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#007AFF',
   },
 });
