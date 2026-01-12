@@ -1,152 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Animated } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 
 export default function BookingsScreen({ navigation }) {
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock booking data
-  const mockBooking = {
-    id: '1',
-    vehicleName: 'BMW M3',
-    vehicleImage: require('../assets/images/bmw.jpg'),
-    renterName: 'John Doe',
-    startDate: '2024-01-15',
-    endDate: '2024-01-20',
-    status: 'active', // active, completed, upcoming
-    totalAmount: 'KSh 45,000',
-    location: 'Nakuru, Kenya',
-  };
-
-  const booking = { ...mockBooking, status: 'active' };
-
-  // Calculate duration
-  const calculateDuration = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const duration = calculateDuration(booking.startDate, booking.endDate);
-
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return '#007AFF';
-      case 'completed':
-        return '#4CAF50';
-      case 'upcoming':
-        return '#FF9800';
-      default:
-        return '#666666';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'active':
-        return 'Active';
-      case 'completed':
-        return 'Completed';
-      case 'upcoming':
-        return 'Upcoming';
-      default:
-        return status;
-    }
-  };
-
-  const SkeletonBox = ({ width, height, style }) => {
-    const [pulseAnim] = useState(new Animated.Value(0.3));
-
-    useEffect(() => {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 0.7,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 0.3,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      pulse.start();
-      return () => pulse.stop();
-    }, []);
-
-    return (
-      <Animated.View
-        style={[
-          {
-            width,
-            height,
-            backgroundColor: '#E5E5EA',
-            borderRadius: 12,
-            opacity: pulseAnim,
-          },
-          style,
-        ]}
-      />
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-        <ScrollView 
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header Skeleton */}
-          <View style={styles.header}>
-            <View style={styles.headerTop}>
-              <View>
-                <SkeletonBox width={140} height={32} style={{ marginBottom: 8 }} />
-                <SkeletonBox width={200} height={16} />
-              </View>
-              <SkeletonBox width={48} height={48} style={{ borderRadius: 24 }} />
-            </View>
-          </View>
-
-          {/* Booking Card Skeleton */}
-          <View style={styles.grid}>
-            <View style={styles.gridCard}>
-              <View style={styles.gridHeaderRow}>
-                <SkeletonBox width={54} height={54} style={{ borderRadius: 27 }} />
-                <View style={{ flex: 1 }}>
-                  <SkeletonBox width={120} height={16} style={{ marginBottom: 8 }} />
-                  <SkeletonBox width={150} height={12} />
-                </View>
-                <SkeletonBox width={78} height={22} style={{ borderRadius: 999 }} />
-              </View>
-
-              <View style={styles.gridBottomRow}>
-                <SkeletonBox width={110} height={18} />
-                <SkeletonBox width={96} height={36} style={{ borderRadius: 999 }} />
-              </View>
-            </View>
-          </View>
-        </ScrollView>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -187,56 +46,11 @@ export default function BookingsScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Booking Grid */}
-        <View style={styles.grid}>
-          <TouchableOpacity
-            style={styles.gridCard}
-            onPress={() => {
-              lightHaptic();
-              navigation.navigate('ActiveBooking');
-            }}
-            activeOpacity={1}
-          >
-            <View style={styles.gridHeaderRow}>
-              <Image source={booking.vehicleImage} style={styles.vehicleAvatar} />
-              <View style={styles.gridDetails}>
-                <Text style={styles.gridTitle}>{booking.vehicleName}</Text>
-                <View style={styles.gridMetrics}>
-                  <View style={styles.gridMetricItem}>
-                    <Ionicons name="play-circle-outline" size={14} color="#1C1C1E" />
-                    <Text style={styles.gridMetricText}>Start: {booking.startDate}</Text>
-                  </View>
-                  <View style={styles.gridMetricItem}>
-                    <Ionicons name="stop-circle-outline" size={14} color="#1C1C1E" />
-                    <Text style={styles.gridMetricText}>End: {booking.endDate}</Text>
-                  </View>
-                  <View style={styles.gridMetricItem}>
-                    <Ionicons name="time-outline" size={14} color="#1C1C1E" />
-                    <Text style={styles.gridMetricText}>{duration} {duration === 1 ? 'day' : 'days'}</Text>
-                  </View>
-                  <View style={styles.gridMetricItem}>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
-                    <Text style={styles.gridMetricText}>{getStatusText(booking.status)}</Text>
-                  </View>
-                  <View style={styles.gridMetricItem}>
-                    <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
-                    <Text style={styles.gridMetricText}>{booking.totalAmount}</Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  style={styles.viewLink}
-                  onPress={() => {
-                    lightHaptic();
-                    navigation.navigate('ActiveBooking');
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.viewLinkText}>View</Text>
-                  <Ionicons name="chevron-forward" size={14} color="#007AFF" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
+        {/* Empty State */}
+        <View style={styles.emptyState}>
+          <Ionicons name="calendar-outline" size={64} color="#C7C7CC" />
+          <Text style={styles.emptyTitle}>No active bookings</Text>
+          <Text style={styles.emptySubtitle}>Your active bookings will appear here</Text>
         </View>
       </ScrollView>
     </View>
@@ -500,5 +314,23 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#007AFF',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+  },
+  emptyTitle: {
+    ...TYPE.section,
+    fontSize: 18,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    textAlign: 'center',
   },
 });

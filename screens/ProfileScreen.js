@@ -190,15 +190,6 @@ export default function ProfileScreen({ navigation }) {
 
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => { lightHaptic(); navigation.navigate('UploadDocs'); }}
-            >
-              <Ionicons name="document-text-outline" size={22} color="#666666" style={styles.linkIcon} />
-              <Text style={styles.linkText}>Upload Documents</Text>
-              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.linkItem}
               onPress={() => { lightHaptic(); navigation.navigate('SupaHost'); }}
             >
               <Ionicons name="ribbon-outline" size={22} color="#666666" style={styles.linkIcon} />
@@ -226,10 +217,13 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
-          <Ionicons name="log-out-outline" size={22} color="#FF3B30" style={styles.logoutIcon} />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <View style={styles.sectionDivider} />
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
+            <Ionicons name="log-out-outline" size={22} color="#FF3B30" style={styles.logoutIcon} />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
 
       </ScrollView>
 
@@ -387,18 +381,16 @@ const styles = StyleSheet.create({
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: SPACING.xl,
     paddingVertical: 16,
   },
   logoutIcon: {
-    marginRight: 8,
+    marginRight: 16,
   },
   logoutText: {
-    ...TYPE.subhead,
+    flex: 1,
+    ...TYPE.bodyStrong,
+    fontSize: 13,
     color: '#FF3B30',
-    fontFamily: 'Nunito-Bold',
-    fontSize: 16,
   },
   overlay: {
     position: 'absolute',

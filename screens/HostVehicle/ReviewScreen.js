@@ -104,29 +104,6 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
         {formData.pricePerMonth && (
           <ReviewItem label="Price per Month" value={`KSh ${formData.pricePerMonth}`} />
         )}
-        {formData.customPrice && (
-          <ReviewItem
-            label={formData.customPriceLabel || 'Custom Price'}
-            value={`KSh ${formData.customPrice}`}
-          />
-        )}
-        <ReviewItem 
-          label="Payment Type" 
-          value={formData.paymentType === 'deposit' ? 'Security Deposit' : 'Full Payment'} 
-        />
-        {formData.paymentType === 'deposit' && (
-          <>
-            {formData.carValue && (
-              <ReviewItem label="Car Value" value={`KSh ${parseFloat(formData.carValue).toLocaleString()}`} />
-            )}
-            {formData.securityDepositAmount && (
-              <ReviewItem 
-                label="Security Deposit" 
-                value={`KSh ${parseFloat(formData.securityDepositAmount).toLocaleString()}`} 
-              />
-            )}
-          </>
-        )}
         <ReviewItem label="Minimum Rental Days" value={formData.minimumRentalDays} />
         {formData.maxRentalDays && (
           <ReviewItem label="Maximum Rental Days" value={formData.maxRentalDays} />
@@ -139,42 +116,31 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
           />
         )}
         <ReviewItem label="Age Restriction" value={formData.ageRestriction} />
-        {formData.carRules && (
-          <ReviewItem label="Car Rules" value={formData.carRules} />
-        )}
-        <View style={styles.switchItem}>
-          <Text style={styles.reviewLabel}>Cross Country Travel</Text>
-          <View style={styles.switchValue}>
-            <Ionicons
-              name={formData.crossCountryAllowed ? 'checkmark-circle' : 'close-circle'}
-              size={20}
-              color={formData.crossCountryAllowed ? '#4CAF50' : '#F44336'}
-            />
-            <Text
-              style={[
-                styles.reviewValue,
-                { color: formData.crossCountryAllowed ? '#4CAF50' : '#F44336' },
-              ]}
-            >
-              {formData.crossCountryAllowed ? 'Allowed' : 'Not Allowed'}
-            </Text>
-          </View>
-        </View>
-        {formData.crossCountryAllowed &&
-          formData.allowedCountries &&
-          formData.allowedCountries.length > 0 && (
-            <View style={styles.countriesList}>
-              <Text style={styles.reviewLabel}>Allowed Countries</Text>
-              <View style={styles.countriesContainer}>
-                {formData.allowedCountries.map((country, index) => (
-                  <View key={index} style={styles.countryTag}>
-                    <Text style={styles.countryTagText}>{country}</Text>
-                  </View>
-                ))}
-              </View>
+        {formData.carRules && Array.isArray(formData.carRules) && formData.carRules.length > 0 && (
+          <View style={styles.rulesList}>
+            <Text style={styles.reviewLabel}>Car Rules</Text>
+            <View style={styles.rulesContainer}>
+              {formData.carRules.map((rule, index) => (
+                <View key={index} style={styles.ruleTag}>
+                  <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
+                  <Text style={styles.ruleTagText}>{rule}</Text>
+                </View>
+              ))}
             </View>
-          )}
+          </View>
+        )}
       </ReviewSection>
+
+      {/* Verification Note */}
+      <View style={styles.verificationNote}>
+        <Ionicons name="information-circle" size={20} color="#FF9500" />
+        <View style={styles.verificationNoteContent}>
+          <Text style={styles.verificationNoteTitle}>Verification Required</Text>
+          <Text style={styles.verificationNoteText}>
+            Ardena verifies all cars in person before they go live. After listing your car, our team will contact you to schedule a quick verification visit.
+          </Text>
+        </View>
+      </View>
 
       {/* Navigation Buttons */}
       <View style={styles.buttonRow}>
@@ -184,7 +150,7 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.submitButton} onPress={onSubmit} activeOpacity={0.9}>
-          <Text style={styles.submitButtonText}>List Car</Text>
+          <Text style={styles.submitButtonText}>Finish</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -320,6 +286,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-SemiBold',
     color: '#007AFF',
   },
+  rulesList: {
+    marginTop: 12,
+  },
+  rulesContainer: {
+    flexDirection: 'column',
+    gap: 8,
+    marginTop: 8,
+  },
+  ruleTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.bg,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+  },
+  ruleTagText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.text,
+  },
   buttonRow: {
     flexDirection: 'row',
     gap: 12,
@@ -346,7 +337,7 @@ const styles = StyleSheet.create({
     flex: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.brand,
+    backgroundColor: '#000000',
     borderRadius: 16,
     padding: 18,
   },
@@ -354,6 +345,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-Bold',
     color: '#ffffff',
+  },
+  verificationNote: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+  },
+  verificationNoteContent: {
+    flex: 1,
+  },
+  verificationNoteTitle: {
+    fontSize: 15,
+    fontFamily: 'Nunito-Bold',
+    color: '#E65100',
+    marginBottom: 6,
+  },
+  verificationNoteText: {
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+    color: '#BF360C',
+    lineHeight: 18,
   },
 });
 

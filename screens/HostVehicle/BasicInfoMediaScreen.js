@@ -172,7 +172,7 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext }) {
         disabled={!canProceed()}
         activeOpacity={0.9}
       >
-        <Text style={styles.nextButtonText}>Next: Upload Media</Text>
+        <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   nextButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.brand,
+    backgroundColor: '#000000',
     borderRadius: 16,
     padding: 18,
     marginTop: 8,

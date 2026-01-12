@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,55 +11,29 @@ import {
   Switch,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getHostCars } from '../utils/userStorage';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function MyListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
+  const [cars, setCars] = useState([]);
 
-  // Mock data - TODO: Replace with actual API data
-  const cars = [
-    {
-      id: 'car-1',
-      name: 'BMW M3',
-      model: '2023 G80',
-      image: require('../assets/images/bmw.jpg'),
-      status: 'available',
-      plateNumber: 'KCA 123A',
-      pricePerDay: 15000,
-      location: 'Nakuru',
-      rating: 4.8,
-      seats: 5,
-      fuelType: 'Petrol',
-      transmission: 'Automatic',
-      activeRentals: 2,
-      totalBookings: 12,
-      description: 'Premium luxury sedan with exceptional performance and comfort. Perfect for long drives and special occasions.',
-      ratingCount: 24,
-    },
-    {
-      id: 'car-2',
-      name: 'Toyota Corolla',
-      model: '2022',
-      image: require('../assets/images/bm.jpg'),
-      status: 'booked',
-      plateNumber: 'KBZ 456B',
-      pricePerDay: 8000,
-      location: 'Nakuru',
-      rating: null,
-      seats: 5,
-      fuelType: 'Petrol',
-      transmission: 'Automatic',
-      activeRentals: 0,
-      totalBookings: 5,
-      description: 'Reliable and fuel-efficient compact car, ideal for city driving and daily commutes.',
-      ratingCount: 12,
-    },
-  ];
+  const loadCars = async () => {
+    const storedCars = await getHostCars();
+    setCars(storedCars);
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCars();
+    }, [])
+  );
 
   const allListings = cars;
 
@@ -69,12 +43,14 @@ export default function MyListingsScreen({ navigation }) {
         return { emoji: '🟢', label: 'Available', color: '#34C759', bgColor: '#E8F5E9' };
       case 'booked':
         return { emoji: '🔵', label: 'Booked', color: '#007AFF', bgColor: '#E3F2FD' };
+      case 'awaiting_verification':
+        return { emoji: '🟡', label: 'Awaiting verification', color: '#FF9500', bgColor: '#FFF3E0' };
       case 'pending':
         return { emoji: '🟡', label: 'Pending approval', color: '#FF9500', bgColor: '#FFF3E0' };
       case 'offline':
         return { emoji: '🔴', label: 'Offline', color: '#FF3B30', bgColor: '#FFEBEE' };
       default:
-        return { emoji: '🟢', label: 'Available', color: '#34C759', bgColor: '#E8F5E9' };
+        return { emoji: '🟡', label: 'Awaiting verification', color: '#FF9500', bgColor: '#FFF3E0' };
     }
   };
 
@@ -97,8 +73,13 @@ export default function MyListingsScreen({ navigation }) {
         activeOpacity={1}
       >
         <View style={styles.carImageContainer}>
-          {item.image ? (
-            <Image source={item.image} style={styles.carImage} />
+          {item.coverPhoto || item.image ? (
+            <Image 
+              source={typeof (item.coverPhoto || item.image) === 'string' 
+                ? { uri: item.coverPhoto || item.image } 
+                : (item.coverPhoto || item.image)} 
+              style={styles.carImage} 
+            />
           ) : (
             <View style={styles.carImagePlaceholder}>
               <Ionicons name="car-outline" size={24} color="#C7C7CC" />
@@ -109,7 +90,9 @@ export default function MyListingsScreen({ navigation }) {
         <View style={styles.carInfo}>
           <View style={styles.carHeader}>
             <Text style={styles.carName}>{item.name}</Text>
-            <Text style={styles.carModel}>{item.model} • {item.plateNumber}</Text>
+            <Text style={styles.carModel}>
+              {item.model}{item.plateNumber ? ` • ${item.plateNumber}` : ''}
+            </Text>
           </View>
 
           <View style={styles.carMetrics}>
@@ -119,7 +102,7 @@ export default function MyListingsScreen({ navigation }) {
             </View>
             <View style={styles.metricItem}>
               <Ionicons name="car-outline" size={14} color="#1C1C1E" />
-              <Text style={styles.metricText}>{item.totalBookings || 0} trips</Text>
+              <Text style={styles.metricText}>{item.totalTrips || 0} trips</Text>
             </View>
             <View style={styles.metricItem}>
               <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
@@ -162,14 +145,22 @@ export default function MyListingsScreen({ navigation }) {
       </View>
 
       {/* Listings */}
-      <FlatList
-        ref={flatListRef}
-        data={allListings}
-        renderItem={renderCarCard}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.listContent, { paddingTop: SPACING.m }]}
-      />
+      {allListings.length > 0 ? (
+        <FlatList
+          ref={flatListRef}
+          data={allListings}
+          renderItem={renderCarCard}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.listContent, { paddingTop: SPACING.m }]}
+        />
+      ) : (
+        <View style={styles.emptyState}>
+          <Ionicons name="car-sport-outline" size={64} color="#C7C7CC" />
+          <Text style={styles.emptyTitle}>No cars yet</Text>
+          <Text style={styles.emptySubtitle}>Add your first vehicle to start hosting</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -292,5 +283,25 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 12,
     color: '#FFFFFF',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
+    paddingTop: 100,
+  },
+  emptyTitle: {
+    ...TYPE.section,
+    fontSize: 20,
+    color: '#1C1C1E',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    ...TYPE.body,
+    fontSize: 15,
+    color: '#8E8E93',
+    textAlign: 'center',
   },
 });

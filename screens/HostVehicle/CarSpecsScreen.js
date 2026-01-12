@@ -217,7 +217,7 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
           disabled={!canProceed()}
           activeOpacity={0.9}
         >
-          <Text style={styles.nextButtonText}>Next: Rental Info</Text>
+          <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     flex: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.brand,
+    backgroundColor: '#000000',
     borderRadius: 16,
     padding: 18,
   },

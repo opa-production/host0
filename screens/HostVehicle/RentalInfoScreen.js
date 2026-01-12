@@ -6,9 +6,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Switch,
-  Modal,
-  FlatList,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -16,25 +13,47 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { COLORS, SPACING, RADIUS, calculateMinSecurityDeposit } from '../../ui/tokens';
+import { COLORS, SPACING, RADIUS } from '../../ui/tokens';
 
-const COUNTRIES = [
-  'Kenya', 'Tanzania', 'Uganda', 'Rwanda', 'Ethiopia', 'South Sudan',
-  'Somalia', 'Burundi', 'Djibouti', 'Eritrea', 'All East Africa',
+const COMMON_RULES = [
+  'No smoking',
+  'No pets',
+  'Return with full tank',
+  'No off-road driving',
+  'Minimum age requirement applies',
+  'Valid driver\'s license required',
+  'No towing allowed',
 ];
 
 export default function RentalInfoScreen({ formData, updateFormData, onNext, onBack }) {
   const insets = useSafeAreaInsets();
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const [showCustomPriceModal, setShowCustomPriceModal] = useState(false);
+  const [showCustomRuleInput, setShowCustomRuleInput] = useState(false);
+  const [customRuleText, setCustomRuleText] = useState('');
+  
+  // Initialize carRules as array if not already
+  const carRules = Array.isArray(formData.carRules) ? formData.carRules : [];
 
-  const toggleCountry = (country) => {
-    const countries = formData.allowedCountries || [];
-    if (countries.includes(country)) {
-      updateFormData({ allowedCountries: countries.filter(c => c !== country) });
+  const toggleRule = (rule) => {
+    const rules = Array.isArray(formData.carRules) ? formData.carRules : [];
+    if (rules.includes(rule)) {
+      updateFormData({ carRules: rules.filter(r => r !== rule) });
     } else {
-      updateFormData({ allowedCountries: [...countries, country] });
+      updateFormData({ carRules: [...rules, rule] });
     }
+  };
+
+  const addCustomRule = () => {
+    if (customRuleText.trim()) {
+      const rules = Array.isArray(formData.carRules) ? formData.carRules : [];
+      updateFormData({ carRules: [...rules, customRuleText.trim()] });
+      setCustomRuleText('');
+      setShowCustomRuleInput(false);
+    }
+  };
+
+  const removeRule = (rule) => {
+    const rules = Array.isArray(formData.carRules) ? formData.carRules : [];
+    updateFormData({ carRules: rules.filter(r => r !== rule) });
   };
 
   const handleUseCurrentLocation = async () => {
@@ -57,35 +76,14 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
     }
   };
 
-  const getMinDepositAmount = () => {
-    if (!formData.carValue || formData.carValue === '') return 0;
-    return calculateMinSecurityDeposit(formData.carValue);
-  };
-
-  const validateDepositAmount = (amount) => {
-    if (!amount || amount === '') return true; // Empty is okay if not required
-    const depositValue = parseFloat(amount);
-    const minDeposit = getMinDepositAmount();
-    return !isNaN(depositValue) && depositValue >= minDeposit;
-  };
 
   const canProceed = () => {
-    const basicFields = (
+    return (
       formData.pricePerDay !== '' &&
       formData.minimumRentalDays !== '' &&
       formData.pickupLocation !== '' &&
       formData.ageRestriction !== ''
     );
-
-    // If payment type is deposit, validate deposit amount
-    if (formData.paymentType === 'deposit') {
-      return basicFields && 
-             formData.carValue !== '' && 
-             formData.securityDepositAmount !== '' &&
-             validateDepositAmount(formData.securityDepositAmount);
-    }
-
-    return basicFields;
   };
 
   return (
@@ -140,130 +138,6 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
           />
         </View>
 
-        {/* Payment Type */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Payment Type *</Text>
-          <View style={styles.paymentTypeContainer}>
-            <TouchableOpacity
-              style={[
-                styles.paymentTypeOption,
-                formData.paymentType === 'full' && styles.paymentTypeOptionSelected,
-              ]}
-              onPress={() => updateFormData({ paymentType: 'full', securityDepositAmount: '' })}
-              activeOpacity={1}
-            >
-              <Ionicons
-                name={formData.paymentType === 'full' ? 'radio-button-on' : 'radio-button-off'}
-                size={20}
-                color={formData.paymentType === 'full' ? '#007AFF' : COLORS.subtle}
-              />
-              <Text
-                style={[
-                  styles.paymentTypeText,
-                  formData.paymentType === 'full' && styles.paymentTypeTextSelected,
-                ]}
-              >
-                Full Payment
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.paymentTypeOption,
-                formData.paymentType === 'deposit' && styles.paymentTypeOptionSelected,
-              ]}
-              onPress={() => updateFormData({ paymentType: 'deposit' })}
-              activeOpacity={1}
-            >
-              <Ionicons
-                name={formData.paymentType === 'deposit' ? 'radio-button-on' : 'radio-button-off'}
-                size={20}
-                color={formData.paymentType === 'deposit' ? '#007AFF' : COLORS.subtle}
-              />
-              <Text
-                style={[
-                  styles.paymentTypeText,
-                  formData.paymentType === 'deposit' && styles.paymentTypeTextSelected,
-                ]}
-              >
-                Accept Security Deposit
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Car Value (required if deposit is selected) */}
-        {formData.paymentType === 'deposit' && (
-          <>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Car Value (KSh) *</Text>
-              <Text style={styles.hint}>Enter the estimated value of your car</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                value={formData.carValue}
-                onChangeText={(text) => {
-                  updateFormData({ carValue: text });
-                  // Clear deposit amount if car value changes
-                  if (formData.securityDepositAmount) {
-                    updateFormData({ securityDepositAmount: '' });
-                  }
-                }}
-                keyboardType="numeric"
-                placeholderTextColor="#999999"
-              />
-            </View>
-
-            {/* Security Deposit Amount */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Security Deposit Amount (KSh) *</Text>
-              <Text style={styles.hint}>
-                Minimum: KSh {getMinDepositAmount().toLocaleString()} (45% higher than car value)
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  formData.securityDepositAmount &&
-                    !validateDepositAmount(formData.securityDepositAmount) &&
-                    styles.inputError,
-                ]}
-                placeholder={getMinDepositAmount().toString()}
-                value={formData.securityDepositAmount}
-                onChangeText={(text) => updateFormData({ securityDepositAmount: text })}
-                keyboardType="numeric"
-                placeholderTextColor="#999999"
-              />
-              {formData.securityDepositAmount &&
-                !validateDepositAmount(formData.securityDepositAmount) && (
-                  <Text style={styles.errorText}>
-                    Deposit must be at least KSh {getMinDepositAmount().toLocaleString()}
-                  </Text>
-                )}
-            </View>
-          </>
-        )}
-
-        <TouchableOpacity
-          style={styles.customPriceButton}
-          onPress={() => setShowCustomPriceModal(true)}
-          activeOpacity={1}
-        >
-          <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
-          <Text style={styles.customPriceButtonText}>Add Custom Price Option</Text>
-        </TouchableOpacity>
-
-        {formData.customPrice && (
-          <View style={styles.customPriceDisplay}>
-            <Text style={styles.customPriceLabel}>{formData.customPriceLabel}:</Text>
-            <Text style={styles.customPriceValue}>KSh {formData.customPrice}</Text>
-            <TouchableOpacity
-              onPress={() => updateFormData({ customPrice: '', customPriceLabel: '' })}
-              activeOpacity={1}
-            >
-              <Ionicons name="close-circle" size={20} color="#007AFF" />
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
       {/* Rental Terms */}
@@ -334,118 +208,88 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
       {/* Car Rules */}
       <View style={styles.section}>
         <Text style={styles.label}>Car Rules</Text>
-        <Text style={styles.hint}>List any rules or restrictions for renters</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="e.g., No smoking, No pets, Return with full tank, etc."
-          value={formData.carRules}
-          onChangeText={(text) => updateFormData({ carRules: text })}
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-          placeholderTextColor="#999999"
-        />
-      </View>
-
-      {/* Cross Country */}
-      <View style={styles.section}>
-        <View style={styles.switchRow}>
-          <View style={styles.switchLabelContainer}>
-            <Text style={styles.label}>Allow Cross Country Travel</Text>
-            <Text style={styles.hint}>Allow renters to travel to other countries</Text>
-          </View>
-          <Switch
-            value={formData.crossCountryAllowed}
-            onValueChange={(value) => updateFormData({ crossCountryAllowed: value })}
-            trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
-            thumbColor="#ffffff"
-          />
+        <Text style={styles.hint}>Select rules that apply to your vehicle</Text>
+        
+        {/* Common Rules */}
+        <View style={styles.rulesContainer}>
+          {COMMON_RULES.map((rule) => {
+            const isSelected = carRules.includes(rule);
+            return (
+              <TouchableOpacity
+                key={rule}
+                style={[styles.ruleCheckbox, isSelected && styles.ruleCheckboxSelected]}
+                onPress={() => toggleRule(rule)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={16} color="#000000" />
+                  )}
+                </View>
+                <Text style={[styles.ruleText, isSelected && styles.ruleTextSelected]}>
+                  {rule}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {formData.crossCountryAllowed && (
-          <View style={styles.countriesSection}>
-            <Text style={styles.label}>Allowed Countries</Text>
-            <Text style={styles.hint}>Select countries renters can visit</Text>
-            <View style={styles.countriesGrid}>
-              {COUNTRIES.map((country) => {
-                const isSelected = (formData.allowedCountries || []).includes(country);
-                return (
-                  <TouchableOpacity
-                    key={country}
-                    style={[styles.countryChip, isSelected && styles.countryChipSelected]}
-                    onPress={() => toggleCountry(country)}
-                    activeOpacity={1}
-                  >
-                    <Text
-                      style={[
-                        styles.countryChipText,
-                        isSelected && styles.countryChipTextSelected,
-                      ]}
-                    >
-                      {country}
-                    </Text>
-                    {isSelected && (
-                      <Ionicons name="checkmark-circle" size={16} color="#007AFF" style={{ marginLeft: 6 }} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+        {/* Custom Rules */}
+        {carRules.filter(rule => !COMMON_RULES.includes(rule)).map((rule, index) => (
+          <View key={`custom-${index}`} style={styles.customRuleRow}>
+            <Text style={styles.customRuleText}>{rule}</Text>
+            <TouchableOpacity
+              onPress={() => removeRule(rule)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close-circle" size={20} color="#FF3B30" />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        {/* Add More Button */}
+        {!showCustomRuleInput ? (
+          <TouchableOpacity
+            style={styles.addRuleButton}
+            onPress={() => setShowCustomRuleInput(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
+            <Text style={styles.addRuleButtonText}>Add More</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.customRuleInputContainer}>
+            <TextInput
+              style={styles.customRuleInput}
+              placeholder="Enter custom rule"
+              value={customRuleText}
+              onChangeText={setCustomRuleText}
+              placeholderTextColor="#999999"
+              autoFocus
+            />
+            <View style={styles.customRuleActions}>
+              <TouchableOpacity
+                style={styles.cancelRuleButton}
+                onPress={() => {
+                  setShowCustomRuleInput(false);
+                  setCustomRuleText('');
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelRuleText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.addRuleConfirmButton, !customRuleText.trim() && styles.addRuleConfirmButtonDisabled]}
+                onPress={addCustomRule}
+                disabled={!customRuleText.trim()}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.addRuleConfirmText}>Add</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
       </View>
-
-      {/* Custom Price Modal */}
-      <Modal
-        visible={showCustomPriceModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCustomPriceModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Custom Price</Text>
-              <TouchableOpacity
-                onPress={() => setShowCustomPriceModal(false)}
-                activeOpacity={1}
-              >
-                <Ionicons name="close" size={24} color="#000000" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.modalBody}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Label</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g., Weekend Special"
-                  value={formData.customPriceLabel}
-                  onChangeText={(text) => updateFormData({ customPriceLabel: text })}
-                  placeholderTextColor="#999999"
-                />
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Price (KSh)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0"
-                  value={formData.customPrice}
-                  onChangeText={(text) => updateFormData({ customPrice: text })}
-                  keyboardType="numeric"
-                  placeholderTextColor="#999999"
-                />
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.modalSaveButton}
-              onPress={() => setShowCustomPriceModal(false)}
-              activeOpacity={1}
-            >
-              <Text style={styles.modalSaveButtonText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* Navigation Buttons */}
       <View style={styles.buttonRow}>
@@ -464,7 +308,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
           disabled={!canProceed()}
           activeOpacity={0.9}
         >
-          <Text style={styles.nextButtonText}>Review</Text>
+          <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
       </View>
       </ScrollView>
@@ -522,125 +366,6 @@ const styles = StyleSheet.create({
     height: 100,
     paddingTop: 16,
   },
-  customPriceButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-    marginTop: 8,
-  },
-  customPriceButtonText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#007AFF',
-  },
-  customPriceDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.bg,
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 12,
-    gap: 8,
-  },
-  customPriceLabel: {
-    fontSize: 14,
-    fontFamily: 'Nunito-SemiBold',
-    color: COLORS.text,
-  },
-  customPriceValue: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.subtle,
-    flex: 1,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  switchLabelContainer: {
-    flex: 1,
-    marginRight: 16,
-  },
-  countriesSection: {
-    marginTop: 16,
-  },
-  countriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
-  },
-  countryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    backgroundColor: COLORS.surface,
-  },
-  countryChipSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF15',
-  },
-  countryChipText: {
-    fontSize: 13,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.subtle,
-  },
-  countryChipTextSelected: {
-    color: '#007AFF',
-    fontFamily: 'Nunito-SemiBold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    width: '85%',
-    maxHeight: '70%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderStrong,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
-    color: COLORS.text,
-  },
-  modalBody: {
-    padding: 20,
-  },
-  modalSaveButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    padding: 18,
-    margin: 20,
-    alignItems: 'center',
-  },
-  modalSaveButtonText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Bold',
-    color: '#ffffff',
-  },
   buttonRow: {
     flexDirection: 'row',
     gap: 12,
@@ -667,7 +392,7 @@ const styles = StyleSheet.create({
     flex: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.brand,
+    backgroundColor: '#000000',
     borderRadius: 16,
     padding: 18,
   },
@@ -678,34 +403,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-Bold',
     color: '#ffffff',
-  },
-  paymentTypeContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  paymentTypeOption: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-    backgroundColor: COLORS.surface,
-  },
-  paymentTypeOptionSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF15',
-  },
-  paymentTypeText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.subtle,
-  },
-  paymentTypeTextSelected: {
-    fontFamily: 'Nunito-SemiBold',
-    color: '#007AFF',
   },
   locationButton: {
     flexDirection: 'row',
@@ -732,6 +429,133 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Regular',
     color: COLORS.danger,
     marginTop: 4,
+  },
+  rulesContainer: {
+    marginTop: 12,
+    gap: 12,
+  },
+  ruleCheckbox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    gap: 12,
+  },
+  ruleCheckboxSelected: {
+    borderColor: '#000000',
+    backgroundColor: COLORS.surface,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: COLORS.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+  },
+  checkboxSelected: {
+    borderColor: '#000000',
+    backgroundColor: '#000000',
+  },
+  ruleText: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.text,
+  },
+  ruleTextSelected: {
+    fontFamily: 'Nunito-SemiBold',
+  },
+  customRuleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    marginTop: 8,
+  },
+  customRuleText: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.text,
+  },
+  addRuleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
+    gap: 8,
+    backgroundColor: COLORS.surface,
+  },
+  addRuleButtonText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#007AFF',
+  },
+  customRuleInputContainer: {
+    marginTop: 12,
+    gap: 12,
+  },
+  customRuleInput: {
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 15,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.text,
+    backgroundColor: COLORS.surface,
+  },
+  customRuleActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelRuleButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: COLORS.surface,
+  },
+  cancelRuleText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-SemiBold',
+    color: COLORS.text,
+  },
+  addRuleConfirmButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: '#007AFF',
+  },
+  addRuleConfirmButtonDisabled: {
+    backgroundColor: '#cccccc',
+  },
+  addRuleConfirmText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#ffffff',
   },
 });
 

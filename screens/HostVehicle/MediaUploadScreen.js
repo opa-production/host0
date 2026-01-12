@@ -16,7 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SPACING } from '../../ui/tokens';
 import { uploadVehicleImages, uploadVehicleVideo } from '../../services/mediaService';
 
-export default function MediaUploadScreen({ formData, updateFormData, onNext, onBack }) {
+export default function MediaUploadScreen({ formData, updateFormData, onNext, onBack, onSubmit }) {
   const insets = useSafeAreaInsets();
   const [uploading, setUploading] = useState(false);
 
@@ -243,11 +243,11 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
 
         <TouchableOpacity
           style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
-          onPress={onNext}
+          onPress={onSubmit || onNext}
           disabled={!canProceed()}
           activeOpacity={0.9}
         >
-          <Text style={styles.nextButtonText}>Next: Specifications</Text>
+          <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     flex: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.brand,
+    backgroundColor: '#000000',
     borderRadius: 16,
     padding: 18,
   },
