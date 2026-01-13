@@ -23,7 +23,6 @@ const SettingsScreen = () => {
   const insets = useSafeAreaInsets();
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
@@ -108,15 +107,6 @@ const SettingsScreen = () => {
 
   const handleNotificationPreference = () => {
     navigation.navigate('NotificationPreferences');
-  };
-
-  const handleLanguage = () => {
-    navigation.navigate('Language', {
-      currentLanguage: selectedLanguage,
-      onLanguageSelect: (language) => {
-        setSelectedLanguage(language);
-      },
-    });
   };
 
   const handleAbout = () => {
@@ -231,14 +221,6 @@ const SettingsScreen = () => {
             icon="notifications-outline"
             title="Notification Preferences"
             onPress={handleNotificationPreference}
-          />
-          <SettingItem
-            icon="language-outline"
-            title="Language"
-            onPress={handleLanguage}
-            rightComponent={
-              <Text style={styles.settingItemValue}>{selectedLanguage}</Text>
-            }
           />
         </View>
 

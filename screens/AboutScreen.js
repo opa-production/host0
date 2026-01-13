@@ -21,12 +21,6 @@ const AboutScreen = () => {
     Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
   };
 
-  const contactInfo = [
-    { icon: 'mail-outline', label: 'Email', value: 'support@opahost.com', action: () => handleLinkPress('mailto:support@opahost.com') },
-    { icon: 'call-outline', label: 'Phone', value: '+254 7022 48 984', action: () => handleLinkPress('tel:+254702248984') },
-    { icon: 'globe-outline', label: 'Website', value: 'opa.deonhq.xyz', action: () => handleLinkPress('https://opa.deonhq.xyz') },
-  ];
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
@@ -52,49 +46,20 @@ const AboutScreen = () => {
         contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* About Card */}
-        <TouchableOpacity
-          style={styles.aboutCard}
-          onPress={() => handleLinkPress('https://opa.deonhq.xyz')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.aboutCardContent}>
-            <Ionicons name="information-circle-outline" size={32} color={COLORS.brand} />
-            <View style={styles.aboutCardText}>
-              <Text style={styles.aboutCardTitle}>About OpaHost</Text>
-              <Text style={styles.aboutCardDescription}>
-                Learn more about our mission, values, and comprehensive platform for car rental hosting.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward-outline" size={24} color={COLORS.subtle} />
-          </View>
-        </TouchableOpacity>
-
-        {/* Contact Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact Us</Text>
-          {contactInfo.map((contact, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.contactItem}
-              onPress={contact.action}
-              activeOpacity={0.7}
-            >
-              <Ionicons name={contact.icon} size={22} color={COLORS.brand} />
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactLabel}>{contact.label}</Text>
-                <Text style={styles.contactValue}>{contact.value}</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={20} color={COLORS.subtle} />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Copyright */}
-        <View style={styles.footerSection}>
-          <Text style={styles.copyrightText}>
-            © 2024 OpaHost. All rights reserved.
+        <View style={styles.contentWrapper}>
+          <Text style={styles.messageText}>
+            Our complete about information, mission, values, and story are compiled on our website.
           </Text>
+          
+          <TouchableOpacity
+            style={styles.websiteButton}
+            onPress={() => handleLinkPress('https://ardena.xyz/about.html')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="globe-outline" size={20} color="#007AFF" />
+            <Text style={styles.websiteButtonText}>View About Information</Text>
+            <Ionicons name="open-outline" size={16} color="#007AFF" />
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -124,82 +89,46 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
     padding: SPACING.l,
-    paddingTop: SPACING.m,
   },
   headerTitle: {
     ...TYPE.largeTitle,
     fontSize: 20,
     color: COLORS.text,
   },
-  aboutCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    marginBottom: SPACING.l,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
-  },
-  aboutCardContent: {
-    flexDirection: 'row',
+  contentWrapper: {
     alignItems: 'center',
-    padding: SPACING.l,
-    gap: SPACING.m,
+    justifyContent: 'center',
+    paddingVertical: SPACING.xl,
   },
-  aboutCardText: {
-    flex: 1,
-  },
-  aboutCardTitle: {
-    ...TYPE.section,
-    fontSize: 15,
-    marginBottom: 4,
-    color: COLORS.text,
-  },
-  aboutCardDescription: {
+  messageText: {
     ...TYPE.body,
-    fontSize: 13,
-    lineHeight: 18,
-    color: COLORS.subtle,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    ...TYPE.section,
     fontSize: 15,
-    marginBottom: 12,
+    lineHeight: 22,
+    textAlign: 'center',
     color: COLORS.text,
+    marginBottom: SPACING.xl,
+    paddingHorizontal: SPACING.m,
   },
-  contactItem: {
+  websiteButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
     paddingVertical: 16,
-    gap: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    paddingHorizontal: 24,
+    borderRadius: RADIUS.button,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    minWidth: 200,
   },
-  contactInfo: {
-    flex: 1,
-  },
-  contactLabel: {
-    ...TYPE.micro,
-    marginBottom: 4,
-    color: '#8E8E93',
-  },
-  contactValue: {
+  websiteButtonText: {
     ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: COLORS.text,
-  },
-  footerSection: {
-    alignItems: 'center',
-    marginTop: 24,
-    paddingTop: 24,
-  },
-  copyrightText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-Regular',
-    textAlign: 'center',
-    color: '#999999',
+    fontSize: 15,
+    color: '#007AFF',
   },
 });
 
