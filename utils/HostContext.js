@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getCurrentHost } from '../services/authService';
 import { getUserToken, clearUserData, setUserProfile, getUserProfile, getUserId } from './userStorage';
 import { fetchHostAvatarFromSupabase } from '../services/mediaService';
@@ -18,8 +18,48 @@ export const HostProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // State Watchdog: Monitor and correct stuck states
+  const loadingStartTimeRef = useRef(null);
+  
+  useEffect(() => {
+    let watchdogInterval = null;
+    const MAX_LOADING_TIME = 15000; // 15 seconds - force stop loading after this
+
+    const startWatchdog = () => {
+      // Track loading start time
+      if (isLoading && !loadingStartTimeRef.current) {
+        loadingStartTimeRef.current = Date.now();
+      } else if (!isLoading) {
+        loadingStartTimeRef.current = null;
+      }
+
+      // If loading for too long, force stop (prevents infinite loading)
+      if (isLoading && loadingStartTimeRef.current) {
+        const loadingDuration = Date.now() - loadingStartTimeRef.current;
+        if (loadingDuration > MAX_LOADING_TIME) {
+          console.warn('🛡️ [StateWatchdog] Loading state stuck for', loadingDuration, 'ms - forcing stop');
+          setIsLoading(false);
+          loadingStartTimeRef.current = null;
+        }
+      }
+    };
+
+    // Run watchdog every 3 seconds
+    watchdogInterval = setInterval(startWatchdog, 3000);
+    startWatchdog(); // Run immediately
+
+    return () => {
+      if (watchdogInterval) {
+        clearInterval(watchdogInterval);
+      }
+    };
+  }, [isLoading]);
+
   // Initialize: Check for existing auth session and verify with backend
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId = null;
+
     const initializeAuth = async () => {
       try {
         // Check if we have a token
@@ -27,28 +67,40 @@ export const HostProvider = ({ children }) => {
         
         if (!token) {
           // No token, user needs to login
-          setHost(null);
-          setIsAuthenticated(false);
-          setIsLoading(false);
+          if (isMounted) {
+            setHost(null);
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
           return;
         }
 
         // Verify token with backend by calling /api/v1/host/me
         // Add timeout to prevent hanging if API is slow/unreachable
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Request timeout')), 5000); // 5 second timeout
+          timeoutId = setTimeout(() => reject(new Error('Request timeout')), 5000); // 5 second timeout
         });
 
         const result = await Promise.race([
           getCurrentHost(),
           timeoutPromise,
         ]);
+
+        // Clear timeout since promise resolved
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        
+        if (!isMounted) return; // Component unmounted, don't update state
         
         if (result.success && result.host) {
           // Token is valid, set authenticated user
           // Fetch avatar from Supabase Storage (backend doesn't store avatar_url)
           const userId = await getUserId();
           const avatarUrl = userId ? await fetchHostAvatarFromSupabase(userId) : null;
+          
+          if (!isMounted) return; // Component unmounted, don't update state
           
           const hostWithAvatar = {
             ...result.host,
@@ -67,6 +119,14 @@ export const HostProvider = ({ children }) => {
           setIsAuthenticated(false);
         }
       } catch (error) {
+        // Clear timeout if it's still pending
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+
+        if (!isMounted) return; // Component unmounted, don't update state
+
         console.error('Auth initialization error:', error);
         // On timeout or error, don't clear data - just mark as not authenticated
         // This allows offline usage and prevents clearing valid tokens on network issues
@@ -74,6 +134,7 @@ export const HostProvider = ({ children }) => {
           console.log('Network timeout or error - allowing offline mode');
           // Try to use cached profile if available
           const cachedProfile = await getUserProfile();
+          if (!isMounted) return; // Component unmounted, don't update state
           if (cachedProfile) {
             setHost(cachedProfile);
             setIsAuthenticated(true);
@@ -88,11 +149,21 @@ export const HostProvider = ({ children }) => {
           setIsAuthenticated(false);
         }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initializeAuth();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   const login = async (hostData) => {

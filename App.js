@@ -7,6 +7,7 @@ import NetInfo from '@react-native-community/netinfo';
 import AppNavigator from './navigation/AppNavigator';
 import OfflineScreen from './screens/OfflineScreen';
 import { HostProvider } from './utils/HostContext';
+import ErrorBoundary from './utils/ErrorBoundary';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -67,15 +68,17 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <HostProvider>
-        {/* Show offline screen when not connected */}
-        {!isConnected ? (
-          <OfflineScreen onRetry={handleRetry} />
-        ) : (
-          <AppNavigator />
-        )}
-      </HostProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <HostProvider>
+          {/* Show offline screen when not connected */}
+          {!isConnected ? (
+            <OfflineScreen onRetry={handleRetry} />
+          ) : (
+            <AppNavigator />
+          )}
+        </HostProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -11,12 +11,22 @@ const PrivacyScreen = () => {
   const insets = useSafeAreaInsets();
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const timeoutRef = useRef(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
   }, [navigation]);
+
+  useEffect(() => {
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleDownloadData = () => {
     setShowDownloadModal(true);
@@ -25,8 +35,9 @@ const PrivacyScreen = () => {
   const handleConfirmDownload = () => {
     setShowDownloadModal(false);
     // TODO: Implement data download
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setShowSuccessModal(true);
+      timeoutRef.current = null;
     }, 300);
   };
 

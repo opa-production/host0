@@ -3,15 +3,17 @@ import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animat
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { useHost } from '../utils/HostContext';
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
+  const { host } = useHost();
   const [isLoading, setIsLoading] = useState(true);
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
 
-  // Data - Replace with actual API data
-  const userName = 'Deon';
+  // Get user name from host profile
+  const userName = host?.name || host?.full_name || 'Host';
   
   const operationsData = {
     activeRentals: 0,

@@ -36,18 +36,28 @@ export default function LoginScreen({ navigation }) {
   // Check for biometric authentication when screen is focused
   useFocusEffect(
     React.useCallback(() => {
+      let timeoutId = null;
+      let isMounted = true;
+
       const checkAndPromptBiometric = async () => {
         setCheckingBiometric(true);
         const enabled = await isBiometricEnabled();
+        
+        if (!isMounted) return;
         
         if (enabled) {
           // Check if we have stored profile for biometric login
           const storedProfile = await getUserProfile();
           
+          if (!isMounted) return;
+          
           if (storedProfile) {
             // Small delay to ensure UI is ready
-            setTimeout(async () => {
+            timeoutId = setTimeout(async () => {
+              if (!isMounted) return;
               const result = await authenticateWithBiometric();
+              
+              if (!isMounted) return;
               
               if (result.success) {
                 // Biometric authentication successful - navigate to main app
@@ -70,6 +80,10 @@ export default function LoginScreen({ navigation }) {
       
       // Reset check when leaving screen
       return () => {
+        isMounted = false;
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
         setCheckingBiometric(false);
       };
     }, [navigation])
