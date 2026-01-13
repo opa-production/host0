@@ -1,105 +1,153 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Image, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { getPaymentMethods } from '../services/paymentService';
 
 export default function GetBadgeScreen({ navigation }) {
-  const [selectedCount, setSelectedCount] = useState('1');
-  const [paymentMethod, setPaymentMethod] = useState('mobile_money');
+  const [selectedMethodId, setSelectedMethodId] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [isLoadingMethods, setIsLoadingMethods] = useState(false);
 
-  const pricePerCar = 4500;
-  const count = parseInt(selectedCount) || 0;
-  const total = count * pricePerCar;
-
-  const handleCountChange = (text) => {
-    // Only allow numbers
-    const numericValue = text.replace(/[^0-9]/g, '');
-    setSelectedCount(numericValue);
+  // Load payment methods from API
+  const loadPaymentMethods = async () => {
+    setIsLoadingMethods(true);
+    try {
+      const result = await getPaymentMethods();
+      
+      if (result.success) {
+        // Handle API response structure: [{ payment_methods: [...] }] or { payment_methods: [...] }
+        let methods = [];
+        
+        if (Array.isArray(result.data)) {
+          if (result.data[0] && Array.isArray(result.data[0].payment_methods)) {
+            methods = result.data[0].payment_methods;
+          } else {
+            methods = result.data;
+          }
+        } else if (result.data && Array.isArray(result.data.payment_methods)) {
+          methods = result.data.payment_methods;
+        }
+        
+        // Transform methods for display
+        const transformedMethods = methods.map((method) => {
+          const methodType = method.method_type?.toLowerCase();
+          
+          if (methodType === 'mpesa' || method.mpesa_number) {
+            return {
+              id: method.id?.toString(),
+              name: method.name || 'M-Pesa',
+              details: method.mpesa_number ? `+${method.mpesa_number}` : 'M-Pesa',
+              icon: require('../assets/images/mpesa.png'),
+              isDefault: method.is_default || false,
+              type: 'mpesa',
+            };
+          } else if (methodType === 'visa' || methodType === 'mastercard' || method.card_type) {
+            const cardType = method.card_type?.toLowerCase() || methodType || 'visa';
+            const lastFour = method.card_last_four || '****';
+            
+            return {
+              id: method.id?.toString(),
+              name: method.name || 'Card',
+              details: `•••• •••• •••• ${lastFour}`,
+              icon: cardType === 'visa' 
+                ? require('../assets/images/visa.png')
+                : require('../assets/images/mastercard.png'),
+              isDefault: method.is_default || false,
+              type: 'card',
+            };
+          }
+          
+          return null;
+        }).filter(Boolean); // Remove null entries
+        
+        setPaymentMethods(transformedMethods);
+        
+        // Auto-select default method if available
+        const defaultMethod = transformedMethods.find(m => m.isDefault);
+        if (defaultMethod && !selectedMethodId) {
+          setSelectedMethodId(defaultMethod.id);
+        } else if (transformedMethods.length > 0 && !selectedMethodId) {
+          setSelectedMethodId(transformedMethods[0].id);
+        }
+      } else {
+        setPaymentMethods([]);
+      }
+    } catch (error) {
+      console.error('Error loading payment methods:', error);
+      setPaymentMethods([]);
+    } finally {
+      setIsLoadingMethods(false);
+    }
   };
+
+  // Load payment methods when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      loadPaymentMethods();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.9}>
-        <Ionicons name="arrow-back" size={22} color={COLORS.text} />
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Get SupaHost badge</Text>
+        <View style={styles.backButton} />
+      </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Get SupaHost badge</Text>
-        <Text style={styles.subtitle}>Choose how many cars you want to elevate, then checkout securely.</Text>
-
-        <View style={styles.selectorCard}>
-          <Text style={styles.sectionLabel}>Number of cars</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              value={selectedCount}
-              onChangeText={handleCountChange}
-              keyboardType="numeric"
-              placeholder="Enter number"
-              placeholderTextColor="#8E8E93"
-              maxLength={3}
-            />
-            <View style={styles.inputSuffix}>
-              <Text style={styles.inputSuffixText}>{count === 1 ? 'car' : 'cars'}</Text>
-            </View>
-          </View>
-          <Text style={styles.helperText}>Enter the number of cars (1-999)</Text>
-        </View>
-
-        <View style={styles.priceCard}>
-          <Text style={styles.priceLabel}>Total</Text>
-          <Text style={styles.priceValue}>{`KES ${total.toLocaleString()}`}</Text>
-          <Text style={styles.priceBreakdown}>
-            {count > 0 ? `${count} ${count === 1 ? 'car' : 'cars'} × KES ${pricePerCar.toLocaleString()}` : 'Enter number of cars'}
-          </Text>
-        </View>
+        {/* <Text style={styles.subtitle}>Elevate your listing and checkout securely.</Text> */}
 
         <View style={styles.paymentSection}>
           <Text style={styles.sectionLabel}>Payment method</Text>
-          <View style={styles.paymentRow}>
-            <TouchableOpacity
-              style={[styles.paymentCard, paymentMethod === 'mobile_money' && styles.paymentCardActive]}
-              activeOpacity={0.9}
-              onPress={() => setPaymentMethod('mobile_money')}
-            >
-              <View style={styles.paymentTopRow}>
-                <Text style={styles.paymentTitle}>Mobile money</Text>
-                {paymentMethod === 'mobile_money' && (
-                  <Ionicons name="checkmark-circle" size={18} color="#1D1D1D" />
-                )}
-              </View>
-              <View style={styles.paymentLogoRow}>
-                <Image source={require('../assets/images/mpesa.png')} style={styles.paymentLogoMpesa} resizeMode="contain" />
-              </View>
-              <Text style={styles.paymentSub}>Pay with M-Pesa</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.paymentCard, paymentMethod === 'card' && styles.paymentCardActive]}
-              activeOpacity={0.9}
-              onPress={() => setPaymentMethod('card')}
-            >
-              <View style={styles.paymentTopRow}>
-                <Text style={styles.paymentTitle}>Card</Text>
-                {paymentMethod === 'card' && (
-                  <Ionicons name="checkmark-circle" size={18} color="#1D1D1D" />
-                )}
-              </View>
-              <View style={styles.paymentLogoRow}>
-                <Image source={require('../assets/images/visa.png')} style={styles.paymentLogo} resizeMode="contain" />
-                <Image source={require('../assets/images/mastercard.png')} style={styles.paymentLogo} resizeMode="contain" />
-              </View>
-              <Text style={styles.paymentSub}>Visa or Mastercard</Text>
-            </TouchableOpacity>
-          </View>
+          
+          {isLoadingMethods ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={COLORS.text} />
+            </View>
+          ) : paymentMethods.length > 0 ? (
+            paymentMethods.map((method) => (
+              <TouchableOpacity
+                key={method.id}
+                style={[styles.paymentMethodItem, selectedMethodId === method.id && styles.paymentMethodItemActive]}
+                activeOpacity={0.9}
+                onPress={() => setSelectedMethodId(method.id)}
+              >
+                <View style={styles.paymentMethodLeft}>
+                  <View style={styles.paymentLogoContainer}>
+                    <Image source={method.icon} style={method.type === 'mpesa' ? styles.paymentLogoMpesa : styles.paymentLogo} resizeMode="contain" />
+                  </View>
+                  <View style={styles.paymentMethodInfo}>
+                    <Text style={styles.paymentMethodTitle}>{method.name}</Text>
+                    <Text style={styles.paymentMethodSub}>{method.details}</Text>
+                  </View>
+                </View>
+                <View style={[styles.checkCircle, selectedMethodId === method.id && styles.checkCircleActive]}>
+                  {selectedMethodId === method.id && (
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No payment methods available</Text>
+              <Text style={styles.emptyStateSubtext}>Add a payment method in Settings to continue</Text>
+            </View>
+          )}
         </View>
 
         <TouchableOpacity 
-          style={[styles.primaryButton, count === 0 && styles.primaryButtonDisabled]} 
+          style={[styles.primaryButton, (!selectedMethodId || paymentMethods.length === 0) && styles.primaryButtonDisabled]} 
           activeOpacity={0.9}
-          disabled={count === 0}
+          disabled={!selectedMethodId || paymentMethods.length === 0}
         >
           <Text style={styles.primaryButtonText}>initiate payment</Text>
         </TouchableOpacity>
@@ -118,41 +166,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingTop: 60,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
+  },
   backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 16,
-    zIndex: 10,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.surface,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
   },
   content: {
     padding: SPACING.l,
-    paddingTop: 90,
+    paddingTop: SPACING.m,
     paddingBottom: 120,
     gap: 16,
-  },
-  title: {
-    ...TYPE.largeTitle,
-    lineHeight: 34,
   },
   subtitle: {
     ...TYPE.body,
     color: COLORS.subtle,
-    marginTop: 6,
+    marginBottom: 4,
   },
-  selectorCard: {
+  paymentSection: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     borderWidth: StyleSheet.hairlineWidth,
@@ -164,104 +209,52 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: COLORS.subtle,
+    marginBottom: 4,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F7',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 56,
-  },
-  input: {
-    flex: 1,
-    ...TYPE.bodyStrong,
-    fontSize: 18,
-    color: '#1D1D1D',
-    padding: 0,
-  },
-  inputSuffix: {
-    paddingLeft: 12,
-  },
-  inputSuffixText: {
-    ...TYPE.body,
-    color: COLORS.subtle,
-    fontSize: 15,
-  },
-  helperText: {
-    ...TYPE.caption,
-    color: COLORS.subtle,
-    fontSize: 12,
-  },
-  priceCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+  loadingContainer: {
     padding: SPACING.l,
     alignItems: 'center',
-    gap: 6,
   },
-  priceLabel: {
-    ...TYPE.body,
-    color: COLORS.subtle,
+  emptyState: {
+    padding: SPACING.l,
+    alignItems: 'center',
   },
-  priceValue: {
-    ...TYPE.largeTitle,
-    fontSize: 32,
-    color: '#1D1D1D',
+  emptyStateText: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
+    marginBottom: 4,
   },
-  priceBreakdown: {
+  emptyStateSubtext: {
     ...TYPE.caption,
+    fontSize: 12,
     color: COLORS.subtle,
-    marginTop: 4,
+    textAlign: 'center',
   },
-  paymentSection: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    padding: SPACING.m,
-    gap: 12,
-  },
-  paymentRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  paymentCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: SPACING.m,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#E5E5EA',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  paymentCardActive: {
-    borderColor: '#1D1D1D',
-    shadowOpacity: 0.12,
-    elevation: 3,
-  },
-  paymentTopRow: {
+  paymentMethodItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    padding: SPACING.m,
+    borderRadius: 12,
+    backgroundColor: COLORS.bg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
   },
-  paymentTitle: {
-    ...TYPE.bodyStrong,
-    fontSize: 14,
-    color: COLORS.text,
+  paymentMethodItemActive: {
+    borderColor: '#1D1D1D',
+    backgroundColor: '#F9F9F9',
   },
-  paymentLogoRow: {
+  paymentMethodLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    minHeight: 26,
+    flex: 1,
+    gap: 12,
+  },
+  paymentLogoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 80,
   },
   paymentLogoMpesa: {
     width: 70,
@@ -271,9 +264,33 @@ const styles = StyleSheet.create({
     width: 44,
     height: 22,
   },
-  paymentSub: {
+  paymentMethodInfo: {
+    flex: 1,
+  },
+  paymentMethodTitle: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  paymentMethodSub: {
     ...TYPE.caption,
-    marginTop: 10,
+    color: COLORS.subtle,
+    fontSize: 12,
+  },
+  checkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+  },
+  checkCircleActive: {
+    backgroundColor: '#1D1D1D',
+    borderColor: '#1D1D1D',
   },
   primaryButton: {
     backgroundColor: '#007AFF',
