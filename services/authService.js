@@ -201,6 +201,127 @@ export const logoutHost = async () => {
 };
 
 /**
+ * Change password for authenticated host
+ * @param {string} currentPassword - Current password (required for verification)
+ * @param {string} newPassword - New password (minimum 8 characters)
+ * @param {string} newPasswordConfirmation - New password confirmation (must match new_password)
+ * @returns {Promise<Object>} Result with success status and message or error
+ */
+export const changePassword = async (currentPassword, newPassword, newPasswordConfirmation) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_CHANGE_PASSWORD);
+  console.log('Changing password at:', url);
+  
+  try {
+    const token = await getUserToken();
+    
+    if (!token) {
+      return {
+        success: false,
+        error: 'No authentication token found. Please login again.',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirmation: newPasswordConfirmation,
+      }),
+    });
+
+    // Check if response is ok before parsing JSON
+    if (!response.ok) {
+      let errorMessage = 'Failed to change password';
+      let requiresLogout = false;
+      
+      try {
+        const errorData = await response.json();
+        // Handle validation errors (FastAPI often returns detail as array or object)
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+        
+        // Check if error message indicates token expiration (not password validation)
+        const errorMsgLower = errorMessage.toLowerCase();
+        const isTokenError = errorMsgLower.includes('token') || 
+                            errorMsgLower.includes('expired') || 
+                            errorMsgLower.includes('unauthorized') ||
+                            errorMsgLower.includes('invalid token') ||
+                            errorMsgLower.includes('session expired');
+        
+        // Only treat as token expiration if 401 AND error message indicates token issue
+        // (not password validation errors like "incorrect password" or "current password")
+        if (response.status === 401 && isTokenError && 
+            !errorMsgLower.includes('password') && 
+            !errorMsgLower.includes('current')) {
+          requiresLogout = true;
+        }
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage;
+        // For 401 without JSON response, assume token issue
+        if (response.status === 401) {
+          requiresLogout = true;
+        }
+      }
+      
+      // If token expired, clear data
+      if (requiresLogout) {
+        console.log('Token expired or invalid during password change');
+        await clearUserData();
+        return {
+          success: false,
+          error: 'Session expired. Please login again.',
+          requiresLogout: true,
+        };
+      }
+      
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      success: true,
+      message: data.message || 'Password changed successfully',
+    };
+  } catch (error) {
+    console.error('Change password error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      url: url,
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Network error. Please check your connection.';
+    if (error.message === 'Network request failed') {
+      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct\n• Firewall is not blocking the connection`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+};
+
+/**
  * Get current authenticated host profile
  */
 export const getCurrentHost = async () => {

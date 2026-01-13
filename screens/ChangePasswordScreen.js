@@ -1,14 +1,17 @@
 import React, { useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, StatusBar, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, StatusBar, KeyboardAvoidingView, Platform, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { changePassword } from '../services/authService';
+import { useHost } from '../utils/HostContext';
 
 const ChangePasswordScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { logout } = useHost();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,6 +19,7 @@ const ChangePasswordScreen = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   useLayoutEffect(() => {
@@ -51,10 +55,57 @@ const ChangePasswordScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChangePassword = () => {
-    if (validateForm()) {
-      // TODO: Make API call to change password
-      setShowSuccessModal(true);
+  const handleChangePassword = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    lightHaptic();
+
+    try {
+      const result = await changePassword(currentPassword, newPassword, confirmPassword);
+
+      if (result.success) {
+        // Password changed successfully
+        // Logout user and show success modal
+        await logout();
+        setShowSuccessModal(true);
+      } else {
+        // Check if logout is required (session expired)
+        if (result.requiresLogout) {
+          // Logout from context to update React state
+          await logout();
+          Alert.alert(
+            'Session Expired',
+            result.error || 'Your session has expired. Please login again.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  navigation.replace('Landing');
+                }
+              }
+            ]
+          );
+        } else {
+          // Show error message (password validation error, etc.)
+          Alert.alert(
+            'Password Change Failed',
+            result.error || 'Failed to change password. Please try again.',
+            [{ text: 'OK' }]
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Change password error:', error);
+      Alert.alert(
+        'Error',
+        'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -212,10 +263,16 @@ const ChangePasswordScreen = () => {
 
           {/* Change Password Button */}
           <TouchableOpacity
-            style={styles.changePasswordButton}
+            style={[styles.changePasswordButton, isLoading && styles.changePasswordButtonDisabled]}
             onPress={handleChangePassword}
+            disabled={isLoading}
+            activeOpacity={0.8}
           >
-            <Text style={styles.changePasswordButtonText}>Change Password</Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.changePasswordButtonText}>Change Password</Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -364,6 +421,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 3,
+  },
+  changePasswordButtonDisabled: {
+    opacity: 0.6,
   },
   changePasswordButtonText: {
     ...TYPE.bodyStrong,

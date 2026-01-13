@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
   HOST_REGISTER: '/api/v1/host/auth/register',
   HOST_LOGIN: '/api/v1/host/auth/login',
   HOST_LOGOUT: '/api/v1/host/auth/logout',
+  HOST_CHANGE_PASSWORD: '/api/v1/host/auth/change-password',
   HOST_ME: '/api/v1/host/me',
   HOST_UPDATE_PROFILE: '/api/v1/host/profile',
   
