@@ -101,7 +101,8 @@ export default function MyListingsScreen({ navigation }) {
   const renderCarCard = ({ item, index }) => {
     const statusInfo = getStatusInfo(item.status, item.is_complete);
     const isLastItem = index === allListings.length - 1;
-    const isIncomplete = item.is_complete === false || item.status === 'incomplete';
+    // Car is incomplete only if it's marked incomplete AND has no images
+    const isIncomplete = (item.is_complete === false || item.status === 'incomplete') && !item.hasImages;
     
     return (
       <TouchableOpacity 

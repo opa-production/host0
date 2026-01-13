@@ -2,7 +2,8 @@
  * Car Service - Backend Integration for Host App
  */
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
-import { getUserToken } from '../utils/userStorage';
+import { getUserToken, getUserId } from '../utils/userStorage';
+import { supabase, STORAGE_BUCKETS } from '../config/supabase';
 
 /**
  * Create car with basic information
@@ -510,6 +511,75 @@ export const updateCarPricing = async (carId, pricing) => {
     };
   }
 };
+
+/**
+ * Fetch car images from Supabase Storage
+ * @param {number} carId - Car ID
+ * @param {number} userId - User ID
+ * @returns {Promise<Object>} Object with coverPhoto URL and images array
+ */
+const fetchCarImagesFromSupabase = async (carId, userId) => {
+  try {
+    if (!carId || !userId) {
+      return { coverPhoto: null, images: [] };
+    }
+
+    const folderPath = `user_${userId}/car_${carId}`;
+    console.log('🖼️ [Fetch Images] Fetching images from Supabase:', folderPath);
+
+    // List all files in the car's folder
+    const { data: files, error } = await supabase.storage
+      .from(STORAGE_BUCKETS.VEHICLE_MEDIA)
+      .list(folderPath, {
+        limit: 100,
+        sortBy: { column: 'created_at', order: 'asc' },
+      });
+
+    if (error) {
+      console.log('🖼️ [Fetch Images] Error listing files:', error.message);
+      return { coverPhoto: null, images: [] };
+    }
+
+    if (!files || files.length === 0) {
+      console.log('🖼️ [Fetch Images] No images found for car:', carId);
+      return { coverPhoto: null, images: [] };
+    }
+
+    // Filter for image files
+    const imageFiles = files.filter(file => 
+      file.name.startsWith('image_') && 
+      (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.png'))
+    );
+
+    if (imageFiles.length === 0) {
+      return { coverPhoto: null, images: [] };
+    }
+
+    // Get public URLs for all images
+    const imageUrls = imageFiles.map(file => {
+      const { data } = supabase.storage
+        .from(STORAGE_BUCKETS.VEHICLE_MEDIA)
+        .getPublicUrl(`${folderPath}/${file.name}`);
+      return data.publicUrl;
+    });
+
+    // First image is the cover photo
+    const coverPhoto = imageUrls[0] || null;
+    const images = imageUrls;
+
+    console.log('🖼️ [Fetch Images] Found images:', {
+      carId,
+      count: images.length,
+      coverPhoto: coverPhoto ? '✓' : '✗',
+    });
+
+    return { coverPhoto, images };
+  } catch (error) {
+    console.error('🖼️ [Fetch Images] Error fetching images:', error);
+    return { coverPhoto: null, images: [] };
+  }
+};
+
 /**
  * Get all cars for the authenticated host
  * @returns {Promise<Object>} Result with success status and cars array or error
@@ -581,51 +651,88 @@ export const getHostCars = async () => {
     });
     console.log('🚗 [GET HOST CARS API] Full response:', JSON.stringify(carsArray, null, 2));
 
-    // Map API response to UI format
-    const mappedCars = carsArray.map(car => ({
-      id: car.id?.toString() || `car-${Date.now()}`,
-      carId: car.id,
-      name: car.name || '',
-      model: car.model || '',
-      body: car.body_type || '',
-      body_type: car.body_type || '',
-      year: car.year?.toString() || '',
-      description: car.description || '',
-      seats: car.seats?.toString() || '',
-      fuelType: car.fuel_type || '',
-      fuel_type: car.fuel_type || '',
-      transmission: car.transmission || '',
-      colour: car.color || '',
-      color: car.color || '',
-      mileage: car.mileage?.toString() || '',
-      features: Array.isArray(car.features) ? car.features : [],
-      pricePerDay: car.daily_rate || 0,
-      daily_rate: car.daily_rate || 0,
-      pricePerWeek: car.weekly_rate || 0,
-      weekly_rate: car.weekly_rate || 0,
-      pricePerMonth: car.monthly_rate || 0,
-      monthly_rate: car.monthly_rate || 0,
-      minimumRentalDays: car.min_rental_days?.toString() || '',
-      min_rental_days: car.min_rental_days || 0,
-      maxRentalDays: car.max_rental_days?.toString() || '',
-      max_rental_days: car.max_rental_days || null,
-      ageRestriction: car.min_age_requirement?.toString() || '',
-      min_age_requirement: car.min_age_requirement || 0,
-      carRules: Array.isArray(car.rules) ? car.rules : (typeof car.rules === 'string' ? [car.rules] : []),
-      rules: Array.isArray(car.rules) ? car.rules : (typeof car.rules === 'string' ? [car.rules] : []),
-      pickupLocation: car.location_name || '',
-      location_name: car.location_name || '',
-      pickupLat: car.latitude || null,
-      latitude: car.latitude || null,
-      pickupLong: car.longitude || null,
-      longitude: car.longitude || null,
-      is_complete: car.is_complete || false,
-      status: car.is_complete ? 'awaiting_verification' : 'incomplete',
-      createdAt: car.created_at || new Date().toISOString(),
-      updated_at: car.updated_at || new Date().toISOString(),
-      totalTrips: 0, // Default value, can be updated from API if available
-      rating: null, // Default value, can be updated from API if available
-    }));
+    // Get user ID for fetching images from Supabase
+    const userId = await getUserId();
+    console.log('🚗 [GET HOST CARS API] User ID for image fetching:', userId);
+
+    // Map API response to UI format and fetch images from Supabase
+    const mappedCarsPromises = carsArray.map(async (car) => {
+      // Check if API already provides image URLs
+      const hasApiImages = !!(car.cover_photo_url || (car.image_urls && car.image_urls.length > 0));
+      
+      // Fetch images from Supabase if not provided by API
+      let supabaseImages = { coverPhoto: null, images: [] };
+      if (!hasApiImages && userId && car.id) {
+        supabaseImages = await fetchCarImagesFromSupabase(car.id, userId);
+      }
+
+      // Determine cover photo and images (prioritize API data, fallback to Supabase)
+      const coverPhoto = car.cover_photo_url || car.coverPhoto || supabaseImages.coverPhoto;
+      const images = Array.isArray(car.image_urls) && car.image_urls.length > 0 
+        ? car.image_urls 
+        : (car.image_urls ? [car.image_urls] : supabaseImages.images);
+      
+      // Determine if car has images
+      const hasImages = !!(coverPhoto || images.length > 0);
+
+      return {
+        id: car.id?.toString() || `car-${Date.now()}`,
+        carId: car.id,
+        name: car.name || '',
+        model: car.model || '',
+        body: car.body_type || '',
+        body_type: car.body_type || '',
+        year: car.year?.toString() || '',
+        description: car.description || '',
+        seats: car.seats?.toString() || '',
+        fuelType: car.fuel_type || '',
+        fuel_type: car.fuel_type || '',
+        transmission: car.transmission || '',
+        colour: car.color || '',
+        color: car.color || '',
+        mileage: car.mileage?.toString() || '',
+        features: Array.isArray(car.features) ? car.features : [],
+        pricePerDay: car.daily_rate || 0,
+        daily_rate: car.daily_rate || 0,
+        pricePerWeek: car.weekly_rate || 0,
+        weekly_rate: car.weekly_rate || 0,
+        pricePerMonth: car.monthly_rate || 0,
+        monthly_rate: car.monthly_rate || 0,
+        minimumRentalDays: car.min_rental_days?.toString() || '',
+        min_rental_days: car.min_rental_days || 0,
+        maxRentalDays: car.max_rental_days?.toString() || '',
+        max_rental_days: car.max_rental_days || null,
+        ageRestriction: car.min_age_requirement?.toString() || '',
+        min_age_requirement: car.min_age_requirement || 0,
+        carRules: Array.isArray(car.rules) ? car.rules : (typeof car.rules === 'string' ? [car.rules] : []),
+        rules: Array.isArray(car.rules) ? car.rules : (typeof car.rules === 'string' ? [car.rules] : []),
+        pickupLocation: car.location_name || '',
+        location_name: car.location_name || '',
+        pickupLat: car.latitude || null,
+        latitude: car.latitude || null,
+        pickupLong: car.longitude || null,
+        longitude: car.longitude || null,
+        // Media URLs - prioritize API, fallback to Supabase
+        coverPhoto: coverPhoto,
+        coverPhotoUrl: coverPhoto,
+        image: coverPhoto, // For backward compatibility
+        images: images,
+        imageUrls: images,
+        video: car.video_url || car.video || null,
+        videoUrl: car.video_url || car.video || null,
+        is_complete: car.is_complete || false,
+        // Status logic: if complete OR has images, show awaiting_verification, otherwise incomplete
+        hasImages: hasImages,
+        status: car.is_complete || hasImages ? 'awaiting_verification' : 'incomplete',
+        createdAt: car.created_at || new Date().toISOString(),
+        updated_at: car.updated_at || new Date().toISOString(),
+        totalTrips: 0, // Default value, can be updated from API if available
+        rating: null, // Default value, can be updated from API if available
+      };
+    });
+
+    // Wait for all image fetches to complete
+    const mappedCars = await Promise.all(mappedCarsPromises);
 
     return {
       success: true,
