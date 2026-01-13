@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: COLORS.brand,
     paddingVertical: 16,
-    borderRadius: 16,
+    borderRadius: RADIUS.button,
     alignItems: 'center',
     marginTop: 4,
   },
