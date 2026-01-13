@@ -17,31 +17,9 @@ const LegalScreen = () => {
   }, [navigation]);
 
   const handleLinkPress = (url) => {
+    lightHaptic();
     Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
   };
-
-  const legalSections = [
-    {
-      title: 'Terms of Service',
-      content: 'By using OpaHost, you agree to our Terms of Service. These terms govern your use of our platform, including vehicle rentals, service bookings, and all interactions on the platform. Please read these terms carefully before using our services.',
-      screenName: 'TermsOfService',
-    },
-    {
-      title: 'User Agreement',
-      content: 'Our User Agreement outlines the rights and responsibilities of both car owners and renters on the OpaHost platform. This includes booking policies, payment terms, cancellation procedures, and dispute resolution processes.',
-      screenName: 'UserAgreement',
-    },
-    {
-      title: 'Liability & Insurance',
-      content: 'OpaHost provides comprehensive insurance coverage for all rentals. Car owners and renters are protected through our insurance policies. However, users are responsible for following all traffic laws and using vehicles responsibly.',
-      screenName: 'LiabilityInsurance',
-    },
-    {
-      title: 'Intellectual Property',
-      content: 'All content on the OpaHost platform, including logos, designs, text, graphics, and software, is the property of OpaHost and protected by copyright and trademark laws.',
-      screenName: 'IntellectualProperty',
-    },
-  ];
 
   return (
     <View style={styles.container}>
@@ -68,59 +46,19 @@ const LegalScreen = () => {
         contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-
-        {/* Legal Sections */}
-        {legalSections.map((section, index) => (
-          <View key={index} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <Text style={styles.sectionContent}>{section.content}</Text>
-            <TouchableOpacity
-              style={styles.readMoreButton}
-              onPress={() => {
-                // Check if screen exists before navigating
-                try {
-                  navigation.navigate(section.screenName);
-                } catch (e) {
-                  console.log(`Screen ${section.screenName} not found`);
-                }
-              }}
-              activeOpacity={1}
-            >
-              <Text style={styles.readMoreText}>Read More</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-
-        {/* Legal Website Link */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal Information</Text>
-          <Text style={styles.sectionContent}>
-            For complete legal information, terms, and policies, please visit our legal website.
+        <View style={styles.contentWrapper}>
+          <Text style={styles.messageText}>
+            Our complete legal information, terms, conditions, and policies are compiled on our website.
           </Text>
+          
           <TouchableOpacity
             style={styles.websiteButton}
-            onPress={() => handleLinkPress('https://opa.deonhq.xyz')}
-            activeOpacity={1}
+            onPress={() => handleLinkPress('https://ardena.xyz/legal.html')}
+            activeOpacity={0.7}
           >
             <Ionicons name="globe-outline" size={20} color="#007AFF" />
-            <Text style={styles.websiteButtonText}>opa.deonhq.xyz</Text>
+            <Text style={styles.websiteButtonText}>View Legal Information</Text>
             <Ionicons name="open-outline" size={16} color="#007AFF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Contact for Legal Inquiries */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal Inquiries</Text>
-          <Text style={styles.sectionContent}>
-            For legal inquiries or questions about our terms and policies, please contact our legal team.
-          </Text>
-          <TouchableOpacity
-            style={styles.contactButton}
-            onPress={() => handleLinkPress('mailto:legal@opahost.com')}
-            activeOpacity={1}
-          >
-            <Ionicons name="mail-outline" size={20} color="#007AFF" />
-            <Text style={styles.contactButtonText}>legal@opahost.com</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -151,73 +89,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
     padding: SPACING.l,
-    paddingTop: SPACING.m,
   },
   headerTitle: {
     ...TYPE.largeTitle,
     fontSize: 20,
     color: COLORS.text,
   },
-  section: {
-    marginBottom: 32,
+  contentWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.xl,
   },
-  sectionTitle: {
-    ...TYPE.section,
-    fontSize: 15,
-    marginBottom: 12,
-    color: '#1C1C1E',
-  },
-  sectionContent: {
+  messageText: {
     ...TYPE.body,
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: 12,
-    color: '#8E8E93',
-  },
-  readMoreButton: {
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  readMoreText: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    textDecorationLine: 'underline',
-    color: '#007AFF',
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    color: COLORS.text,
+    marginBottom: SPACING.xl,
+    paddingHorizontal: SPACING.m,
   },
   websiteButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginTop: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: RADIUS.button,
     backgroundColor: COLORS.surface,
-    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    minWidth: 200,
   },
   websiteButtonText: {
     ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#007AFF',
-  },
-  contactButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    alignSelf: 'flex-start',
-  },
-  contactButtonText: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
+    fontSize: 15,
     color: '#007AFF',
   },
 });
