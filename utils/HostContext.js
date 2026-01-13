@@ -33,7 +33,15 @@ export const HostProvider = ({ children }) => {
         }
 
         // Verify token with backend by calling /api/v1/host/me
-        const result = await getCurrentHost();
+        // Add timeout to prevent hanging if API is slow/unreachable
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Request timeout')), 5000); // 5 second timeout
+        });
+
+        const result = await Promise.race([
+          getCurrentHost(),
+          timeoutPromise,
+        ]);
         
         if (result.success && result.host) {
           // Token is valid, set authenticated user
@@ -50,10 +58,25 @@ export const HostProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        // On error, clear local data and require re-login
-        await clearUserData();
-        setHost(null);
-        setIsAuthenticated(false);
+        // On timeout or error, don't clear data - just mark as not authenticated
+        // This allows offline usage and prevents clearing valid tokens on network issues
+        if (error.message === 'Request timeout' || error.message.includes('Network request failed')) {
+          console.log('Network timeout or error - allowing offline mode');
+          // Try to use cached profile if available
+          const cachedProfile = await getUserProfile();
+          if (cachedProfile) {
+            setHost(cachedProfile);
+            setIsAuthenticated(true);
+          } else {
+            setHost(null);
+            setIsAuthenticated(false);
+          }
+        } else {
+          // For other errors, clear local data
+          await clearUserData();
+          setHost(null);
+          setIsAuthenticated(false);
+        }
       } finally {
         setIsLoading(false);
       }

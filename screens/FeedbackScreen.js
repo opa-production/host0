@@ -1,22 +1,88 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getUserToken } from '../utils/userStorage';
+import { getApiUrl, API_ENDPOINTS } from '../config/api';
+
+const MAX_FEEDBACK_LENGTH = 250;
 
 export default function FeedbackScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [feedback, setFeedback] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submitFeedback = () => {
+  const submitFeedback = async () => {
     if (!feedback.trim()) {
       Alert.alert('Feedback needed', 'Please enter your feedback before submitting.');
       return;
     }
-    Alert.alert('Thank you!', 'Your feedback has been submitted.');
-    setFeedback('');
-    navigation.goBack();
+
+    if (feedback.trim().length > MAX_FEEDBACK_LENGTH) {
+      Alert.alert('Feedback too long', `Feedback must be ${MAX_FEEDBACK_LENGTH} characters or less.`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    lightHaptic();
+
+    try {
+      const token = await getUserToken();
+      
+      if (!token) {
+        Alert.alert('Authentication Required', 'Please log in to submit feedback.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const url = getApiUrl(API_ENDPOINTS.HOST_FEEDBACK);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: feedback.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to submit feedback';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch (e) {
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      
+      Alert.alert('Thank you!', 'Your feedback has been submitted successfully.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            setFeedback('');
+            navigation.goBack();
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error('Feedback submission error:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to submit feedback. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -53,18 +119,38 @@ export default function FeedbackScreen({ navigation }) {
           </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Your feedback</Text>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>Your feedback</Text>
+            <Text style={[
+              styles.characterCount,
+              feedback.length > MAX_FEEDBACK_LENGTH && styles.characterCountError
+            ]}>
+              {feedback.length}/{MAX_FEEDBACK_LENGTH}
+            </Text>
+          </View>
           <TextInput
             style={styles.textArea}
             placeholder="Type your thoughts..."
+            placeholderTextColor="#999999"
             multiline
             numberOfLines={6}
             value={feedback}
             onChangeText={setFeedback}
+            maxLength={MAX_FEEDBACK_LENGTH}
+            editable={!isSubmitting}
           />
 
-          <TouchableOpacity style={styles.primaryButton} onPress={submitFeedback} activeOpacity={0.9}>
-            <Text style={styles.primaryButtonText}>Submit</Text>
+          <TouchableOpacity 
+            style={[styles.primaryButton, isSubmitting && styles.primaryButtonDisabled]} 
+            onPress={submitFeedback} 
+            activeOpacity={0.9}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Submit</Text>
+            )}
           </TouchableOpacity>
         </View>
         </ScrollView>
@@ -125,9 +211,23 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 12,
   },
+  labelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   label: {
     ...TYPE.micro,
     color: '#8E8E93',
+  },
+  characterCount: {
+    ...TYPE.micro,
+    color: '#8E8E93',
+    fontSize: 11,
+  },
+  characterCountError: {
+    color: '#FF3B30',
   },
   textArea: {
     minHeight: 140,
@@ -146,7 +246,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 4,
+    minHeight: 48,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.6,
   },
   primaryButtonText: {
     ...TYPE.bodyStrong,

@@ -32,6 +32,9 @@ export const API_ENDPOINTS = {
   PAYMENT_METHODS_MPESA: '/api/v1/host/payment-methods/mpesa',
   PAYMENT_METHODS_CARD: '/api/v1/host/payment-methods/card',
   PAYMENT_METHOD_DELETE: (id) => `/api/v1/host/payment-methods/${id}`,
+  
+  // Feedback
+  HOST_FEEDBACK: '/api/v1/host/feedback',
 };
 
 /**
