@@ -91,14 +91,14 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['videos'],
         allowsEditing: true,
-        videoMaxDuration: 15,
+        videoMaxDuration: 30,
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const videoAsset = result.assets[0];
-        if (videoAsset.duration && videoAsset.duration > 15000) {
-          Alert.alert('Video too long', 'Please select a video that is 15 seconds or less');
+        if (videoAsset.duration && videoAsset.duration > 30000) {
+          Alert.alert('Video too long', 'Please select a video that is 30 seconds or less');
           return;
         }
         updateFormData({ video: videoAsset.uri });
@@ -201,7 +201,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
       {/* Video */}
       <View style={styles.section}>
         <Text style={styles.label}>Video</Text>
-        <Text style={styles.hint}>Optional (up to 15 seconds)</Text>
+        <Text style={styles.hint}>Optional (up to 30 seconds)</Text>
         
         {formData.video ? (
           <View style={styles.videoContainer}>
