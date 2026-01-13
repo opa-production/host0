@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, TYPE, SPACING } from '../ui/tokens';
-import { createCarBasics, updateCarSpecs, updateCarPricing, updateCarLocation } from '../services/carService';
+import { createCarBasics, updateCarSpecs, updateCarPricing } from '../services/carService';
+import { uploadVehicleImages, uploadVehicleVideo } from '../services/mediaService';
 import BasicInfoScreen from './HostVehicle/BasicInfoMediaScreen';
 import MediaUploadScreen from './HostVehicle/MediaUploadScreen';
 import CarSpecsScreen from './HostVehicle/CarSpecsScreen';
@@ -216,10 +217,14 @@ export default function HostVehicleScreen({ navigation, route }) {
         setIsSubmitting(false);
       }
     } else if (currentStep === 4) {
-      // If moving from step 4 to step 5, update car location via API
-      // Validate location before proceeding
-      if (!formData.pickupLocation && (!formData.pickupLat || !formData.pickupLong)) {
-        Alert.alert('Incomplete Information', 'Please provide a pickup location before proceeding.');
+      // If moving from step 4 to step 5, upload media via API
+      // Validate media before proceeding
+      if (!formData.coverPhoto) {
+        Alert.alert('Incomplete Information', 'Please add a cover photo before proceeding.');
+        return;
+      }
+      if (!formData.images || formData.images.length < 4) {
+        Alert.alert('Incomplete Information', 'Please add at least 4 photos before proceeding.');
         return;
       }
 
@@ -231,26 +236,67 @@ export default function HostVehicleScreen({ navigation, route }) {
       setIsSubmitting(true);
       
       try {
-        const result = await updateCarLocation(carId || formData.carId, {
-          location_name: formData.pickupLocation,
-          latitude: formData.pickupLat,
-          longitude: formData.pickupLong,
+        const currentCarId = carId || formData.carId;
+        const uploadResults = {
+          coverPhoto: null,
+          images: [],
+          video: null,
+        };
+
+        // Upload images (cover photo + additional images)
+        // Cover photo should be first in the array
+        console.log('📸 [Media Upload] Starting images upload...');
+        const allImages = [formData.coverPhoto, ...formData.images];
+        const imagesResult = await uploadVehicleImages(
+          allImages.map((uri, index) => ({
+            uri: uri,
+            name: `image_${currentCarId}_${index}.jpg`,
+            type: 'image/jpeg',
+          })),
+          currentCarId
+        );
+        
+        if (!imagesResult.success) {
+          throw new Error(`Images upload failed: ${imagesResult.error}`);
+        }
+        uploadResults.images = imagesResult.urls || [];
+        // First image is the cover photo
+        uploadResults.coverPhoto = uploadResults.images[0] || null;
+        console.log('📸 [Media Upload] Images uploaded:', uploadResults.images.length);
+        console.log('📸 [Media Upload] Cover photo URL:', uploadResults.coverPhoto);
+
+        // Upload video if provided
+        if (formData.video) {
+          console.log('📹 [Media Upload] Starting video upload...');
+          const videoResult = await uploadVehicleVideo({
+            uri: formData.video,
+            name: `video_${currentCarId}.mp4`,
+            type: 'video/mp4',
+          }, currentCarId);
+          
+          if (!videoResult.success) {
+            console.warn('⚠️ [Media Upload] Video upload failed:', videoResult.error);
+            // Don't block progress if video fails
+          } else {
+            uploadResults.video = videoResult.url;
+            console.log('📹 [Media Upload] Video uploaded:', videoResult.url);
+          }
+        }
+
+        // Update form data with uploaded URLs
+        updateFormData({
+          coverPhotoUrl: uploadResults.coverPhoto,
+          imageUrls: uploadResults.images,
+          videoUrl: uploadResults.video,
         });
 
-        if (result.success) {
-          setCurrentStep(5);
-        } else {
-          Alert.alert(
-            'Error',
-            result.error || 'Failed to update car location. Please try again.',
-            [{ text: 'OK' }]
-          );
-        }
+        console.log('✅ [Media Upload] All media uploaded successfully');
+        setCurrentStep(5);
       } catch (error) {
-        console.error('Error updating car location:', error);
+        console.error('❌ [Media Upload] Error uploading media:', error);
         Alert.alert(
-          'Error',
-          error.message || 'Failed to update car location. Please check your connection and try again.',
+          'Upload Error',
+          error.message || 'Failed to upload media. Please check your connection and try again.',
           [{ text: 'OK' }]
         );
       } finally {

@@ -1,9 +1,12 @@
 /**
  * Media Upload Service - Backend Integration for Host App
- * All uploads go through FastAPI backend for security
+ * Vehicle media uploads go directly to Supabase Storage
+ * Other uploads go through FastAPI backend for security
  */
-import { getUserToken } from '../utils/userStorage';
-import { API_BASE_URL } from '../config/api';
+import { getUserToken, getUserId } from '../utils/userStorage';
+import { API_BASE_URL, getApiUrl, API_ENDPOINTS } from '../config/api';
+import { supabase, STORAGE_BUCKETS } from '../config/supabase';
+import * as FileSystem from 'expo-file-system';
 
 const API_URL = `${API_BASE_URL}/api/v1`;
 
@@ -25,6 +28,113 @@ export const testBackendConnection = async () => {
     return { 
       success: false, 
       error: `Cannot reach backend at ${API_BASE_URL}. Please check:\n1. Backend is running\n2. IP address is correct\n3. Device can reach the backend` 
+    };
+  }
+};
+
+/**
+ * Test Supabase Storage connection and bucket access
+ * Use this to debug upload issues
+ */
+export const testSupabaseStorage = async () => {
+  try {
+    console.log('🔍 [Supabase Test] Testing Supabase Storage connection...');
+    console.log('🔍 [Supabase Test] Buckets to test:', STORAGE_BUCKETS.VEHICLE_MEDIA, STORAGE_BUCKETS.CAR_VIDEOS);
+    
+    const results = {
+      vehicleMedia: { accessible: false, error: null },
+      carVideos: { accessible: false, error: null },
+    };
+
+    // Test vehicle-media bucket
+    try {
+      console.log('🔍 [Supabase Test] Testing vehicle-media bucket...');
+      const { data: listData, error: listError } = await supabase.storage
+        .from(STORAGE_BUCKETS.VEHICLE_MEDIA)
+        .list('', { limit: 1 });
+      
+      if (listError) {
+        console.error('🔍 [Supabase Test] vehicle-media bucket error:', listError);
+        results.vehicleMedia.error = listError.message || listError.error || 'Unknown error';
+        results.vehicleMedia.statusCode = listError.statusCode;
+      } else {
+        console.log('🔍 [Supabase Test] ✅ vehicle-media bucket is accessible');
+        results.vehicleMedia.accessible = true;
+      }
+    } catch (error) {
+      console.error('🔍 [Supabase Test] vehicle-media bucket exception:', error);
+      results.vehicleMedia.error = error.message;
+    }
+
+    // Test carvideos bucket
+    try {
+      console.log('🔍 [Supabase Test] Testing carvideos bucket...');
+      const { data: listData, error: listError } = await supabase.storage
+        .from(STORAGE_BUCKETS.CAR_VIDEOS)
+        .list('', { limit: 1 });
+      
+      if (listError) {
+        console.error('🔍 [Supabase Test] carvideos bucket error:', listError);
+        results.carVideos.error = listError.message || listError.error || 'Unknown error';
+        results.carVideos.statusCode = listError.statusCode;
+      } else {
+        console.log('🔍 [Supabase Test] ✅ carvideos bucket is accessible');
+        results.carVideos.accessible = true;
+      }
+    } catch (error) {
+      console.error('🔍 [Supabase Test] carvideos bucket exception:', error);
+      results.carVideos.error = error.message;
+    }
+
+    // Test upload permission with a small test file
+    const userId = await getUserId();
+    if (userId) {
+      console.log('🔍 [Supabase Test] Testing upload permission...');
+      const testPath = `user_${userId}/test/test_${Date.now()}.txt`;
+      const testContent = new Blob(['test'], { type: 'text/plain' });
+      
+      try {
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(STORAGE_BUCKETS.VEHICLE_MEDIA)
+          .upload(testPath, testContent, {
+            contentType: 'text/plain',
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error('🔍 [Supabase Test] ❌ Upload test failed:', uploadError);
+          results.uploadTest = {
+            success: false,
+            error: uploadError.message || uploadError.error || 'Unknown error',
+            statusCode: uploadError.statusCode,
+          };
+        } else {
+          console.log('🔍 [Supabase Test] ✅ Upload test successful');
+          results.uploadTest = { success: true };
+          
+          // Clean up test file
+          await supabase.storage
+            .from(STORAGE_BUCKETS.VEHICLE_MEDIA)
+            .remove([testPath]);
+        }
+      } catch (error) {
+        console.error('🔍 [Supabase Test] Upload test exception:', error);
+        results.uploadTest = { success: false, error: error.message };
+      }
+    } else {
+      console.warn('🔍 [Supabase Test] ⚠️ No user ID found, skipping upload test');
+      results.uploadTest = { success: false, error: 'User ID not found' };
+    }
+
+    return {
+      success: results.vehicleMedia.accessible && results.carVideos.accessible,
+      results,
+    };
+  } catch (error) {
+    console.error('🔍 [Supabase Test] ❌ Test failed:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to test Supabase Storage',
     };
   }
 };
@@ -319,18 +429,13 @@ export const uploadHostDocument = async (file, documentType) => {
 };
 
 /**
- * Upload multiple vehicle images
- * @param {Array<Object>} files - Array of file objects
+ * Upload multiple vehicle images directly to Supabase Storage
+ * @param {Array<Object>} files - Array of file objects with {uri, name, type}
  * @param {number} carId - Car ID
  * @returns {Promise<Object>} Upload result with URLs
  */
 export const uploadVehicleImages = async (files, carId) => {
   try {
-    const token = await getUserToken();
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
     if (!carId) {
       throw new Error('Car ID is required');
     }
@@ -339,40 +444,148 @@ export const uploadVehicleImages = async (files, carId) => {
       throw new Error('No files provided');
     }
 
-    if (files.length > 10) {
-      throw new Error('Maximum 10 images allowed');
+    if (files.length > 12) {
+      throw new Error('Maximum 12 images allowed');
     }
 
-    const formData = new FormData();
-    files.forEach((file, index) => {
-      formData.append('files', {
-        uri: file.uri,
-        name: file.name || `image_${index}.jpg`,
-        type: file.type || 'image/jpeg',
-      });
-    });
-
-    const response = await fetch(`${API_URL}/host/upload/vehicle/${carId}/images`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.detail || 'Upload failed');
+    // Get user ID to associate images with user
+    const userId = await getUserId();
+    if (!userId) {
+      throw new Error('User ID is required. Please ensure you are logged in.');
     }
+
+    console.log('📸 [Vehicle Images Upload] Starting upload to Supabase...');
+    console.log('📸 [Vehicle Images Upload] User ID:', userId);
+    console.log('📸 [Vehicle Images Upload] Car ID:', carId);
+    console.log('📸 [Vehicle Images Upload] Files count:', files.length);
+    console.log('📸 [Vehicle Images Upload] Bucket:', STORAGE_BUCKETS.VEHICLE_MEDIA);
+
+    const uploadedUrls = [];
+    const errors = [];
+
+    // Upload each image sequentially to avoid overwhelming the connection
+    for (let index = 0; index < files.length; index++) {
+      const file = files[index];
+      try {
+        // Generate unique file path: user_{userId}/car_{carId}/image_{timestamp}_{index}.jpg
+        const timestamp = Date.now();
+        const fileName = file.name || `image_${index}.jpg`;
+        const fileExtension = fileName.split('.').pop() || 'jpg';
+        const filePath = `user_${userId}/car_${carId}/image_${timestamp}_${index}.${fileExtension}`;
+
+        console.log(`📸 [Vehicle Images Upload] Uploading image ${index + 1}/${files.length}: ${filePath}`);
+
+        // For React Native, read file and convert to ArrayBuffer for Supabase
+        let fileData;
+        try {
+          console.log(`📸 [Vehicle Images Upload] Reading file ${index + 1} from: ${file.uri}`);
+          
+          // Read file as base64 from React Native file system
+          // In expo-file-system v19, use the string 'base64' instead of enum
+          const base64 = await FileSystem.readAsStringAsync(file.uri, {
+            encoding: 'base64',
+          });
+          
+          console.log(`📸 [Vehicle Images Upload] File ${index + 1} read, size: ${(base64.length / 1024).toFixed(2)} KB (base64)`);
+          
+          // Convert base64 to ArrayBuffer (Supabase works better with ArrayBuffer in React Native)
+          const byteCharacters = atob(base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          fileData = byteArray.buffer; // Use ArrayBuffer instead of Blob
+          
+          console.log(`📸 [Vehicle Images Upload] File ${index + 1} converted to ArrayBuffer, size: ${(fileData.byteLength / 1024).toFixed(2)} KB`);
+        } catch (readError) {
+          // Fallback: try using fetch for remote URIs
+          console.log(`📸 [Vehicle Images Upload] Base64 read failed, trying fetch method for image ${index + 1}...`);
+          console.log(`📸 [Vehicle Images Upload] Read error:`, readError);
+          try {
+            const response = await fetch(file.uri);
+            if (!response.ok) {
+              throw new Error(`Fetch failed with status ${response.status}`);
+            }
+            // In React Native, fetch response.arrayBuffer() works directly
+            fileData = await response.arrayBuffer();
+            console.log(`📸 [Vehicle Images Upload] File ${index + 1} fetched and converted, size: ${(fileData.byteLength / 1024).toFixed(2)} KB`);
+          } catch (fetchError) {
+            console.error(`📸 [Vehicle Images Upload] Both methods failed for image ${index + 1}:`, fetchError);
+            throw new Error(`Failed to read file: ${fetchError.message}`);
+          }
+        }
+
+        // Upload to Supabase Storage
+        console.log(`📸 [Vehicle Images Upload] Uploading to Supabase: bucket=${STORAGE_BUCKETS.VEHICLE_MEDIA}, path=${filePath}`);
+        console.log(`📸 [Vehicle Images Upload] File data size: ${(fileData.byteLength / 1024).toFixed(2)} KB, content type: ${file.type || 'image/jpeg'}`);
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(STORAGE_BUCKETS.VEHICLE_MEDIA)
+          .upload(filePath, fileData, {
+            contentType: file.type || 'image/jpeg',
+            upsert: false, // Don't overwrite existing files
+            cacheControl: '3600',
+          });
+
+        if (uploadError) {
+          console.error(`📸 [Vehicle Images Upload] ❌ Upload error for image ${index + 1}:`, {
+            message: uploadError.message,
+            statusCode: uploadError.statusCode,
+            error: uploadError.error,
+            name: uploadError.name,
+            status: uploadError.status,
+            statusText: uploadError.statusText,
+            fullError: JSON.stringify(uploadError, null, 2),
+          });
+          
+          // Extract more detailed error message
+          let errorMsg = uploadError.message || uploadError.error || 'Unknown error';
+          if (uploadError.statusCode) {
+            errorMsg += ` (Status: ${uploadError.statusCode})`;
+          }
+          if (uploadError.statusText) {
+            errorMsg += ` (${uploadError.statusText})`;
+          }
+          
+          errors.push(`Image ${index + 1}: ${errorMsg}`);
+          continue;
+        }
+
+        console.log(`📸 [Vehicle Images Upload] ✅ Upload successful for image ${index + 1}, data:`, uploadData);
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from(STORAGE_BUCKETS.VEHICLE_MEDIA)
+          .getPublicUrl(filePath);
+
+        const publicUrl = urlData.publicUrl;
+        uploadedUrls.push(publicUrl);
+        console.log(`📸 [Vehicle Images Upload] ✅ Image ${index + 1} uploaded: ${publicUrl}`);
+      } catch (fileError) {
+        console.error(`📸 [Vehicle Images Upload] Error processing image ${index + 1}:`, fileError);
+        errors.push(`Image ${index + 1}: ${fileError.message}`);
+      }
+    }
+
+    if (uploadedUrls.length === 0) {
+      throw new Error(`All uploads failed: ${errors.join(', ')}`);
+    }
+
+    if (errors.length > 0) {
+      console.warn(`📸 [Vehicle Images Upload] ⚠️ Some uploads failed: ${errors.join(', ')}`);
+    }
+
+    console.log(`📸 [Vehicle Images Upload] ✅ Success! ${uploadedUrls.length}/${files.length} images uploaded`);
 
     return {
       success: true,
-      urls: data.urls,
-      message: data.message,
+      urls: uploadedUrls,
+      message: `Successfully uploaded ${uploadedUrls.length} of ${files.length} images`,
+      errors: errors.length > 0 ? errors : undefined,
     };
   } catch (error) {
-    console.error('Vehicle images upload error:', error);
+    console.error('📸 [Vehicle Images Upload] ❌ Error:', error);
     return {
       success: false,
       error: error.message || 'Failed to upload vehicle images',
@@ -381,50 +594,134 @@ export const uploadVehicleImages = async (files, carId) => {
 };
 
 /**
- * Upload vehicle video
- * @param {Object} file - Video file object
+ * Upload vehicle video directly to Supabase Storage
+ * @param {Object} file - Video file object with {uri, name, type}
  * @param {number} carId - Car ID
  * @returns {Promise<Object>} Upload result with URL
  */
 export const uploadVehicleVideo = async (file, carId) => {
   try {
-    const token = await getUserToken();
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
     if (!carId) {
       throw new Error('Car ID is required');
     }
 
-    const formData = new FormData();
-    formData.append('file', {
-      uri: file.uri,
-      name: file.name || 'video.mp4',
-      type: file.type || 'video/mp4',
-    });
-
-    const response = await fetch(`${API_URL}/host/upload/vehicle/${carId}/video`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.detail || 'Upload failed');
+    if (!file || !file.uri) {
+      throw new Error('Video file is required');
     }
+
+    // Get user ID to associate video with user
+    const userId = await getUserId();
+    if (!userId) {
+      throw new Error('User ID is required. Please ensure you are logged in.');
+    }
+
+    console.log('📹 [Vehicle Video Upload] Starting upload to Supabase...');
+    console.log('📹 [Vehicle Video Upload] User ID:', userId);
+    console.log('📹 [Vehicle Video Upload] Car ID:', carId);
+    console.log('📹 [Vehicle Video Upload] Bucket:', STORAGE_BUCKETS.CAR_VIDEOS);
+
+    // Generate unique file path: user_{userId}/car_{carId}/video_{timestamp}.mp4
+    const timestamp = Date.now();
+    const fileName = file.name || 'video.mp4';
+    const fileExtension = fileName.split('.').pop() || 'mp4';
+    const filePath = `user_${userId}/car_${carId}/video_${timestamp}.${fileExtension}`;
+
+    console.log(`📹 [Vehicle Video Upload] Uploading video: ${filePath}`);
+
+    // For React Native, read file and convert to ArrayBuffer for Supabase
+    let fileData;
+    try {
+      console.log(`📹 [Vehicle Video Upload] Reading video from: ${file.uri}`);
+      
+      // Read file as base64 from React Native file system
+      // In expo-file-system v19, use the string 'base64' instead of enum
+      const base64 = await FileSystem.readAsStringAsync(file.uri, {
+        encoding: 'base64',
+      });
+      
+      console.log(`📹 [Vehicle Video Upload] Video read, size: ${(base64.length / 1024 / 1024).toFixed(2)} MB (base64)`);
+      
+      // Convert base64 to ArrayBuffer (Supabase works better with ArrayBuffer in React Native)
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      fileData = byteArray.buffer; // Use ArrayBuffer instead of Blob
+      
+      console.log(`📹 [Vehicle Video Upload] Video converted to ArrayBuffer, size: ${(fileData.byteLength / 1024 / 1024).toFixed(2)} MB`);
+    } catch (readError) {
+      // Fallback: try using fetch for remote URIs
+      console.log('📹 [Vehicle Video Upload] Base64 read failed, trying fetch method...');
+      console.log('📹 [Vehicle Video Upload] Read error:', readError);
+      try {
+        const response = await fetch(file.uri);
+        if (!response.ok) {
+          throw new Error(`Fetch failed with status ${response.status}`);
+        }
+        // In React Native, fetch response.arrayBuffer() works directly
+        fileData = await response.arrayBuffer();
+        console.log(`📹 [Vehicle Video Upload] Video fetched and converted, size: ${(fileData.byteLength / 1024 / 1024).toFixed(2)} MB`);
+      } catch (fetchError) {
+        console.error('📹 [Vehicle Video Upload] Both methods failed:', fetchError);
+        throw new Error(`Failed to read video file: ${fetchError.message}`);
+      }
+    }
+
+    console.log(`📹 [Vehicle Video Upload] Uploading to Supabase: bucket=${STORAGE_BUCKETS.CAR_VIDEOS}, path=${filePath}`);
+    console.log(`📹 [Vehicle Video Upload] File data size: ${(fileData.byteLength / 1024 / 1024).toFixed(2)} MB, content type: ${file.type || 'video/mp4'}`);
+
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKETS.CAR_VIDEOS)
+      .upload(filePath, fileData, {
+        contentType: file.type || 'video/mp4',
+        upsert: false, // Don't overwrite existing files
+        cacheControl: '3600',
+      });
+
+    if (uploadError) {
+      console.error('📹 [Vehicle Video Upload] ❌ Upload error:', {
+        message: uploadError.message,
+        statusCode: uploadError.statusCode,
+        error: uploadError.error,
+        name: uploadError.name,
+        status: uploadError.status,
+        statusText: uploadError.statusText,
+        fullError: JSON.stringify(uploadError, null, 2),
+      });
+      
+      // Extract more detailed error message
+      let errorMsg = uploadError.message || uploadError.error || 'Failed to upload video';
+      if (uploadError.statusCode) {
+        errorMsg += ` (Status: ${uploadError.statusCode})`;
+      }
+      if (uploadError.statusText) {
+        errorMsg += ` (${uploadError.statusText})`;
+      }
+      
+      throw new Error(errorMsg);
+    }
+
+    console.log('📹 [Vehicle Video Upload] ✅ Upload successful, data:', uploadData);
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from(STORAGE_BUCKETS.CAR_VIDEOS)
+      .getPublicUrl(filePath);
+
+    const publicUrl = urlData.publicUrl;
+    console.log('📹 [Vehicle Video Upload] ✅ Video uploaded:', publicUrl);
 
     return {
       success: true,
-      url: data.url,
-      message: data.message,
+      url: publicUrl,
+      path: filePath,
+      message: 'Video uploaded successfully',
     };
   } catch (error) {
-    console.error('Vehicle video upload error:', error);
+    console.error('📹 [Vehicle Video Upload] ❌ Error:', error);
     return {
       success: false,
       error: error.message || 'Failed to upload vehicle video',

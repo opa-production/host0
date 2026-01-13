@@ -28,6 +28,7 @@ export const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KE
 export const STORAGE_BUCKETS = {
   LEGAL_DOCS: 'legal-compliance-docs',
   VEHICLE_MEDIA: 'vehicle-media',
+  CAR_VIDEOS: 'carvideos',
   HOST_DOCUMENTS: 'host-documents',
   HOST_PROFILE: 'host-profile-images',
 };
