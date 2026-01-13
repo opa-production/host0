@@ -736,6 +736,68 @@ export const uploadVehicleVideo = async (file, carId) => {
 };
 
 /**
+ * Fetch host avatar from Supabase Storage
+ * @param {string} userId - User ID
+ * @returns {Promise<string|null>} Avatar URL or null if not found
+ */
+export const fetchHostAvatarFromSupabase = async (userId) => {
+  try {
+    if (!userId) {
+      return null;
+    }
+
+    const folderPath = `user_${userId}`;
+    console.log('📸 [Fetch Avatar] Fetching avatar from Supabase:', folderPath);
+
+    // List all files in the user's folder
+    const { data: files, error } = await supabase.storage
+      .from(STORAGE_BUCKETS.HOST_PROFILE)
+      .list(folderPath, {
+        limit: 100,
+        sortBy: { column: 'created_at', order: 'desc' },
+      });
+
+    if (error) {
+      console.log('📸 [Fetch Avatar] Error listing files:', error.message);
+      return null;
+    }
+
+    if (!files || files.length === 0) {
+      console.log('📸 [Fetch Avatar] No files found for user:', userId);
+      return null;
+    }
+
+    // Filter for avatar files (files starting with 'avatar_')
+    const avatarFiles = files.filter(file => 
+      file.name.startsWith('avatar_') &&
+      (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.png'))
+    );
+
+    if (avatarFiles.length === 0) {
+      console.log('📸 [Fetch Avatar] No avatar files found');
+      return null;
+    }
+
+    // Get the most recent avatar (first in the list since we sorted by desc)
+    const avatarFile = avatarFiles[0];
+    const filePath = `${folderPath}/${avatarFile.name}`;
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from(STORAGE_BUCKETS.HOST_PROFILE)
+      .getPublicUrl(filePath);
+
+    const publicUrl = urlData.publicUrl;
+    console.log('📸 [Fetch Avatar] ✅ Avatar found:', publicUrl);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('📸 [Fetch Avatar] ❌ Error:', error);
+    return null;
+  }
+};
+
+/**
  * Get host profile with media URLs
  * @returns {Promise<Object>} Host profile data
  */

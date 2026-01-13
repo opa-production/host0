@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getCurrentHost } from '../services/authService';
-import { getUserToken, clearUserData, setUserProfile, getUserProfile } from './userStorage';
+import { getUserToken, clearUserData, setUserProfile, getUserProfile, getUserId } from './userStorage';
+import { fetchHostAvatarFromSupabase } from '../services/mediaService';
 
 const HostContext = createContext();
 
@@ -45,10 +46,19 @@ export const HostProvider = ({ children }) => {
         
         if (result.success && result.host) {
           // Token is valid, set authenticated user
-          setHost(result.host);
+          // Fetch avatar from Supabase Storage (backend doesn't store avatar_url)
+          const userId = await getUserId();
+          const avatarUrl = userId ? await fetchHostAvatarFromSupabase(userId) : null;
+          
+          const hostWithAvatar = {
+            ...result.host,
+            avatar_url: avatarUrl,
+          };
+          
+          setHost(hostWithAvatar);
           setIsAuthenticated(true);
-          // Update stored profile with latest data from backend
-          await setUserProfile(result.host);
+          // Update stored profile with latest data from backend (including avatar from Supabase)
+          await setUserProfile(hostWithAvatar);
         } else {
           // Token is invalid or expired, clear local data
           console.log('Token verification failed, clearing local data');
@@ -112,9 +122,18 @@ export const HostProvider = ({ children }) => {
       const result = await getCurrentHost();
       
       if (result.success && result.host) {
-        setHost(result.host);
-        // Update stored profile with latest data from backend
-        await setUserProfile(result.host);
+        // Fetch avatar from Supabase Storage (backend doesn't store avatar_url)
+        const userId = await getUserId();
+        const avatarUrl = userId ? await fetchHostAvatarFromSupabase(userId) : null;
+        
+        const updatedHost = {
+          ...result.host,
+          avatar_url: avatarUrl,
+        };
+        
+        setHost(updatedHost);
+        // Update stored profile with latest data from backend (including avatar from Supabase)
+        await setUserProfile(updatedHost);
         return { success: true };
       } else {
         // If API call fails, check if it's an auth error

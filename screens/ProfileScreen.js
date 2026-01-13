@@ -13,6 +13,11 @@ export default function ProfileScreen({ navigation }) {
   const { host, logout, refreshProfile, updateHost } = useHost();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Debug: Log avatar_url changes
+  React.useEffect(() => {
+    console.log('📸 [ProfileScreen] host.avatar_url changed:', host?.avatar_url);
+  }, [host?.avatar_url]);
+
   // Refresh profile when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
@@ -55,15 +60,12 @@ export default function ProfileScreen({ navigation }) {
         };
 
         const uploadResult = await uploadHostProfilePicture(file, host.id.toString());
-        if (uploadResult.success) {
-          // Refresh profile from backend to get new avatar_url
-          const refreshResult = await refreshProfile();
-          if (refreshResult.success) {
-            Alert.alert('Success', 'Profile picture updated successfully!');
-          } else {
-            // Upload succeeded but refresh failed - still show success
-            Alert.alert('Success', 'Profile picture uploaded! Refresh the screen to see changes.');
-          }
+        if (uploadResult.success && uploadResult.url) {
+          console.log('📸 [ProfileScreen] Upload successful, URL:', uploadResult.url);
+          // Update local context immediately with new avatar URL
+          await updateHost({ avatar_url: uploadResult.url });
+          console.log('📸 [ProfileScreen] Updated host context with avatar_url:', uploadResult.url);
+          Alert.alert('Success', 'Profile picture updated successfully!');
         } else {
           Alert.alert('Upload Failed', uploadResult.error || 'Failed to upload profile picture');
         }
@@ -125,6 +127,14 @@ export default function ProfileScreen({ navigation }) {
               <Image 
                 source={{ uri: host.avatar_url }} 
                 style={styles.profileImage}
+                key={host.avatar_url}
+                onError={(error) => {
+                  console.log('📸 [ProfileScreen] Image load error:', error);
+                  console.log('📸 [ProfileScreen] Avatar URL:', host.avatar_url);
+                }}
+                onLoad={() => {
+                  console.log('📸 [ProfileScreen] Image loaded successfully:', host.avatar_url);
+                }}
               />
             ) : (
               <View style={styles.profileImagePlaceholder}>
