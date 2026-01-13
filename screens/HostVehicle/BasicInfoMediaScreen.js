@@ -38,19 +38,22 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext, isSu
     );
   };
 
-  const Dropdown = ({ label, value, options, visible, onSelect, onToggle }) => (
-    <View style={styles.section}>
-      <Text style={styles.label}>{label} *</Text>
-      <TouchableOpacity
-        style={styles.dropdown}
-        onPress={onToggle}
-        activeOpacity={1}
-      >
-        <Text style={[styles.dropdownText, !value && styles.placeholder]}>
-          {value || `Select ${label}`}
-        </Text>
-        <Ionicons name="chevron-down" size={20} color="#666666" />
-      </TouchableOpacity>
+  const Dropdown = ({ label, value, options, visible, onSelect, onToggle, showSeparator = true }) => (
+    <View>
+      <View style={styles.inputSection}>
+        <Text style={styles.label}>{label} *</Text>
+        <TouchableOpacity
+          style={styles.dropdown}
+          onPress={onToggle}
+          activeOpacity={1}
+        >
+          <Text style={[styles.dropdownText, !value && styles.placeholder]}>
+            {value || `Select ${label}`}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color="#666666" />
+        </TouchableOpacity>
+      </View>
+      {showSeparator && <View style={styles.separator} />}
 
       <Modal
         visible={visible}
@@ -107,63 +110,67 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext, isSu
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-      {/* Car Name */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Car Name *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., BMW M3"
-          value={formData.name}
-          onChangeText={(text) => updateFormData({ name: text })}
-          placeholderTextColor="#999999"
+      <View style={styles.card}>
+        {/* Car Name */}
+        <View style={styles.inputSection}>
+          <Text style={styles.label}>Car Name *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., BMW M3"
+            value={formData.name}
+            onChangeText={(text) => updateFormData({ name: text })}
+            placeholderTextColor="#999999"
+          />
+        </View>
+        <View style={styles.separator} />
+
+        {/* Model */}
+        <View style={styles.inputSection}>
+          <Text style={styles.label}>Model *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., G80"
+            value={formData.model}
+            onChangeText={(text) => updateFormData({ model: text })}
+            placeholderTextColor="#999999"
+          />
+        </View>
+        <View style={styles.separator} />
+
+        {/* Body Type */}
+        <Dropdown
+          label="Body Type"
+          value={formData.body}
+          options={BODY_TYPES}
+          visible={showBodyDropdown}
+          onSelect={(value) => updateFormData({ body: value })}
+          onToggle={() => setShowBodyDropdown(!showBodyDropdown)}
         />
-      </View>
 
-      {/* Model */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Model *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., G80"
-          value={formData.model}
-          onChangeText={(text) => updateFormData({ model: text })}
-          placeholderTextColor="#999999"
+        {/* Year */}
+        <Dropdown
+          label="Year"
+          value={formData.year}
+          options={YEARS}
+          visible={showYearDropdown}
+          onSelect={(value) => updateFormData({ year: value })}
+          onToggle={() => setShowYearDropdown(!showYearDropdown)}
         />
-      </View>
 
-      {/* Body Type */}
-      <Dropdown
-        label="Body Type"
-        value={formData.body}
-        options={BODY_TYPES}
-        visible={showBodyDropdown}
-        onSelect={(value) => updateFormData({ body: value })}
-        onToggle={() => setShowBodyDropdown(!showBodyDropdown)}
-      />
-
-      {/* Year */}
-      <Dropdown
-        label="Year"
-        value={formData.year}
-        options={YEARS}
-        visible={showYearDropdown}
-        onSelect={(value) => updateFormData({ year: value })}
-        onToggle={() => setShowYearDropdown(!showYearDropdown)}
-      />
-
-      {/* Description */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Describe your car, its features, condition, etc."
-          value={formData.description}
-          onChangeText={(text) => updateFormData({ description: text })}
-          multiline
-          numberOfLines={6}
-          textAlignVertical="top"
-          placeholderTextColor="#999999"
-        />
+        {/* Description */}
+        <View style={styles.inputSection}>
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Describe your car, its features, condition, etc."
+            value={formData.description}
+            onChangeText={(text) => updateFormData({ description: text })}
+            multiline
+            numberOfLines={6}
+            textAlignVertical="top"
+            placeholderTextColor="#999999"
+          />
+        </View>
       </View>
 
       {/* Next Button */}
@@ -196,8 +203,19 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.l,
   },
-  section: {
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
     marginBottom: 24,
+    overflow: 'hidden',
+  },
+  inputSection: {
+    padding: SPACING.m,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#CCCCCC',
+    marginHorizontal: SPACING.m,
   },
   label: {
     fontSize: 16,
@@ -219,7 +237,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
     color: COLORS.text,
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#F9F9F9',
   },
   textArea: {
     height: 120,
@@ -233,7 +251,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderStrong,
     borderRadius: 12,
     padding: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#F9F9F9',
   },
   dropdownText: {
     fontSize: 16,

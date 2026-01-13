@@ -92,8 +92,66 @@ export const clearUserData = async () => {
     await AsyncStorage.removeItem(USER_ID_KEY);
     await AsyncStorage.removeItem(USER_TOKEN_KEY);
     await AsyncStorage.removeItem(USER_PROFILE_KEY);
+    await AsyncStorage.removeItem('@host_cars');
   } catch (error) {
     console.error('Error clearing user data:', error);
   }
 };
 
+const HOST_CARS_KEY = '@host_cars';
+
+/**
+ * Get all cars from storage
+ * @returns {Promise<Array>} Array of cars
+ */
+export const getHostCars = async () => {
+  try {
+    const cars = await AsyncStorage.getItem(HOST_CARS_KEY);
+    return cars ? JSON.parse(cars) : [];
+  } catch (error) {
+    console.error('Error getting host cars:', error);
+    return [];
+  }
+};
+
+/**
+ * Save a car to storage
+ * @param {Object} carData - Car data object
+ * @returns {Promise<Object>} Saved car with ID and status
+ */
+export const saveHostCar = async (carData) => {
+  try {
+    const cars = await getHostCars();
+    const newCar = {
+      ...carData,
+      id: `car-${Date.now()}`,
+      status: 'awaiting_verification',
+      createdAt: new Date().toISOString(),
+      totalTrips: 0,
+    };
+    cars.push(newCar);
+    await AsyncStorage.setItem(HOST_CARS_KEY, JSON.stringify(cars));
+    return newCar;
+  } catch (error) {
+    console.error('Error saving host car:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update a car in storage
+ * @param {string} carId - Car ID
+ * @param {Object} updates - Updates to apply
+ */
+export const updateHostCar = async (carId, updates) => {
+  try {
+    const cars = await getHostCars();
+    const updatedCars = cars.map(car => 
+      car.id === carId ? { ...car, ...updates } : car
+    );
+    await AsyncStorage.setItem(HOST_CARS_KEY, JSON.stringify(updatedCars));
+  } catch (error) {
+    console.error('Error updating host car:', error);
+    throw error;
+  }
+};
