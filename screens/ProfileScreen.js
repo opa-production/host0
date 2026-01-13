@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Alert, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
@@ -12,6 +12,48 @@ import { logoutHost } from '../services/authService';
 export default function ProfileScreen({ navigation }) {
   const { host, logout, refreshProfile, updateHost } = useHost();
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Skeleton component for loading state with shimmer effect
+  const SkeletonBox = ({ width, height, style }) => {
+    const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+    React.useEffect(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(shimmerAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shimmerAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }, []);
+
+    const opacity = shimmerAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.3, 0.7],
+    });
+
+    return (
+      <Animated.View
+        style={[
+          {
+            width,
+            height,
+            backgroundColor: '#E5E5EA',
+            borderRadius: 8,
+            opacity,
+          },
+          style,
+        ]}
+      />
+    );
+  };
 
   // Debug: Log avatar_url changes
   React.useEffect(() => {
@@ -146,10 +188,16 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
           <View style={styles.profileDetails}>
-            <Text style={styles.profileName}>{host?.full_name || 'Host User'}</Text>
-            <Text style={styles.profileEmail}>{host?.email || ''}</Text>
-            {isRefreshing && (
-              <ActivityIndicator size="small" color={COLORS.text} style={{ marginTop: 8 }} />
+            {isRefreshing ? (
+              <>
+                <SkeletonBox width={150} height={20} style={{ marginBottom: 8, borderRadius: 6 }} />
+                <SkeletonBox width={200} height={14} style={{ borderRadius: 6 }} />
+              </>
+            ) : (
+              <>
+                <Text style={styles.profileName}>{host?.full_name || 'Host User'}</Text>
+                <Text style={styles.profileEmail}>{host?.email || ''}</Text>
+              </>
             )}
           </View>
         </View>
