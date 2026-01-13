@@ -140,112 +140,118 @@ export const testSupabaseStorage = async () => {
 };
 
 /**
- * Upload host avatar image
+ * Upload host avatar image directly to Supabase Storage
  * @param {Object} file - File object with uri, name, type
  * @returns {Promise<Object>} Upload result with URL
  */
 export const uploadHostAvatar = async (file) => {
   try {
-    const token = await getUserToken();
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
     // Validate file URI
     if (!file || !file.uri) {
       throw new Error('Invalid file object - missing URI');
     }
 
-    // Extract filename from URI or use default
-    const uriParts = file.uri.split('/');
-    const fileName = file.name || uriParts[uriParts.length - 1] || 'avatar.jpg';
-    
-    // Ensure proper MIME type
-    const fileType = file.type || 'image/jpeg';
+    // Get user ID to associate avatar with user
+    const userId = await getUserId();
+    if (!userId) {
+      throw new Error('User ID is required. Please ensure you are logged in.');
+    }
 
-    console.log('=== Upload Debug Info ===');
-    console.log('API URL:', `${API_URL}/host/upload/avatar`);
-    console.log('File URI:', file.uri);
-    console.log('File name:', fileName);
-    console.log('File type:', fileType);
-    console.log('Token present:', !!token);
-    console.log('Token length:', token.length);
+    console.log('📸 [Avatar Upload] Starting upload to Supabase...');
+    console.log('📸 [Avatar Upload] User ID:', userId);
+    console.log('📸 [Avatar Upload] File URI:', file.uri);
+    console.log('📸 [Avatar Upload] Bucket:', STORAGE_BUCKETS.HOST_PROFILE);
 
-    // Create FormData - React Native style
-    const formData = new FormData();
-    formData.append('file', {
-      uri: file.uri,
-      name: fileName,
-      type: fileType,
-    });
+    // Generate unique file path: user_{userId}/avatar_{timestamp}.jpg
+    const timestamp = Date.now();
+    const fileName = file.name || 'avatar.jpg';
+    const fileExtension = fileName.split('.').pop() || 'jpg';
+    const filePath = `user_${userId}/avatar_${timestamp}.${fileExtension}`;
 
-    console.log('FormData created, attempting fetch...');
+    console.log(`📸 [Avatar Upload] Uploading avatar: ${filePath}`);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
+    // For React Native, read file and convert to ArrayBuffer for Supabase
+    let fileData;
     try {
-      const response = await fetch(`${API_URL}/host/upload/avatar`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        },
-        body: formData,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      console.log('Response received!');
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
-      const data = await response.json();
-      console.log('Response data:', data);
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Upload failed');
-      }
-
-      return {
-        success: true,
-        url: data.url,
-        message: data.message,
-      };
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      console.error('Fetch error details:', {
-        name: fetchError.name,
-        message: fetchError.message,
-        stack: fetchError.stack,
+      console.log(`📸 [Avatar Upload] Reading file from: ${file.uri}`);
+      
+      // Read file as base64 from React Native file system
+      const base64 = await FileSystem.readAsStringAsync(file.uri, {
+        encoding: 'base64',
       });
       
-      if (fetchError.name === 'AbortError') {
-        throw new Error('Upload timeout - please check your network connection');
+      console.log(`📸 [Avatar Upload] File read, size: ${(base64.length / 1024).toFixed(2)} KB (base64)`);
+      
+      // Convert base64 to ArrayBuffer (Supabase works better with ArrayBuffer in React Native)
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
-      throw fetchError;
+      const byteArray = new Uint8Array(byteNumbers);
+      fileData = byteArray.buffer;
+      
+      console.log(`📸 [Avatar Upload] File converted to ArrayBuffer, size: ${(fileData.byteLength / 1024).toFixed(2)} KB`);
+    } catch (readError) {
+      // Fallback: try using fetch for remote URIs
+      console.log(`📸 [Avatar Upload] Base64 read failed, trying fetch method...`);
+      try {
+        const response = await fetch(file.uri);
+        if (!response.ok) {
+          throw new Error(`Fetch failed with status ${response.status}`);
+        }
+        fileData = await response.arrayBuffer();
+        console.log(`📸 [Avatar Upload] File fetched and converted, size: ${(fileData.byteLength / 1024).toFixed(2)} KB`);
+      } catch (fetchError) {
+        console.error(`📸 [Avatar Upload] Both methods failed:`, fetchError);
+        throw new Error(`Failed to read file: ${fetchError.message}`);
+      }
     }
 
-    console.log('Response status:', response.status);
-    const data = await response.json();
+    // Upload to Supabase Storage (upsert: true to replace existing avatar)
+    console.log(`📸 [Avatar Upload] Uploading to Supabase: bucket=${STORAGE_BUCKETS.HOST_PROFILE}, path=${filePath}`);
+    console.log(`📸 [Avatar Upload] File data size: ${(fileData.byteLength / 1024).toFixed(2)} KB, content type: ${file.type || 'image/jpeg'}`);
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKETS.HOST_PROFILE)
+      .upload(filePath, fileData, {
+        contentType: file.type || 'image/jpeg',
+        upsert: true, // Replace existing avatar if it exists
+        cacheControl: '3600',
+      });
 
-    if (!response.ok) {
-      throw new Error(data.detail || 'Upload failed');
+    if (uploadError) {
+      console.error('📸 [Avatar Upload] ❌ Upload error:', {
+        message: uploadError.message,
+        statusCode: uploadError.statusCode,
+        error: uploadError.error,
+      });
+      
+      let errorMsg = uploadError.message || uploadError.error || 'Failed to upload avatar';
+      if (uploadError.statusCode) {
+        errorMsg += ` (Status: ${uploadError.statusCode})`;
+      }
+      
+      throw new Error(errorMsg);
     }
+
+    console.log('📸 [Avatar Upload] ✅ Upload successful, data:', uploadData);
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from(STORAGE_BUCKETS.HOST_PROFILE)
+      .getPublicUrl(filePath);
+
+    const publicUrl = urlData.publicUrl;
+    console.log('📸 [Avatar Upload] ✅ Avatar uploaded:', publicUrl);
 
     return {
       success: true,
-      url: data.url,
-      message: data.message,
+      url: publicUrl,
+      message: 'Avatar uploaded successfully',
     };
   } catch (error) {
-    console.error('Avatar upload error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack
-    });
+    console.error('📸 [Avatar Upload] ❌ Error:', error);
     return {
       success: false,
       error: error.message || 'Failed to upload avatar',
