@@ -9,13 +9,14 @@ import {
   FlatList,
   Dimensions,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostCars } from '../utils/userStorage';
+import { getHostCars } from '../services/carService';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -23,21 +24,51 @@ export default function MyListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
   const [cars, setCars] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadCars = async () => {
-    const storedCars = await getHostCars();
-    setCars(storedCars);
+    console.log('📱 [MyListingsScreen] loadCars called');
+    setIsLoading(true);
+    try {
+      console.log('📱 [MyListingsScreen] Calling getHostCars...');
+      const result = await getHostCars();
+      console.log('📱 [MyListingsScreen] getHostCars result:', result);
+      if (result.success && result.cars) {
+        console.log('📱 [MyListingsScreen] Setting cars:', result.cars.length);
+        setCars(result.cars);
+      } else {
+        console.error('📱 [MyListingsScreen] Failed to load cars:', result.error);
+        setCars([]);
+      }
+    } catch (error) {
+      console.error('📱 [MyListingsScreen] Error loading cars:', error);
+      setCars([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Load cars on mount and when screen is focused
+  useEffect(() => {
+    console.log('📱 [MyListingsScreen] Component mounted, loading cars...');
+    loadCars();
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
+      console.log('📱 [MyListingsScreen] Screen focused, loading cars...');
       loadCars();
     }, [])
   );
 
   const allListings = cars;
 
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status, isComplete) => {
+    // Handle incomplete cars
+    if (status === 'incomplete' || isComplete === false) {
+      return { emoji: '⚪', label: 'Incomplete', color: '#8E8E93', bgColor: '#F2F2F7' };
+    }
+    
     switch (status) {
       case 'available':
         return { emoji: '🟢', label: 'Available', color: '#34C759', bgColor: '#E8F5E9' };
@@ -59,12 +90,18 @@ export default function MyListingsScreen({ navigation }) {
   };
 
   const handleCardPress = (item) => {
-    navigation.navigate('CarDetails', { car: item });
+    // If incomplete, navigate to HostVehicle screen to continue editing
+    if (item.is_complete === false || item.status === 'incomplete') {
+      navigation.navigate('HostVehicle', { carId: item.carId || item.id, existingCar: item });
+    } else {
+      navigation.navigate('CarDetails', { car: item });
+    }
   };
 
   const renderCarCard = ({ item, index }) => {
-    const statusInfo = getStatusInfo(item.status);
+    const statusInfo = getStatusInfo(item.status, item.is_complete);
     const isLastItem = index === allListings.length - 1;
+    const isIncomplete = item.is_complete === false || item.status === 'incomplete';
     
     return (
       <TouchableOpacity 
@@ -96,28 +133,39 @@ export default function MyListingsScreen({ navigation }) {
           </View>
 
           <View style={styles.carMetrics}>
-            <View style={styles.metricItem}>
-              <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
-              <Text style={styles.metricText}>{formatPrice(item.pricePerDay)}</Text>
-            </View>
-            <View style={styles.metricItem}>
-              <Ionicons name="car-outline" size={14} color="#1C1C1E" />
-              <Text style={styles.metricText}>{item.totalTrips || 0} trips</Text>
-            </View>
+            {isIncomplete ? (
+              <View style={styles.metricItem}>
+                <Ionicons name="alert-circle-outline" size={14} color="#FF9500" />
+                <Text style={[styles.metricText, { color: '#FF9500' }]}>Complete setup to publish</Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.metricItem}>
+                  <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
+                  <Text style={styles.metricText}>{formatPrice(item.pricePerDay || 0)}</Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Ionicons name="car-outline" size={14} color="#1C1C1E" />
+                  <Text style={styles.metricText}>{item.totalTrips || 0} trips</Text>
+                </View>
+              </>
+            )}
             <View style={styles.metricItem}>
               <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
               <Text style={styles.metricText}>{statusInfo.label}</Text>
             </View>
-            <View style={styles.metricItem}>
-              {item.rating ? (
-                <>
-                  <Text style={styles.ratingText}>⭐</Text>
-                  <Text style={styles.metricText}>{item.rating}</Text>
-                </>
-              ) : (
-                <Text style={styles.newBadgeText}>New</Text>
-              )}
-            </View>
+            {!isIncomplete && (
+              <View style={styles.metricItem}>
+                {item.rating ? (
+                  <>
+                    <Text style={styles.ratingText}>⭐</Text>
+                    <Text style={styles.metricText}>{item.rating}</Text>
+                  </>
+                ) : (
+                  <Text style={styles.newBadgeText}>New</Text>
+                )}
+              </View>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -145,14 +193,21 @@ export default function MyListingsScreen({ navigation }) {
       </View>
 
       {/* Listings */}
-      {allListings.length > 0 ? (
+      {isLoading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color={COLORS.brand} />
+          <Text style={styles.emptySubtitle}>Loading your cars...</Text>
+        </View>
+      ) : allListings.length > 0 ? (
         <FlatList
           ref={flatListRef}
           data={allListings}
           renderItem={renderCarCard}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id?.toString() || `car-${item.carId || Date.now()}`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.listContent, { paddingTop: SPACING.m }]}
+          refreshing={isLoading}
+          onRefresh={loadCars}
         />
       ) : (
         <View style={styles.emptyState}>

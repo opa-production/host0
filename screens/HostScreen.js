@@ -1,47 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getHostCars } from '../services/carService';
 
 export default function HostScreen({ navigation }) {
   const [cars, setCars] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadCars = async () => {
+    console.log('📱 [HostScreen] loadCars called');
+    setIsLoading(true);
     try {
-      const HOST_CARS_KEY = '@host_cars';
-      const storedCars = await AsyncStorage.getItem(HOST_CARS_KEY);
-      let cars = storedCars ? JSON.parse(storedCars) : [];
+      console.log('📱 [HostScreen] Calling getHostCars API...');
+      const result = await getHostCars();
+      console.log('📱 [HostScreen] getHostCars result:', result);
       
-      // Remove duplicates based on name, model, and year (keep first occurrence)
-      const seen = new Set();
-      const originalLength = cars.length;
-      cars = cars.filter(car => {
-        const key = `${car.name || ''}-${car.model || ''}-${car.year || ''}`;
-        if (seen.has(key)) {
-          return false; // Duplicate, remove it
-        }
-        seen.add(key);
-        return true; // Keep first occurrence
-      });
-      
-      // If duplicates were removed, save the cleaned array
-      if (cars.length < originalLength) {
-        await AsyncStorage.setItem(HOST_CARS_KEY, JSON.stringify(cars));
-        console.log(`Removed ${originalLength - cars.length} duplicate car(s)`);
+      if (result.success && result.cars) {
+        console.log('📱 [HostScreen] Setting cars:', result.cars.length);
+        setCars(result.cars);
+      } else {
+        console.error('📱 [HostScreen] Failed to load cars:', result.error);
+        setCars([]);
       }
-      
-      setCars(cars);
     } catch (error) {
-      console.error('Error loading cars:', error);
+      console.error('📱 [HostScreen] Error loading cars:', error);
       setCars([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // Load cars on mount
+  useEffect(() => {
+    console.log('📱 [HostScreen] Component mounted, loading cars...');
+    loadCars();
+  }, []);
+
+  // Reload when screen is focused
   useFocusEffect(
     React.useCallback(() => {
+      console.log('📱 [HostScreen] Screen focused, loading cars...');
       loadCars();
     }, [])
   );
@@ -51,7 +53,12 @@ export default function HostScreen({ navigation }) {
     navigation.navigate('HostVehicle');
   };
 
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status, isComplete) => {
+    // Handle incomplete cars
+    if (status === 'incomplete' || isComplete === false) {
+      return { emoji: '⚪', label: 'Incomplete', color: '#8E8E93', bgColor: '#F2F2F7' };
+    }
+    
     switch (status) {
       case 'available':
         return { emoji: '🟢', label: 'Available', color: '#34C759', bgColor: '#E8F5E9' };
@@ -73,7 +80,12 @@ export default function HostScreen({ navigation }) {
   };
 
   const handleCardPress = (item) => {
-    navigation.navigate('CarDetails', { car: item });
+    // If incomplete, navigate to HostVehicle screen to continue editing
+    if (item.is_complete === false || item.status === 'incomplete') {
+      navigation.navigate('HostVehicle', { carId: item.carId || item.id, existingCar: item });
+    } else {
+      navigation.navigate('CarDetails', { car: item });
+    }
   };
 
   const handleDeleteCar = (carId, carName) => {
@@ -109,8 +121,9 @@ export default function HostScreen({ navigation }) {
   };
 
   const renderCarCard = ({ item, index }) => {
-    const statusInfo = getStatusInfo(item.status);
+    const statusInfo = getStatusInfo(item.status, item.is_complete);
     const isLastItem = index === cars.length - 1;
+    const isIncomplete = item.is_complete === false || item.status === 'incomplete';
     
     return (
       <View style={[styles.carCard, isLastItem && styles.carCardLast]}>
@@ -143,28 +156,39 @@ export default function HostScreen({ navigation }) {
             </View>
 
             <View style={styles.carMetrics}>
-              <View style={styles.metricItem}>
-                <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
-                <Text style={styles.metricText}>{formatPrice(item.pricePerDay)}</Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Ionicons name="car-outline" size={14} color="#1C1C1E" />
-                <Text style={styles.metricText}>{item.totalTrips || 0} trips</Text>
-              </View>
+              {isIncomplete ? (
+                <View style={styles.metricItem}>
+                  <Ionicons name="alert-circle-outline" size={14} color="#FF9500" />
+                  <Text style={[styles.metricText, { color: '#FF9500' }]}>Complete setup to publish</Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.metricItem}>
+                    <Ionicons name="wallet-outline" size={14} color="#1C1C1E" />
+                    <Text style={styles.metricText}>{formatPrice(item.pricePerDay || 0)}</Text>
+                  </View>
+                  <View style={styles.metricItem}>
+                    <Ionicons name="car-outline" size={14} color="#1C1C1E" />
+                    <Text style={styles.metricText}>{item.totalTrips || 0} trips</Text>
+                  </View>
+                </>
+              )}
               <View style={styles.metricItem}>
                 <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
                 <Text style={styles.metricText}>{statusInfo.label}</Text>
               </View>
-              <View style={styles.metricItem}>
-                {item.rating ? (
-                  <>
-                    <Text style={styles.ratingText}>⭐</Text>
-                    <Text style={styles.metricText}>{item.rating}</Text>
-                  </>
-                ) : (
-                  <Text style={styles.newBadgeText}>New</Text>
-                )}
-              </View>
+              {!isIncomplete && (
+                <View style={styles.metricItem}>
+                  {item.rating ? (
+                    <>
+                      <Text style={styles.ratingText}>⭐</Text>
+                      <Text style={styles.metricText}>{item.rating}</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.newBadgeText}>New</Text>
+                  )}
+                </View>
+              )}
             </View>
           </View>
         </TouchableOpacity>
@@ -194,13 +218,20 @@ export default function HostScreen({ navigation }) {
       </View>
 
       {/* Cars List */}
-      {cars.length > 0 ? (
+      {isLoading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color={COLORS.brand} />
+          <Text style={styles.emptySubtitle}>Loading your cars...</Text>
+        </View>
+      ) : cars.length > 0 ? (
         <FlatList
           data={cars}
           renderItem={renderCarCard}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id?.toString() || `car-${item.carId || Date.now()}`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          refreshing={isLoading}
+          onRefresh={loadCars}
         />
       ) : (
         <View style={styles.emptyState}>

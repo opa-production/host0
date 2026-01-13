@@ -10,6 +10,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +23,7 @@ const BODY_TYPES = [
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 50 }, (_, i) => (CURRENT_YEAR - i).toString());
 
-export default function BasicInfoScreen({ formData, updateFormData, onNext }) {
+export default function BasicInfoScreen({ formData, updateFormData, onNext, isSubmitting = false }) {
   const insets = useSafeAreaInsets();
   const [showBodyDropdown, setShowBodyDropdown] = useState(false);
   const [showYearDropdown, setShowYearDropdown] = useState(false);
@@ -167,12 +168,16 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext }) {
 
       {/* Next Button */}
       <TouchableOpacity
-        style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
+        style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
         onPress={onNext}
-        disabled={!canProceed()}
+        disabled={!canProceed() || isSubmitting}
         activeOpacity={0.9}
       >
-        <Text style={styles.nextButtonText}>Next</Text>
+        {isSubmitting ? (
+          <ActivityIndicator color="#ffffff" />
+        ) : (
+          <Text style={styles.nextButtonText}>Next</Text>
+        )}
       </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

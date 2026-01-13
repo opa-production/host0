@@ -25,7 +25,12 @@ export const API_ENDPOINTS = {
   
   // Cars
   CARS: '/api/v1/cars',
+  HOST_CARS: '/api/v1/host/cars',
   CAR_DETAIL: (id) => `/api/v1/cars/${id}`,
+  CAR_BASICS: '/api/v1/cars/basics',
+  CAR_SPECS: (carId) => `/api/v1/cars/${carId}/specs`,
+  CAR_PRICING: (carId) => `/api/v1/cars/${carId}/pricing`,
+  CAR_LOCATION: (carId) => `/api/v1/cars/${carId}/location`,
   
   // Payment Methods
   PAYMENT_METHODS: '/api/v1/host/payment-methods',

@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,7 +26,7 @@ const COMMON_RULES = [
   'No towing allowed',
 ];
 
-export default function RentalInfoScreen({ formData, updateFormData, onNext, onBack }) {
+export default function RentalInfoScreen({ formData, updateFormData, onNext, onBack, isSubmitting = false }) {
   const insets = useSafeAreaInsets();
   const [showCustomRuleInput, setShowCustomRuleInput] = useState(false);
   const [customRuleText, setCustomRuleText] = useState('');
@@ -80,8 +81,9 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
   const canProceed = () => {
     return (
       formData.pricePerDay !== '' &&
+      formData.pricePerWeek !== '' &&
+      formData.pricePerMonth !== '' &&
       formData.minimumRentalDays !== '' &&
-      formData.pickupLocation !== '' &&
       formData.ageRestriction !== ''
     );
   };
@@ -115,7 +117,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Price per Week (KSh)</Text>
+          <Text style={styles.label}>Price per Week (KSh) *</Text>
           <TextInput
             style={styles.input}
             placeholder="0"
@@ -127,7 +129,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Price per Month (KSh)</Text>
+          <Text style={styles.label}>Price per Month (KSh) *</Text>
           <TextInput
             style={styles.input}
             placeholder="0"
@@ -170,7 +172,8 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Pickup Location *</Text>
+          <Text style={styles.label}>Pickup Location</Text>
+          <Text style={styles.hint}>Optional - Will be set in the next step</Text>
           <TextInput
             style={styles.input}
             placeholder="e.g., Nakuru, Kenya"
@@ -303,12 +306,16 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
+          style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
           onPress={onNext}
-          disabled={!canProceed()}
+          disabled={!canProceed() || isSubmitting}
           activeOpacity={0.9}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          {isSubmitting ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text style={styles.nextButtonText}>Next</Text>
+          )}
         </TouchableOpacity>
       </View>
       </ScrollView>

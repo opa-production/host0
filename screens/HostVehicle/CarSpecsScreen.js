@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,7 +26,7 @@ const FEATURES = [
   'Cruise Control', 'Keyless Entry', 'Remote Start', 'WiFi', 'Child Seat',
 ];
 
-export default function CarSpecsScreen({ formData, updateFormData, onNext, onBack }) {
+export default function CarSpecsScreen({ formData, updateFormData, onNext, onBack, isSubmitting = false }) {
   const insets = useSafeAreaInsets();
   const [showFuelDropdown, setShowFuelDropdown] = useState(false);
   const [showTransmissionDropdown, setShowTransmissionDropdown] = useState(false);
@@ -212,12 +213,16 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
+          style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
           onPress={onNext}
-          disabled={!canProceed()}
+          disabled={!canProceed() || isSubmitting}
           activeOpacity={0.9}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          {isSubmitting ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text style={styles.nextButtonText}>Next</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
