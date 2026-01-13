@@ -1,22 +1,96 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getPaymentMethods } from '../services/paymentService';
 
 export default function WithdrawScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const withdrawable = route?.params?.withdrawable ?? 95000;
   const [amount, setAmount] = useState('');
   const [selectedMethod, setSelectedMethod] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [isLoadingMethods, setIsLoadingMethods] = useState(false);
   const scrollViewRef = useRef(null);
   const amountInputRef = useRef(null);
 
   const formattedCurrency = (value) => `KSh ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 
-  // Payment methods will be loaded from backend
-  const paymentMethods = [];
+  // Load payment methods from API
+  const loadPaymentMethods = async () => {
+    setIsLoadingMethods(true);
+    try {
+      const result = await getPaymentMethods();
+      console.log('WithdrawScreen - Payment methods API result:', JSON.stringify(result, null, 2));
+      
+      if (result.success) {
+        // Handle API response structure: [{ payment_methods: [...] }] or { payment_methods: [...] }
+        let methods = [];
+        
+        if (Array.isArray(result.data)) {
+          if (result.data[0] && Array.isArray(result.data[0].payment_methods)) {
+            methods = result.data[0].payment_methods;
+          } else {
+            methods = result.data;
+          }
+        } else if (result.data && Array.isArray(result.data.payment_methods)) {
+          methods = result.data.payment_methods;
+        }
+        
+        console.log('WithdrawScreen - Extracted methods:', JSON.stringify(methods, null, 2));
+        
+        // Transform methods for display (need icon and details)
+        const transformedMethods = methods.map((method) => {
+          const methodType = method.method_type?.toLowerCase();
+          
+          if (methodType === 'mpesa' || method.mpesa_number) {
+            return {
+              id: method.id?.toString(),
+              name: method.name || '',
+              details: method.mpesa_number ? `+${method.mpesa_number}` : 'M-Pesa',
+              icon: require('../assets/images/mpesa.png'),
+              isDefault: method.is_default || false,
+            };
+          } else if (methodType === 'visa' || methodType === 'mastercard' || method.card_type) {
+            const cardType = method.card_type?.toLowerCase() || methodType || 'visa';
+            const lastFour = method.card_last_four || '****';
+            const expiry = method.expiry_date || '';
+            
+            return {
+              id: method.id?.toString(),
+              name: method.name || '',
+              details: `•••• •••• •••• ${lastFour}${expiry ? ` | Expires ${expiry}` : ''}`,
+              icon: cardType === 'visa' 
+                ? require('../assets/images/visa.png')
+                : require('../assets/images/mastercard.png'),
+              isDefault: method.is_default || false,
+            };
+          }
+          
+          return null;
+        }).filter(Boolean); // Remove null entries
+        
+        console.log('WithdrawScreen - Transformed methods:', JSON.stringify(transformedMethods, null, 2));
+        setPaymentMethods(transformedMethods);
+      } else {
+        console.error('Failed to load payment methods:', result.error);
+      }
+    } catch (error) {
+      console.error('Error loading payment methods:', error);
+    } finally {
+      setIsLoadingMethods(false);
+    }
+  };
+
+  // Load payment methods when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      loadPaymentMethods();
+    }, [])
+  );
 
   const handleAddPaymentMethod = () => {
     lightHaptic();
@@ -76,7 +150,12 @@ export default function WithdrawScreen({ navigation, route }) {
           {/* Payment Methods */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select Payment Method</Text>
-            {paymentMethods.length > 0 ? (
+            {isLoadingMethods ? (
+              <View style={styles.emptyStateCard}>
+                <ActivityIndicator size="small" color={COLORS.text} />
+                <Text style={styles.emptyStateSubtitle}>Loading payment methods...</Text>
+              </View>
+            ) : paymentMethods.length > 0 ? (
               <View style={styles.methodsCard}>
                 {paymentMethods.map((method, index) => (
                   <React.Fragment key={method.id}>

@@ -17,23 +17,41 @@ export const HostProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Initialize: Check for existing auth session (bypassed for development)
+  // Initialize: Check for existing auth session and verify with backend
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Bypass authentication - check for locally stored profile only
-        const storedProfile = await getUserProfile();
+        // Check if we have a token
+        const token = await getUserToken();
         
-        if (storedProfile) {
-          setHost(storedProfile);
+        if (!token) {
+          // No token, user needs to login
+          setHost(null);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+
+        // Verify token with backend by calling /api/v1/host/me
+        const result = await getCurrentHost();
+        
+        if (result.success && result.host) {
+          // Token is valid, set authenticated user
+          setHost(result.host);
           setIsAuthenticated(true);
+          // Update stored profile with latest data from backend
+          await setUserProfile(result.host);
         } else {
-          // No stored profile, user needs to login
+          // Token is invalid or expired, clear local data
+          console.log('Token verification failed, clearing local data');
+          await clearUserData();
           setHost(null);
           setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        // On error, clear local data and require re-login
+        await clearUserData();
         setHost(null);
         setIsAuthenticated(false);
       } finally {
@@ -67,14 +85,23 @@ export const HostProvider = ({ children }) => {
 
   const refreshProfile = async () => {
     try {
-      // Bypass API call - just return stored profile
-      const storedProfile = await getUserProfile();
+      // Call backend API to get current host profile
+      const result = await getCurrentHost();
       
-      if (storedProfile) {
-        setHost(storedProfile);
+      if (result.success && result.host) {
+        setHost(result.host);
+        // Update stored profile with latest data from backend
+        await setUserProfile(result.host);
         return { success: true };
       } else {
-        return { success: false, error: 'No profile found' };
+        // If API call fails, check if it's an auth error
+        if (result.error && result.error.includes('Session expired')) {
+          // Token expired, clear local data and logout
+          await clearUserData();
+          setHost(null);
+          setIsAuthenticated(false);
+        }
+        return { success: false, error: result.error || 'Failed to refresh profile' };
       }
     } catch (error) {
       console.error('Refresh profile error:', error);

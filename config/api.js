@@ -28,7 +28,9 @@ export const API_ENDPOINTS = {
   CAR_DETAIL: (id) => `/api/v1/cars/${id}`,
   
   // Payment Methods
-  PAYMENT_METHODS: '/api/v1/payment-methods',
+  PAYMENT_METHODS: '/api/v1/host/payment-methods',
+  PAYMENT_METHODS_MPESA: '/api/v1/host/payment-methods/mpesa',
+  PAYMENT_METHODS_CARD: '/api/v1/host/payment-methods/card',
 };
 
 /**

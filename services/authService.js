@@ -148,26 +148,55 @@ export const loginHost = async (email, password) => {
 
 /**
  * Logout host and clear credentials
+ * 
+ * Note: JWT tokens are stateless. The API endpoint is called for consistency,
+ * but the most important action is clearing the token locally, which happens
+ * in the finally block regardless of API call success/failure.
  */
 export const logoutHost = async () => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_LOGOUT);
+  console.log('Attempting logout to:', url);
+  
   try {
     const token = await getUserToken();
     
     if (token) {
-      // Call backend logout endpoint
-      await fetch(getApiUrl(API_ENDPOINTS.HOST_LOGOUT), {
+      // Call backend logout endpoint (for API consistency)
+      // Note: Since JWT tokens are stateless, this is mainly for logging/analytics
+      // The client must discard the token locally regardless of API response
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
+          'accept': 'application/json',
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
+
+      // Log response but don't fail if API call fails
+      // The token will be cleared locally anyway
+      if (response.ok) {
+        console.log('Logout API call successful');
+      } else {
+        console.warn('Logout API call returned non-OK status:', response.status);
+      }
+    } else {
+      console.log('No token found, skipping API logout call');
     }
   } catch (error) {
-    console.error('Logout error:', error);
+    // Log error but don't throw - we still want to clear local data
+    console.error('Logout API call error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      url: url,
+    });
   } finally {
-    // Always clear local data
+    // CRITICAL: Always clear local data regardless of API call success/failure
+    // This is the most important part since JWT tokens are stateless
+    console.log('Clearing local authentication data...');
     await clearUserData();
+    console.log('Local authentication data cleared');
   }
 };
 
@@ -175,31 +204,55 @@ export const logoutHost = async () => {
  * Get current authenticated host profile
  */
 export const getCurrentHost = async () => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_ME);
+  console.log('Fetching current host profile from:', url);
+  
   try {
     const token = await getUserToken();
     
     if (!token) {
-      throw new Error('No authentication token found');
+      return {
+        success: false,
+        error: 'No authentication token found',
+      };
     }
 
-    const response = await fetch(getApiUrl(API_ENDPOINTS.HOST_ME), {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
+        'accept': 'application/json',
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
 
-    const data = await response.json();
-
+    // Check if response is ok before parsing JSON
     if (!response.ok) {
+      let errorMessage = 'Failed to get profile';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      
       // Token expired or invalid
       if (response.status === 401) {
+        console.log('Token expired or invalid, clearing local data');
         await clearUserData();
-        throw new Error('Session expired. Please login again.');
+        return {
+          success: false,
+          error: 'Session expired. Please login again.',
+        };
       }
-      throw new Error(data.detail || 'Failed to get profile');
+      
+      return {
+        success: false,
+        error: errorMessage,
+      };
     }
+
+    const data = await response.json();
 
     return {
       success: true,
@@ -207,9 +260,23 @@ export const getCurrentHost = async () => {
     };
   } catch (error) {
     console.error('Get profile error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      url: url,
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Network error. Please check your connection.';
+    if (error.message === 'Network request failed') {
+      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct: 192.168.88.253:8000`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return {
       success: false,
-      error: error.message || 'Network error',
+      error: errorMessage,
     };
   }
 };
