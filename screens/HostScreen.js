@@ -9,12 +9,17 @@ import { getHostCars } from '../services/carService';
 
 export default function HostScreen({ navigation }) {
   const [cars, setCars] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with true for initial load
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [previousCarsCount, setPreviousCarsCount] = useState(0);
 
-  const loadCars = async () => {
-    console.log('📱 [HostScreen] loadCars called');
-    setIsLoading(true);
+  const loadCars = async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    
     try {
       console.log('📱 [HostScreen] Calling getHostCars API...');
       const result = await getHostCars();
@@ -36,21 +41,25 @@ export default function HostScreen({ navigation }) {
       setCars([]);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   // Load cars on mount
   useEffect(() => {
     console.log('📱 [HostScreen] Component mounted, loading cars...');
-    loadCars();
+    loadCars(false);
   }, []);
 
-  // Reload when screen is focused
+  // Reload when screen is focused (but don't show skeleton if we have cars)
   useFocusEffect(
     React.useCallback(() => {
-      console.log('📱 [HostScreen] Screen focused, loading cars...');
-      loadCars();
-    }, [])
+      // Only reload if we don't have cars yet (initial load)
+      if (cars.length === 0) {
+        console.log('📱 [HostScreen] Screen focused, no cars yet - loading...');
+        loadCars(false);
+      }
+    }, [cars.length])
   );
 
   const handleAddVehicle = () => {
@@ -299,7 +308,8 @@ export default function HostScreen({ navigation }) {
       </View>
 
       {/* Cars List */}
-      {isLoading ? (
+      {isLoading && cars.length === 0 ? (
+        // Only show skeleton on initial load when no cars exist
         <FlatList
           data={Array.from({ length: previousCarsCount > 0 ? previousCarsCount : 1 }, (_, i) => i + 1)}
           renderItem={renderSkeletonCard}
@@ -308,14 +318,15 @@ export default function HostScreen({ navigation }) {
           contentContainerStyle={styles.listContent}
         />
       ) : cars.length > 0 ? (
+        // Show cars, with pull-to-refresh indicator
         <FlatList
           data={cars}
           renderItem={renderCarCard}
           keyExtractor={(item) => item.id?.toString() || `car-${item.carId || Date.now()}`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-          refreshing={isLoading}
-          onRefresh={loadCars}
+          refreshing={isRefreshing}
+          onRefresh={() => loadCars(true)}
         />
       ) : (
         <View style={styles.emptyState}>
