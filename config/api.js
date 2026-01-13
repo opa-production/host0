@@ -10,9 +10,9 @@
 
 // Default to localhost for development
 // Change this to your computer's IP address when testing on physical devices
-// For Expo Go on physical device, use your computer's IP: 10.38.56.33
+// For Expo Go on physical device, use your computer's IP: 192.168.88.253
 export const API_BASE_URL = __DEV__ 
-  ? 'http://10.38.56.33:8000'  // Physical device via USB/WiFi
+  ? 'http://192.168.88.253:8000'  // Local development server (your computer's IP)
   : 'https://your-production-api.com';
 
 export const API_ENDPOINTS = {

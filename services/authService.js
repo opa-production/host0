@@ -42,10 +42,14 @@ export const registerHost = async (fullName, email, password, passwordConfirmati
  * Login host and store credentials
  */
 export const loginHost = async (email, password) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_LOGIN);
+  console.log('Attempting login to:', url);
+  
   try {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.HOST_LOGIN), {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
+        'accept': 'application/json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -54,10 +58,24 @@ export const loginHost = async (email, password) => {
       }),
     });
 
+    // Check if response is ok before parsing JSON
+    if (!response.ok) {
+      let errorMessage = 'Login failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
     const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.detail || 'Login failed');
+    // Validate response structure
+    if (!data.access_token || !data.host) {
+      throw new Error('Invalid response from server');
     }
 
     // Store authentication data
@@ -71,9 +89,23 @@ export const loginHost = async (email, password) => {
     };
   } catch (error) {
     console.error('Login error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      url: url,
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Network error. Please check your connection.';
+    if (error.message === 'Network request failed') {
+      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct: 192.168.88.253:8000\n• Firewall is not blocking the connection`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return {
       success: false,
-      error: error.message || 'Network error. Please check your connection.',
+      error: errorMessage,
     };
   }
 };

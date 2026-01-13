@@ -107,7 +107,7 @@ export default function UploadDocsScreen({ navigation: nav }) {
       console.error('Upload error:', error);
       Alert.alert(
         'Upload Error',
-        `${error.message || 'Failed to upload document'}\n\nPlease check:\n• Backend server is running\n• Network connection\n• IP address: 10.38.56.33:8000`
+        `${error.message || 'Failed to upload document'}\n\nPlease check:\n• Backend server is running\n• Network connection\n• Device and server are on the same network`
       );
     } finally {
       setUploading(false);

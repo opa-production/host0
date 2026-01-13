@@ -100,23 +100,32 @@ export default function LoginScreen({ navigation }) {
 
     setIsLoading(true);
 
-    // Bypass authentication - create mock profile and log in
-    const mockProfile = {
-      id: '1',
-      email: email,
-      full_name: email.split('@')[0],
-      phone: '+254712345678',
-      avatar_url: null,
-      bio: 'Host on OpaHost',
-      created_at: new Date().toISOString(),
-    };
+    try {
+      // Call the actual API login endpoint
+      const result = await loginHost(email, password);
 
-    await login(mockProfile);
-
-    setTimeout(() => {
+      if (result.success) {
+        // Login successful - store host profile and navigate
+        await login(result.host);
+        navigation.replace('MainTabs');
+      } else {
+        // Login failed - show error
+        Alert.alert(
+          'Login Failed',
+          result.error || 'Invalid email or password. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert(
+        'Error',
+        'Failed to connect to server. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
       setIsLoading(false);
-      navigation.replace('MainTabs');
-    }, 500);
+    }
   };
 
   const handleGoogleLogin = () => {

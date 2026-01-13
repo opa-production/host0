@@ -3,11 +3,7 @@
  * All uploads go through FastAPI backend for security
  */
 import { getUserToken } from '../utils/userStorage';
-
-// API Configuration
-const API_BASE_URL = __DEV__ 
-  ? 'http://10.38.56.33:8000'  // Development - update to your machine's IP
-  : 'https://your-production-api.com';  // Production
+import { API_BASE_URL } from '../config/api';
 
 const API_URL = `${API_BASE_URL}/api/v1`;
 
