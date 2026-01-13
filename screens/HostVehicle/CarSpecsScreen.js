@@ -53,19 +53,22 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
     );
   };
 
-  const Dropdown = ({ label, value, options, visible, onSelect, onToggle }) => (
-    <View style={styles.section}>
-      <Text style={styles.label}>{label} *</Text>
-      <TouchableOpacity
-        style={styles.dropdown}
-        onPress={onToggle}
-        activeOpacity={1}
-      >
-        <Text style={[styles.dropdownText, !value && styles.placeholder]}>
-          {value || `Select ${label}`}
-        </Text>
-        <Ionicons name="chevron-down" size={20} color="#666666" />
-      </TouchableOpacity>
+  const Dropdown = ({ label, value, options, visible, onSelect, onToggle, showSeparator = true }) => (
+    <View>
+      <View style={styles.inputSection}>
+        <Text style={styles.label}>{label} *</Text>
+        <TouchableOpacity
+          style={styles.dropdown}
+          onPress={onToggle}
+          activeOpacity={1}
+        >
+          <Text style={[styles.dropdownText, !value && styles.placeholder]}>
+            {value || `Select ${label}`}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color="#666666" />
+        </TouchableOpacity>
+      </View>
+      {showSeparator && <View style={styles.separator} />}
 
       <Modal
         visible={visible}
@@ -116,88 +119,91 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Seats */}
-      <Dropdown
-        label="Seats Capacity"
-        value={formData.seats}
-        options={seatsOptions}
-        visible={showSeatsDropdown}
-        onSelect={(value) => updateFormData({ seats: value })}
-        onToggle={() => setShowSeatsDropdown(!showSeatsDropdown)}
-      />
-
-      {/* Fuel Type */}
-      <Dropdown
-        label="Fuel Type"
-        value={formData.fuelType}
-        options={FUEL_TYPES}
-        visible={showFuelDropdown}
-        onSelect={(value) => updateFormData({ fuelType: value })}
-        onToggle={() => setShowFuelDropdown(!showFuelDropdown)}
-      />
-
-      {/* Transmission */}
-      <Dropdown
-        label="Transmission"
-        value={formData.transmission}
-        options={TRANSMISSIONS}
-        visible={showTransmissionDropdown}
-        onSelect={(value) => updateFormData({ transmission: value })}
-        onToggle={() => setShowTransmissionDropdown(!showTransmissionDropdown)}
-      />
-
-      {/* Colour */}
-      <Dropdown
-        label="Colour"
-        value={formData.colour}
-        options={COLOURS}
-        visible={showColourDropdown}
-        onSelect={(value) => updateFormData({ colour: value })}
-        onToggle={() => setShowColourDropdown(!showColourDropdown)}
-      />
-
-      {/* Mileage */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Mileage</Text>
-        <Text style={styles.hint}>Current odometer reading in kilometers</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., 15000"
-          value={formData.mileage}
-          onChangeText={(text) => updateFormData({ mileage: text })}
-          keyboardType="numeric"
-          placeholderTextColor="#999999"
+      <View style={styles.card}>
+        {/* Seats */}
+        <Dropdown
+          label="Seats Capacity"
+          value={formData.seats}
+          options={seatsOptions}
+          visible={showSeatsDropdown}
+          onSelect={(value) => updateFormData({ seats: value })}
+          onToggle={() => setShowSeatsDropdown(!showSeatsDropdown)}
         />
-      </View>
 
-      {/* Features */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Features</Text>
-        <Text style={styles.hint}>Select all that apply</Text>
-        <View style={styles.featuresGrid}>
-          {FEATURES.map((feature) => {
-            const isSelected = (formData.features || []).includes(feature);
-            return (
-              <TouchableOpacity
-                key={feature}
-                style={[styles.featureChip, isSelected && styles.featureChipSelected]}
-                onPress={() => toggleFeature(feature)}
-                activeOpacity={1}
-              >
-                <Text
-                  style={[
-                    styles.featureChipText,
-                    isSelected && styles.featureChipTextSelected,
-                  ]}
+        {/* Fuel Type */}
+        <Dropdown
+          label="Fuel Type"
+          value={formData.fuelType}
+          options={FUEL_TYPES}
+          visible={showFuelDropdown}
+          onSelect={(value) => updateFormData({ fuelType: value })}
+          onToggle={() => setShowFuelDropdown(!showFuelDropdown)}
+        />
+
+        {/* Transmission */}
+        <Dropdown
+          label="Transmission"
+          value={formData.transmission}
+          options={TRANSMISSIONS}
+          visible={showTransmissionDropdown}
+          onSelect={(value) => updateFormData({ transmission: value })}
+          onToggle={() => setShowTransmissionDropdown(!showTransmissionDropdown)}
+        />
+
+        {/* Colour */}
+        <Dropdown
+          label="Colour"
+          value={formData.colour}
+          options={COLOURS}
+          visible={showColourDropdown}
+          onSelect={(value) => updateFormData({ colour: value })}
+          onToggle={() => setShowColourDropdown(!showColourDropdown)}
+        />
+
+        {/* Mileage */}
+        <View style={styles.inputSection}>
+          <Text style={styles.label}>Mileage</Text>
+          <Text style={styles.hint}>Current odometer reading in kilometers</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., 15000"
+            value={formData.mileage}
+            onChangeText={(text) => updateFormData({ mileage: text })}
+            keyboardType="numeric"
+            placeholderTextColor="#999999"
+          />
+        </View>
+        <View style={styles.separator} />
+
+        {/* Features */}
+        <View style={styles.inputSection}>
+          <Text style={styles.label}>Features</Text>
+          <Text style={styles.hint}>Select all that apply</Text>
+          <View style={styles.featuresGrid}>
+            {FEATURES.map((feature) => {
+              const isSelected = (formData.features || []).includes(feature);
+              return (
+                <TouchableOpacity
+                  key={feature}
+                  style={[styles.featureChip, isSelected && styles.featureChipSelected]}
+                  onPress={() => toggleFeature(feature)}
+                  activeOpacity={1}
                 >
-                  {feature}
-                </Text>
-                {isSelected && (
-                  <Ionicons name="checkmark-circle" size={18} color="#007AFF" style={{ marginLeft: 6 }} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.featureChipText,
+                      isSelected && styles.featureChipTextSelected,
+                    ]}
+                  >
+                    {feature}
+                  </Text>
+                  {isSelected && (
+                    <Ionicons name="checkmark-circle" size={18} color="#007AFF" style={{ marginLeft: 6 }} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </View>
 
@@ -237,8 +243,19 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.l,
   },
-  section: {
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
     marginBottom: 24,
+    overflow: 'hidden',
+  },
+  inputSection: {
+    padding: SPACING.m,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#CCCCCC',
+    marginHorizontal: SPACING.m,
   },
   label: {
     fontSize: 16,
@@ -260,7 +277,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
     color: COLORS.text,
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#F9F9F9',
   },
   dropdown: {
     flexDirection: 'row',
@@ -270,7 +287,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderStrong,
     borderRadius: 12,
     padding: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#F9F9F9',
   },
   dropdownText: {
     fontSize: 16,
