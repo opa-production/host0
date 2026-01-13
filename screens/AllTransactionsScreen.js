@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,11 +8,11 @@ import { lightHaptic } from '../ui/haptics';
 export default function AllTransactionsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const transactions = route?.params?.transactions ?? [];
-
-  const formattedCurrency = useMemo(
-    () => (value) => `KSh ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`,
-    []
-  );
+  
+  const formatCurrency = (amount) => {
+    const numericAmount = Number(amount) || 0;
+    return numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
 
   const getAmountStyle = (t) => {
     if (t?.title === 'Commission') return styles.amountCommission;
@@ -56,7 +56,7 @@ export default function AllTransactionsScreen({ navigation, route }) {
             <View style={styles.list}>
               {transactions.map((t, idx) => {
                 const isNegative = t.amount < 0;
-                const amountText = `${isNegative ? '-' : ''}${formattedCurrency(Math.abs(t.amount))}`;
+                const amountText = `${isNegative ? '-' : ''}KSh ${formatCurrency(Math.abs(t.amount))}`;
                 return (
                   <View key={t.id ?? `${idx}`}>
                     <View style={styles.row}>

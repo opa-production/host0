@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,31 +7,27 @@ import { lightHaptic } from '../ui/haptics';
 
 export default function FinanceScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   
-  // Mock balances
-  const earnings = {
-    gross: 125000,
-    commission: 18750,
-    net: 106250,
-    withdrawable: 95000,
+  // Data - Replace with actual API data
+  const netEarnings = 0;
+  const commission = 0;
+  const withdrawable = 0;
+
+  const recentTransactions = [];
+
+  const formatCurrency = (amount) => {
+    const numericAmount = Number(amount) || 0;
+    return numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
-  const recentTransactions = [
-    { id: 't1', title: 'Withdrawal', subtitle: 'M-Pesa', amount: -15000 },
-    { id: 't2', title: 'Payout', subtitle: 'Booking earnings', amount: 32000 },
-    { id: 't3', title: 'Commission', subtitle: 'Platform fee', amount: -4500 },
-    { id: 't4', title: 'Payout', subtitle: 'Booking earnings', amount: 18500 },
-    { id: 't5', title: 'Adjustment', subtitle: 'Support adjustment', amount: 1200 },
-  ];
-
-  const formattedCurrency = (value) =>
-    `KSh ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
-
   const handleWithdraw = () => {
-    navigation.navigate('Withdraw', { withdrawable: earnings.withdrawable });
+    lightHaptic();
+    navigation.navigate('Withdraw', { withdrawable });
   };
 
   const handleViewMoreTransactions = () => {
+    lightHaptic();
     navigation.navigate('AllTransactions', { transactions: recentTransactions });
   };
 
@@ -59,27 +55,60 @@ export default function FinanceScreen({ navigation }) {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.walletCard}>
-          <Text style={styles.balanceLabel}>Withdrawable</Text>
-          <Text style={styles.withdrawableValue}>{formattedCurrency(earnings.withdrawable)}</Text>
-
-          <View style={styles.breakdownDivider} />
-
-          <View style={styles.breakdownRow}>
-            <Text style={styles.breakdownLabel}>Net earnings</Text>
-            <Text style={styles.breakdownValue}>{formattedCurrency(earnings.net)}</Text>
+        {/* Balance Card */}
+        <TouchableOpacity 
+          style={styles.financeCard}
+          activeOpacity={0.95}
+        >
+          <View style={styles.financeCardHeader}>
+            <Text style={styles.financeCardTitle}>Balance</Text>
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                lightHaptic();
+                setIsBalanceVisible(!isBalanceVisible);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name={isBalanceVisible ? "eye-outline" : "eye-off-outline"} 
+                size={20} 
+                color="rgba(255, 255, 255, 0.8)" 
+              />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.breakdownDivider} />
-
-          <View style={styles.breakdownRow}>
-            <Text style={styles.breakdownLabel}>Platform commission</Text>
-            <Text style={styles.breakdownValueCommission}>- {formattedCurrency(earnings.commission)}</Text>
+          <View style={styles.balanceContainer}>
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceLabel}>Net earnings</Text>
+              <Text style={styles.balanceLabelValue}>
+                {isBalanceVisible ? `KSh ${formatCurrency(netEarnings)}` : '••••'}
+              </Text>
+            </View>
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceLabel}>Commission</Text>
+              <Text style={[styles.balanceLabelValue, styles.commissionText]}>
+                {isBalanceVisible ? `- KSh ${formatCurrency(commission)}` : '••••'}
+              </Text>
+            </View>
+            <View style={styles.withdrawableContainer}>
+              <Text style={styles.withdrawableLabel}>Withdrawable</Text>
+              <Text style={styles.withdrawableValue}>
+                {isBalanceVisible ? `KSh ${formatCurrency(withdrawable)}` : '••••••'}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <TouchableOpacity style={styles.primaryButton} onPress={handleWithdraw} activeOpacity={0.9}>
-          <Text style={styles.primaryButtonText}>Withdraw</Text>
+          <TouchableOpacity 
+            style={styles.withdrawButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleWithdraw();
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.withdrawButtonText}>Withdraw</Text>
+          </TouchableOpacity>
         </TouchableOpacity>
 
         <View style={styles.transactionsCard}>
@@ -87,44 +116,54 @@ export default function FinanceScreen({ navigation }) {
             <Text style={styles.transactionsTitle}>Recent transactions</Text>
           </View>
 
-          <View style={styles.transactionsList}>
-            {recentTransactions.slice(0, 4).map((t, idx) => {
-              const isNegative = t.amount < 0;
-              const amountText = `${isNegative ? '-' : ''}${formattedCurrency(Math.abs(t.amount))}`;
-              const amountStyle =
-                t.title === 'Commission'
-                  ? styles.transactionAmountCommission
-                  : t.title === 'Withdrawal'
-                    ? styles.transactionAmountWithdrawal
-                    : t.amount > 0
-                      ? styles.transactionAmountIncoming
-                      : styles.transactionAmount;
+          {recentTransactions.length > 0 ? (
+            <>
+              <View style={styles.transactionsList}>
+                {recentTransactions.slice(0, 4).map((t, idx) => {
+                  const isNegative = t.amount < 0;
+                  const amountText = `${isNegative ? '-' : ''}KSh ${formatCurrency(Math.abs(t.amount))}`;
+                  const amountStyle =
+                    t.title === 'Commission'
+                      ? styles.transactionAmountCommission
+                      : t.title === 'Withdrawal'
+                        ? styles.transactionAmountWithdrawal
+                        : t.amount > 0
+                          ? styles.transactionAmountIncoming
+                          : styles.transactionAmount;
 
-              return (
-                <View key={t.id}>
-                  <View style={styles.transactionRow}>
-                    <View style={styles.transactionLeft}>
-                      <Text style={styles.transactionTitle}>{t.title}</Text>
-                      <Text style={styles.transactionSubtitle}>{t.subtitle}</Text>
+                  return (
+                    <View key={t.id}>
+                      <View style={styles.transactionRow}>
+                        <View style={styles.transactionLeft}>
+                          <Text style={styles.transactionTitle}>{t.title}</Text>
+                          <Text style={styles.transactionSubtitle}>{t.subtitle}</Text>
+                        </View>
+                        <Text style={amountStyle}>
+                          {amountText}
+                        </Text>
+                      </View>
+                      {idx !== 3 && <View style={styles.breakdownDivider} />}
                     </View>
-                    <Text style={amountStyle}>
-                      {amountText}
-                    </Text>
-                  </View>
-                  {idx !== 3 && <View style={styles.breakdownDivider} />}
-                </View>
-              );
-            })}
-          </View>
+                  );
+                })}
+              </View>
 
-          <TouchableOpacity
-            style={styles.viewMoreRow}
-            onPress={handleViewMoreTransactions}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.viewMoreText}>View more</Text>
-            <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.viewMoreRow}
+                onPress={handleViewMoreTransactions}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.viewMoreText}>View more</Text>
+                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.emptyState}>
+              <Ionicons name="receipt-outline" size={48} color="#C7C7CC" />
+              <Text style={styles.emptyTitle}>No transactions yet</Text>
+              <Text style={styles.emptySubtitle}>Your payouts, withdrawals, and fees will show here.</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -159,71 +198,81 @@ const styles = StyleSheet.create({
     padding: SPACING.l,
     paddingTop: SPACING.m,
   },
-  balanceLabel: {
-    ...TYPE.micro,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  walletCard: {
+  financeCard: {
     backgroundColor: COLORS.text,
     borderRadius: RADIUS.card,
     padding: SPACING.l,
-    marginBottom: SPACING.xl,
-    minHeight: 200,
+    marginBottom: 24,
   },
-  withdrawableValue: {
-    ...TYPE.largeTitle,
-    fontSize: 36,
-    color: '#FFFFFF',
+  financeCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  financeCardTitle: {
+    ...TYPE.section,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  balanceContainer: {
     marginTop: 8,
     marginBottom: 20,
   },
-  breakdownRow: {
+  balanceRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  breakdownLabel: {
+  balanceLabel: {
     ...TYPE.body,
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.7)',
   },
-  breakdownValue: {
-    ...TYPE.bodyStrong,
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-  breakdownValueMuted: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  breakdownValueCommission: {
-    ...TYPE.bodyStrong,
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
-  },
-  breakdownValueStrong: {
+  balanceLabelValue: {
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#FFFFFF',
+  },
+  commissionText: {
+    color: '#FF3B30',
+  },
+  withdrawableContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  withdrawableLabel: {
+    ...TYPE.micro,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.6)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  withdrawableValue: {
+    fontSize: 32,
+    lineHeight: 40,
+    fontFamily: 'Nunito-Bold',
+    color: '#FFFFFF',
+  },
+  withdrawButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.card,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPACING.m,
+  },
+  withdrawButtonText: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
   },
   breakdownDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  primaryButton: {
-    backgroundColor: '#000000',
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    ...TYPE.bodyStrong,
-    fontSize: 14,
-    color: '#FFFFFF',
+    backgroundColor: '#E5E5EA',
   },
   transactionsCard: {
     marginTop: SPACING.xl,
@@ -301,5 +350,23 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#007AFF',
+  },
+  emptyState: {
+    padding: SPACING.xl,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    ...TYPE.section,
+    fontSize: 15,
+    color: COLORS.text,
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  emptySubtitle: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: '#8E8E93',
+    textAlign: 'center',
+    maxWidth: 280,
   },
 });
