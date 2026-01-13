@@ -64,8 +64,14 @@ export default function MyListingsScreen({ navigation }) {
   const allListings = cars;
 
   const getStatusInfo = (status, isComplete) => {
-    // Handle incomplete cars
-    if (status === 'incomplete' || isComplete === false) {
+    // Prioritize status field - if status is set, use it (especially for awaiting_verification)
+    // Only show incomplete if status is explicitly 'incomplete' AND not awaiting verification
+    if (status === 'awaiting_verification') {
+      return { emoji: '🟡', label: 'Awaiting verification', color: '#FF9500', bgColor: '#FFF3E0' };
+    }
+    
+    // Handle incomplete cars only if status is explicitly incomplete
+    if (status === 'incomplete' && isComplete === false) {
       return { emoji: '⚪', label: 'Incomplete', color: '#8E8E93', bgColor: '#F2F2F7' };
     }
     
@@ -81,6 +87,7 @@ export default function MyListingsScreen({ navigation }) {
       case 'offline':
         return { emoji: '🔴', label: 'Offline', color: '#FF3B30', bgColor: '#FFEBEE' };
       default:
+        // Default to awaiting verification if status is not set but car has images
         return { emoji: '🟡', label: 'Awaiting verification', color: '#FF9500', bgColor: '#FFF3E0' };
     }
   };
