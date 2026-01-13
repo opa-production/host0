@@ -100,11 +100,9 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-      {/* Pricing Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Pricing</Text>
-        
-        <View style={styles.inputGroup}>
+      <View style={styles.card}>
+        {/* Pricing Section */}
+        <View style={styles.inputSection}>
           <Text style={styles.label}>Price per Day (KSh) *</Text>
           <TextInput
             style={styles.input}
@@ -115,8 +113,9 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             placeholderTextColor="#999999"
           />
         </View>
+        <View style={styles.separator} />
 
-        <View style={styles.inputGroup}>
+        <View style={styles.inputSection}>
           <Text style={styles.label}>Price per Week (KSh) *</Text>
           <TextInput
             style={styles.input}
@@ -127,8 +126,9 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             placeholderTextColor="#999999"
           />
         </View>
+        <View style={styles.separator} />
 
-        <View style={styles.inputGroup}>
+        <View style={styles.inputSection}>
           <Text style={styles.label}>Price per Month (KSh) *</Text>
           <TextInput
             style={styles.input}
@@ -139,14 +139,10 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             placeholderTextColor="#999999"
           />
         </View>
+        <View style={styles.separator} />
 
-      </View>
-
-      {/* Rental Terms */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Rental Terms</Text>
-        
-        <View style={styles.inputGroup}>
+        {/* Rental Terms */}
+        <View style={styles.inputSection}>
           <Text style={styles.label}>Minimum Rental Days *</Text>
           <TextInput
             style={styles.input}
@@ -157,8 +153,9 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             placeholderTextColor="#999999"
           />
         </View>
+        <View style={styles.separator} />
 
-        <View style={styles.inputGroup}>
+        <View style={styles.inputSection}>
           <Text style={styles.label}>Maximum Rental Days</Text>
           <Text style={styles.hint}>Optional - Leave blank for no maximum</Text>
           <TextInput
@@ -170,8 +167,9 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             placeholderTextColor="#999999"
           />
         </View>
+        <View style={styles.separator} />
 
-        <View style={styles.inputGroup}>
+        <View style={styles.inputSection}>
           <Text style={styles.label}>Pickup Location</Text>
           <Text style={styles.hint}>Optional - Will be set in the next step</Text>
           <TextInput
@@ -195,8 +193,9 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             </Text>
           )}
         </View>
+        <View style={styles.separator} />
 
-        <View style={styles.inputGroup}>
+        <View style={styles.inputSection}>
           <Text style={styles.label}>Age Restriction *</Text>
           <TextInput
             style={styles.input}
@@ -206,92 +205,93 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             placeholderTextColor="#999999"
           />
         </View>
-      </View>
+        <View style={styles.separator} />
 
-      {/* Car Rules */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Car Rules</Text>
-        <Text style={styles.hint}>Select rules that apply to your vehicle</Text>
-        
-        {/* Common Rules */}
-        <View style={styles.rulesContainer}>
-          {COMMON_RULES.map((rule) => {
-            const isSelected = carRules.includes(rule);
-            return (
-              <TouchableOpacity
-                key={rule}
-                style={[styles.ruleCheckbox, isSelected && styles.ruleCheckboxSelected]}
-                onPress={() => toggleRule(rule)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                  {isSelected && (
-                    <Ionicons name="checkmark" size={16} color="#000000" />
-                  )}
-                </View>
-                <Text style={[styles.ruleText, isSelected && styles.ruleTextSelected]}>
-                  {rule}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Custom Rules */}
-        {carRules.filter(rule => !COMMON_RULES.includes(rule)).map((rule, index) => (
-          <View key={`custom-${index}`} style={styles.customRuleRow}>
-            <Text style={styles.customRuleText}>{rule}</Text>
-            <TouchableOpacity
-              onPress={() => removeRule(rule)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="close-circle" size={20} color="#FF3B30" />
-            </TouchableOpacity>
+        {/* Car Rules */}
+        <View style={styles.inputSection}>
+          <Text style={styles.label}>Car Rules</Text>
+          <Text style={styles.hint}>Select rules that apply to your vehicle</Text>
+          
+          {/* Common Rules */}
+          <View style={styles.rulesContainer}>
+            {COMMON_RULES.map((rule) => {
+              const isSelected = carRules.includes(rule);
+              return (
+                <TouchableOpacity
+                  key={rule}
+                  style={[styles.ruleCheckbox, isSelected && styles.ruleCheckboxSelected]}
+                  onPress={() => toggleRule(rule)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                    {isSelected && (
+                      <Ionicons name="checkmark" size={16} color="#000000" />
+                    )}
+                  </View>
+                  <Text style={[styles.ruleText, isSelected && styles.ruleTextSelected]}>
+                    {rule}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        ))}
 
-        {/* Add More Button */}
-        {!showCustomRuleInput ? (
-          <TouchableOpacity
-            style={styles.addRuleButton}
-            onPress={() => setShowCustomRuleInput(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
-            <Text style={styles.addRuleButtonText}>Add More</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.customRuleInputContainer}>
-            <TextInput
-              style={styles.customRuleInput}
-              placeholder="Enter custom rule"
-              value={customRuleText}
-              onChangeText={setCustomRuleText}
-              placeholderTextColor="#999999"
-              autoFocus
-            />
-            <View style={styles.customRuleActions}>
+          {/* Custom Rules */}
+          {carRules.filter(rule => !COMMON_RULES.includes(rule)).map((rule, index) => (
+            <View key={`custom-${index}`} style={styles.customRuleRow}>
+              <Text style={styles.customRuleText}>{rule}</Text>
               <TouchableOpacity
-                style={styles.cancelRuleButton}
-                onPress={() => {
-                  setShowCustomRuleInput(false);
-                  setCustomRuleText('');
-                }}
+                onPress={() => removeRule(rule)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelRuleText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.addRuleConfirmButton, !customRuleText.trim() && styles.addRuleConfirmButtonDisabled]}
-                onPress={addCustomRule}
-                disabled={!customRuleText.trim()}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.addRuleConfirmText}>Add</Text>
+                <Ionicons name="close-circle" size={20} color="#FF3B30" />
               </TouchableOpacity>
             </View>
-          </View>
-        )}
+          ))}
+
+          {/* Add More Button */}
+          {!showCustomRuleInput ? (
+            <TouchableOpacity
+              style={styles.addRuleButton}
+              onPress={() => setShowCustomRuleInput(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
+              <Text style={styles.addRuleButtonText}>Add More</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.customRuleInputContainer}>
+              <TextInput
+                style={styles.customRuleInput}
+                placeholder="Enter custom rule"
+                value={customRuleText}
+                onChangeText={setCustomRuleText}
+                placeholderTextColor="#999999"
+                autoFocus
+              />
+              <View style={styles.customRuleActions}>
+                <TouchableOpacity
+                  style={styles.cancelRuleButton}
+                  onPress={() => {
+                    setShowCustomRuleInput(false);
+                    setCustomRuleText('');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelRuleText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.addRuleConfirmButton, !customRuleText.trim() && styles.addRuleConfirmButtonDisabled]}
+                  onPress={addCustomRule}
+                  disabled={!customRuleText.trim()}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.addRuleConfirmText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Navigation Buttons */}
@@ -335,17 +335,19 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.l,
   },
-  section: {
-    marginBottom: 32,
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    marginBottom: 24,
+    overflow: 'hidden',
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Bold',
-    color: COLORS.text,
-    marginBottom: 16,
+  inputSection: {
+    padding: SPACING.m,
   },
-  inputGroup: {
-    marginBottom: 16,
+  separator: {
+    height: 1,
+    backgroundColor: '#CCCCCC',
+    marginHorizontal: SPACING.m,
   },
   label: {
     fontSize: 16,
@@ -367,7 +369,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
     color: COLORS.text,
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#F9F9F9',
   },
   textArea: {
     height: 100,
