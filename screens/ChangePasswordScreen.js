@@ -89,19 +89,31 @@ const ChangePasswordScreen = () => {
             ]
           );
         } else {
-          // Show error message (password validation error, etc.)
-          Alert.alert(
-            'Password Change Failed',
-            result.error || 'Failed to change password. Please try again.',
-            [{ text: 'OK' }]
-          );
+          // Check if error is about current password - show inline error
+          const errorMsg = result.error || 'Failed to change password. Please try again.';
+          const errorLower = errorMsg.toLowerCase();
+          
+          if (errorLower.includes('current password') || errorLower.includes('incorrect password')) {
+            // Show inline error for current password field
+            setErrors({ currentPassword: errorMsg });
+          } else if (errorLower.includes('new password') || errorLower.includes('password')) {
+            // Show inline error for new password field
+            setErrors({ newPassword: errorMsg });
+          } else {
+            // Show alert for other errors
+            Alert.alert(
+              'Password Change Failed',
+              errorMsg,
+              [{ text: 'OK' }]
+            );
+          }
         }
       }
     } catch (error) {
-      console.error('Change password error:', error);
+      // Error should already be handled by the service, but catch any unexpected errors
       Alert.alert(
         'Error',
-        'An unexpected error occurred. Please try again.',
+        error?.message || 'An unexpected error occurred. Please try again.',
         [{ text: 'OK' }]
       );
     } finally {

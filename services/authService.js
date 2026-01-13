@@ -1,5 +1,6 @@
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { setUserId, setUserToken, getUserToken, clearUserData } from '../utils/userStorage';
+import { formatApiError, formatErrorMessage, logError, getApiErrorMessage } from '../utils/errorHandler';
 
 /**
  * Register a new host account
@@ -96,15 +97,9 @@ export const loginHost = async (email, password) => {
 
     // Check if response is ok before parsing JSON
     if (!response.ok) {
-      let errorMessage = 'Login failed';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.detail || errorData.message || errorMessage;
-      } catch (e) {
-        // If response is not JSON, use status text
-        errorMessage = response.statusText || errorMessage;
-      }
-      throw new Error(errorMessage);
+      const errorMessage = await getApiErrorMessage(response, 'Login failed');
+      const formattedError = formatErrorMessage(errorMessage, 'login');
+      throw new Error(formattedError);
     }
 
     const data = await response.json();
@@ -124,20 +119,10 @@ export const loginHost = async (email, password) => {
       host: data.host,
     };
   } catch (error) {
-    console.error('Login error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      name: error.name,
-      url: url,
-    });
+    logError(error, 'Login');
     
-    // Provide more specific error messages
-    let errorMessage = 'Network error. Please check your connection.';
-    if (error.message === 'Network request failed') {
-      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct: 192.168.88.253:8000\n• Firewall is not blocking the connection`;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
+    // Format error message for user
+    const errorMessage = formatErrorMessage(error, 'login');
     
     return {
       success: false,
@@ -237,58 +222,43 @@ export const changePassword = async (currentPassword, newPassword, newPasswordCo
 
     // Check if response is ok before parsing JSON
     if (!response.ok) {
-      let errorMessage = 'Failed to change password';
       let requiresLogout = false;
       
-      try {
-        const errorData = await response.json();
-        // Handle validation errors (FastAPI often returns detail as array or object)
-        if (Array.isArray(errorData.detail)) {
-          errorMessage = errorData.detail.map(err => err.msg || err).join(', ');
-        } else if (typeof errorData.detail === 'object') {
-          errorMessage = Object.values(errorData.detail).flat().join(', ');
-        } else {
-          errorMessage = errorData.detail || errorData.message || errorMessage;
-        }
-        
-        // Check if error message indicates token expiration (not password validation)
-        const errorMsgLower = errorMessage.toLowerCase();
-        const isTokenError = errorMsgLower.includes('token') || 
-                            errorMsgLower.includes('expired') || 
-                            errorMsgLower.includes('unauthorized') ||
-                            errorMsgLower.includes('invalid token') ||
-                            errorMsgLower.includes('session expired');
-        
-        // Only treat as token expiration if 401 AND error message indicates token issue
-        // (not password validation errors like "incorrect password" or "current password")
-        if (response.status === 401 && isTokenError && 
-            !errorMsgLower.includes('password') && 
-            !errorMsgLower.includes('current')) {
-          requiresLogout = true;
-        }
-      } catch (e) {
-        // If response is not JSON, use status text
-        errorMessage = response.statusText || errorMessage;
-        // For 401 without JSON response, assume token issue
-        if (response.status === 401) {
-          requiresLogout = true;
-        }
+      // Get user-friendly error message
+      const errorMessage = await getApiErrorMessage(response, 'Failed to change password');
+      const formattedError = formatErrorMessage(errorMessage, 'password change');
+      
+      // Check if error message indicates token expiration (not password validation)
+      const errorMsgLower = formattedError.toLowerCase();
+      const isTokenError = errorMsgLower.includes('token') || 
+                          errorMsgLower.includes('expired') || 
+                          errorMsgLower.includes('unauthorized') ||
+                          errorMsgLower.includes('invalid token') ||
+                          errorMsgLower.includes('session expired');
+      
+      // Only treat as token expiration if 401 AND error message indicates token issue
+      // (not password validation errors like "incorrect password" or "current password")
+      if (response.status === 401 && isTokenError && 
+          !errorMsgLower.includes('password') && 
+          !errorMsgLower.includes('current') &&
+          !errorMsgLower.includes('incorrect')) {
+        requiresLogout = true;
       }
       
       // If token expired, clear data
       if (requiresLogout) {
-        console.log('Token expired or invalid during password change');
+        logError('Token expired or invalid during password change', 'ChangePassword');
         await clearUserData();
         return {
           success: false,
-          error: 'Session expired. Please login again.',
+          error: 'Your session has expired. Please log in again.',
           requiresLogout: true,
         };
       }
       
       return {
         success: false,
-        error: errorMessage,
+        error: formattedError,
       };
     }
 
@@ -299,20 +269,10 @@ export const changePassword = async (currentPassword, newPassword, newPasswordCo
       message: data.message || 'Password changed successfully',
     };
   } catch (error) {
-    console.error('Change password error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      name: error.name,
-      url: url,
-    });
+    logError(error, 'ChangePassword');
     
-    // Provide more specific error messages
-    let errorMessage = 'Network error. Please check your connection.';
-    if (error.message === 'Network request failed') {
-      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct\n• Firewall is not blocking the connection`;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
+    // Format error message for user
+    const errorMessage = formatErrorMessage(error, 'password change');
     
     return {
       success: false,

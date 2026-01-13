@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert, ActivityIndicator, Animated } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { getHostCars } from '../services/carService';
 export default function HostScreen({ navigation }) {
   const [cars, setCars] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [previousCarsCount, setPreviousCarsCount] = useState(0);
 
   const loadCars = async () => {
     console.log('📱 [HostScreen] loadCars called');
@@ -22,6 +23,10 @@ export default function HostScreen({ navigation }) {
       if (result.success && result.cars) {
         console.log('📱 [HostScreen] Setting cars:', result.cars.length);
         setCars(result.cars);
+        // Store the count for skeleton matching
+        if (result.cars.length > 0) {
+          setPreviousCarsCount(result.cars.length);
+        }
       } else {
         console.error('📱 [HostScreen] Failed to load cars:', result.error);
         setCars([]);
@@ -85,6 +90,74 @@ export default function HostScreen({ navigation }) {
   const formatPrice = (price) => {
     return `KSh ${price.toLocaleString()}/day`;
   };
+
+  // Skeleton component for loading state with shimmer effect
+  const SkeletonBox = ({ width, height, style }) => {
+    const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(shimmerAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shimmerAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }, []);
+
+    const opacity = shimmerAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.3, 0.7],
+    });
+
+    return (
+      <Animated.View
+        style={[
+          {
+            width,
+            height,
+            backgroundColor: '#E5E5EA',
+            borderRadius: 8,
+            opacity,
+          },
+          style,
+        ]}
+      />
+    );
+  };
+
+  const renderSkeletonCard = () => (
+    <View style={[styles.carCard, styles.skeletonCard]}>
+      <View style={styles.carCardContent}>
+        {/* Skeleton Image */}
+        <View style={styles.carImageContainer}>
+          <View style={[styles.carImagePlaceholder, { backgroundColor: '#E5E5EA' }]} />
+        </View>
+
+        {/* Skeleton Info */}
+        <View style={styles.carInfo}>
+          <View style={styles.carHeader}>
+            <SkeletonBox width={120} height={16} style={{ marginBottom: 8, borderRadius: 4 }} />
+            <SkeletonBox width={150} height={12} style={{ borderRadius: 4 }} />
+          </View>
+
+          <View style={styles.carMetrics}>
+            <SkeletonBox width={100} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
+            <SkeletonBox width={80} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
+            <SkeletonBox width={90} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
+            <SkeletonBox width={60} height={12} style={{ borderRadius: 4 }} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
 
   const handleCardPress = (item) => {
     // If incomplete, navigate to HostVehicle screen to continue editing
@@ -227,10 +300,13 @@ export default function HostScreen({ navigation }) {
 
       {/* Cars List */}
       {isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={COLORS.brand} />
-          <Text style={styles.emptySubtitle}>Loading your cars...</Text>
-        </View>
+        <FlatList
+          data={Array.from({ length: previousCarsCount > 0 ? previousCarsCount : 1 }, (_, i) => i + 1)}
+          renderItem={renderSkeletonCard}
+          keyExtractor={(item) => `skeleton-${item}`}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
       ) : cars.length > 0 ? (
         <FlatList
           data={cars}
@@ -297,6 +373,9 @@ const styles = StyleSheet.create({
   },
   carCardLast: {
     marginBottom: 0,
+  },
+  skeletonCard: {
+    opacity: 0.7,
   },
   carCardContent: {
     flexDirection: 'row',

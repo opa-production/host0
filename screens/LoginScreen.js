@@ -131,10 +131,10 @@ export default function LoginScreen({ navigation }) {
         );
       }
     } catch (error) {
-      console.error('Login error:', error);
+      // Error should already be handled by the service, but catch any unexpected errors
       Alert.alert(
         'Error',
-        'Failed to connect to server. Please check your connection and try again.',
+        error?.message || 'An unexpected error occurred. Please try again.',
         [{ text: 'OK' }]
       );
     } finally {

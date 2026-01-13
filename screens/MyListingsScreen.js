@@ -10,6 +10,7 @@ import {
   Dimensions,
   Switch,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -62,6 +63,72 @@ export default function MyListingsScreen({ navigation }) {
   );
 
   const allListings = cars;
+
+  // Skeleton component for loading state with shimmer effect
+  const SkeletonBox = ({ width, height, style }) => {
+    const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(shimmerAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shimmerAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }, []);
+
+    const opacity = shimmerAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.3, 0.7],
+    });
+
+    return (
+      <Animated.View
+        style={[
+          {
+            width,
+            height,
+            backgroundColor: '#E5E5EA',
+            borderRadius: 8,
+            opacity,
+          },
+          style,
+        ]}
+      />
+    );
+  };
+
+  const renderSkeletonCard = () => (
+    <View style={[styles.listCard, styles.skeletonCard]}>
+      {/* Skeleton Image */}
+      <View style={styles.carImageContainer}>
+        <View style={[styles.carImagePlaceholder, { backgroundColor: '#E5E5EA' }]} />
+      </View>
+
+      {/* Skeleton Info */}
+      <View style={styles.carInfo}>
+        <View style={styles.carHeader}>
+          <SkeletonBox width={120} height={16} style={{ marginBottom: 8, borderRadius: 4 }} />
+          <SkeletonBox width={150} height={12} style={{ borderRadius: 4 }} />
+        </View>
+
+        <View style={styles.carMetrics}>
+          <SkeletonBox width={100} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
+          <SkeletonBox width={80} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
+          <SkeletonBox width={90} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
+          <SkeletonBox width={60} height={12} style={{ borderRadius: 4 }} />
+        </View>
+      </View>
+    </View>
+  );
 
   const getStatusInfo = (status, isComplete) => {
     // Prioritize status field - if status is set, use it (especially for awaiting_verification)
@@ -202,10 +269,13 @@ export default function MyListingsScreen({ navigation }) {
 
       {/* Listings */}
       {isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={COLORS.brand} />
-          <Text style={styles.emptySubtitle}>Loading your cars...</Text>
-        </View>
+        <FlatList
+          data={[1, 2, 3]} // Render 3 skeleton cards
+          renderItem={renderSkeletonCard}
+          keyExtractor={(item) => `skeleton-${item}`}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.listContent, { paddingTop: SPACING.m }]}
+        />
       ) : allListings.length > 0 ? (
         <FlatList
           ref={flatListRef}
@@ -267,6 +337,9 @@ const styles = StyleSheet.create({
   },
   listCardLast: {
     marginBottom: 0,
+  },
+  skeletonCard: {
+    opacity: 0.7,
   },
   carImageContainer: {
     width: 80,
