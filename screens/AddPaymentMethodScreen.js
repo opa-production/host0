@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { addMpesaPaymentMethod, addCardPaymentMethod, getPaymentMethods } from '../services/paymentService';
+import { addMpesaPaymentMethod, addCardPaymentMethod, getPaymentMethods, deletePaymentMethod } from '../services/paymentService';
 
 export default function AddPaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -290,7 +290,8 @@ export default function AddPaymentMethodScreen({ navigation }) {
           // Check for M-Pesa payment method
           if (methodType === 'mpesa' || method.mpesa_number) {
             const transformed = {
-              id: method.id?.toString() || `mpesa-${index}-${Date.now()}`,
+              id: method.id, // Keep original numeric ID for API calls
+              idString: method.id?.toString() || `mpesa-${index}-${Date.now()}`, // String ID for React keys
               type: 'mpesa',
               name: method.name || '',
               mobileNumber: method.mpesa_number || method.mobile_number || '',
@@ -311,7 +312,8 @@ export default function AddPaymentMethodScreen({ navigation }) {
             const cardType = method.card_type?.toLowerCase() || methodType || 'visa';
             
             const transformed = {
-              id: method.id?.toString() || `card-${index}-${Date.now()}`,
+              id: method.id, // Keep original numeric ID for API calls
+              idString: method.id?.toString() || `card-${index}-${Date.now()}`, // String ID for React keys
               type: cardType,
               name: method.name || '',
               lastFour: lastFour,
@@ -422,8 +424,48 @@ export default function AddPaymentMethodScreen({ navigation }) {
   };
 
   // Remove saved method
-  const handleRemoveMethod = (id) => {
-    setSavedMethods(savedMethods.filter(m => m.id !== id));
+  const handleRemoveMethod = async (id) => {
+    lightHaptic();
+    
+    // Show confirmation alert
+    Alert.alert(
+      'Delete Payment Method',
+      'Are you sure you want to delete this payment method?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Call API to delete payment method
+              const result = await deletePaymentMethod(id);
+              
+              if (result.success) {
+                // Reload from API to ensure sync (this will update the UI)
+                await loadPaymentMethods();
+              } else {
+                Alert.alert(
+                  'Delete Failed',
+                  result.error || 'Failed to delete payment method. Please try again.',
+                  [{ text: 'OK' }]
+                );
+              }
+            } catch (error) {
+              console.error('Delete payment method error:', error);
+              Alert.alert(
+                'Error',
+                'An unexpected error occurred. Please try again.',
+                [{ text: 'OK' }]
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -771,7 +813,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Saved Payment Methods</Text>
             {savedMethods.map((method, index) => (
-              <View key={method.id} style={styles.savedCard}>
+              <View key={method.idString || method.id} style={styles.savedCard}>
                 <View style={styles.savedCardContent}>
                   <Image 
                     source={method.logo} 
@@ -804,7 +846,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
                   onPress={() => handleRemoveMethod(method.id)}
                   activeOpacity={1}
                 >
-                  <Ionicons name="trash-outline" size={20} color="#007AFF" />
+                  <Ionicons name="trash-outline" size={20} color="#FF3B30" />
                 </TouchableOpacity>
               </View>
             ))}

@@ -110,9 +110,14 @@ export const getPaymentMethods = async () => {
     const token = await getUserToken();
     
     if (!token) {
-      throw new Error('No authentication token found');
+      console.warn('getPaymentMethods: No token found in storage');
+      return {
+        success: false,
+        error: 'No authentication token found. Please login again.',
+      };
     }
 
+    console.log('getPaymentMethods: Token found, making request...');
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -121,6 +126,8 @@ export const getPaymentMethods = async () => {
         'Content-Type': 'application/json',
       },
     });
+
+    console.log('getPaymentMethods: Response status:', response.status);
 
     if (!response.ok) {
       let errorMessage = 'Failed to fetch payment methods';
@@ -137,11 +144,20 @@ export const getPaymentMethods = async () => {
         errorMessage = response.statusText || errorMessage;
       }
       
+      // For 401, don't clear user data here - let getCurrentHost handle token validation
+      // Just return the error so the UI can handle it
       if (response.status === 401) {
-        throw new Error('Session expired. Please login again.');
+        console.warn('getPaymentMethods: Received 401 Unauthorized. Token may be expired or invalid.');
+        return {
+          success: false,
+          error: 'Session expired. Please login again.',
+        };
       }
       
-      throw new Error(errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
     }
 
     const data = await response.json();
@@ -254,6 +270,94 @@ export const addCardPaymentMethod = async (name, cardNumber, expiryDate, cvc, ca
     };
   } catch (error) {
     console.error('Add card payment method error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      url: url,
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Network error. Please check your connection.';
+    if (error.message === 'Network request failed') {
+      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct: 192.168.88.253:8000`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+};
+
+/**
+ * Delete a payment method
+ * @param {string|number} paymentMethodId - ID of the payment method to delete
+ * @returns {Promise<Object>} Result with success status or error
+ */
+export const deletePaymentMethod = async (paymentMethodId) => {
+  const url = getApiUrl(API_ENDPOINTS.PAYMENT_METHOD_DELETE(paymentMethodId));
+  console.log('Attempting to delete payment method:', url);
+  
+  try {
+    const token = await getUserToken();
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Check if response is ok
+    if (!response.ok) {
+      let errorMessage = 'Failed to delete payment method';
+      try {
+        const errorData = await response.json();
+        // Handle validation errors (FastAPI often returns detail as array or object)
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      
+      if (response.status === 401) {
+        throw new Error('Session expired. Please login again.');
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    // DELETE requests might return empty body or success message
+    let data = null;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        data = await response.json();
+      } catch (e) {
+        // Empty response is fine for DELETE
+      }
+    }
+
+    return {
+      success: true,
+      data: data,
+    };
+  } catch (error) {
+    console.error('Delete payment method error:', error);
     console.error('Error details:', {
       message: error.message,
       name: error.name,

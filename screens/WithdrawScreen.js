@@ -77,9 +77,19 @@ export default function WithdrawScreen({ navigation, route }) {
         setPaymentMethods(transformedMethods);
       } else {
         console.error('Failed to load payment methods:', result.error);
+        // If it's an authentication error, clear methods and show empty state
+        // But don't clear user data - let HostContext handle token validation
+        if (result.error && (result.error.includes('Session expired') || result.error.includes('authentication') || result.error.includes('No authentication token'))) {
+          console.warn('WithdrawScreen: Authentication error detected:', result.error);
+          setPaymentMethods([]);
+        } else {
+          // For other errors, keep existing methods if any (don't clear them)
+          console.warn('WithdrawScreen: Non-auth error, keeping existing methods:', result.error);
+        }
       }
     } catch (error) {
       console.error('Error loading payment methods:', error);
+      // On unexpected errors, keep existing methods
     } finally {
       setIsLoadingMethods(false);
     }
