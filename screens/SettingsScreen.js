@@ -209,14 +209,6 @@ const SettingsScreen = () => {
               />
             }
           />
-        </View>
-
-        {/* Separator Line */}
-        <View style={styles.sectionSeparator} />
-
-        {/* Preferences Section */}
-        <SectionHeader title="Preferences" />
-        <View style={styles.section}>
           <SettingItem
             icon="notifications-outline"
             title="Notification Preferences"
@@ -269,12 +261,12 @@ const SettingsScreen = () => {
         </View>
 
         {/* App Version Section */}
-        <View style={styles.versionSection}>
+        {/* <View style={styles.versionSection}>
           <Text style={styles.versionText}>Version 1.0.0 Beta</Text>
           <Text style={styles.versionDescription}>
             This app is currently under development. We are working to have all features up based on user feedback.
           </Text>
-        </View>
+        </View> */}
 
         <Modal
           visible={showDeleteModal}
