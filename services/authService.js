@@ -186,6 +186,57 @@ export const logoutHost = async () => {
 };
 
 /**
+ * Request password reset for host (forgot password)
+ * @param {string} email - Email address to send password reset link
+ * @returns {Promise<Object>} Result with success status and message or error
+ */
+export const forgotPassword = async (email) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_FORGOT_PASSWORD);
+  console.log('Requesting password reset at:', url);
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+      }),
+    });
+
+    // Check if response is ok before parsing JSON
+    if (!response.ok) {
+      const errorMessage = await getApiErrorMessage(response, 'Failed to send reset email');
+      const formattedError = formatErrorMessage(errorMessage, 'password reset');
+      
+      return {
+        success: false,
+        error: formattedError,
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      success: true,
+      message: data.message || 'Password reset link has been sent to your email.',
+    };
+  } catch (error) {
+    logError(error, 'ForgotPassword');
+    
+    // Format error message for user
+    const errorMessage = formatErrorMessage(error, 'password reset');
+    
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+};
+
+/**
  * Change password for authenticated host
  * @param {string} currentPassword - Current password (required for verification)
  * @param {string} newPassword - New password (minimum 8 characters)

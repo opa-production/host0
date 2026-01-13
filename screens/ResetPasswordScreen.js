@@ -1,22 +1,78 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { Ionicons } from '@expo/vector-icons';
 import { lightHaptic } from '../ui/haptics';
+import { forgotPassword } from '../services/authService';
 
 export default function ResetPasswordScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
-  const handleReset = () => {
+  const validateEmail = (email) => {
     if (!email.trim()) {
-      Alert.alert('Email required', 'Please enter the email associated with your account.');
+      return 'Email is required';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email';
+    }
+    return '';
+  };
+
+  const handleReset = async () => {
+    lightHaptic();
+    
+    const emailValidationError = validateEmail(email);
+    if (emailValidationError) {
+      setEmailError(emailValidationError);
       return;
     }
-    // TODO: call API to send reset email
-    Alert.alert('Check your email', 'If an account exists, a reset link has been sent.');
-    navigation.goBack();
+
+    setEmailError('');
+    setIsLoading(true);
+
+    try {
+      const result = await forgotPassword(email);
+
+      if (result.success) {
+        Alert.alert(
+          'Check your email',
+          result.message || 'If an account exists, a password reset link has been sent to your email address.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } else {
+        // Check if it's an email validation error
+        const errorMsg = result.error || 'Failed to send reset email. Please try again.';
+        const errorLower = errorMsg.toLowerCase();
+        
+        if (errorLower.includes('email') && (errorLower.includes('invalid') || errorLower.includes('not found'))) {
+          setEmailError(errorMsg);
+        } else {
+          Alert.alert(
+            'Error',
+            errorMsg,
+            [{ text: 'OK' }]
+          );
+        }
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error?.message || 'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,25 +105,45 @@ export default function ResetPasswordScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.subtitle}>Enter your email and we'll send you a reset link.</Text>
+          <View style={styles.card}>
+            <Text style={styles.subtitle}>Enter your email and we'll send you a reset link.</Text>
 
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor={COLORS.subtle}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
+            <View style={styles.inputContainer}>
+              <Ionicons name="mail-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor={COLORS.subtle}
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (emailError) {
+                    setEmailError('');
+                  }
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                editable={!isLoading}
+              />
+            </View>
+            {emailError ? (
+              <Text style={styles.errorText}>{emailError}</Text>
+            ) : null}
+
+            <TouchableOpacity 
+              style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]} 
+              onPress={handleReset} 
+              activeOpacity={0.8}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Send reset link</Text>
+              )}
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity style={styles.primaryButton} onPress={handleReset} activeOpacity={0.8}>
-            <Text style={styles.primaryButtonText}>Send reset link</Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -104,12 +180,26 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.l,
     paddingTop: SPACING.m,
-    gap: SPACING.m,
+  },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.l,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
   },
   subtitle: {
     ...TYPE.body,
     color: COLORS.subtle,
-    marginBottom: SPACING.s,
+    marginBottom: SPACING.l,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -118,8 +208,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: RADIUS.card,
     paddingHorizontal: SPACING.m,
-    backgroundColor: COLORS.surface,
-    marginTop: SPACING.s,
+    backgroundColor: COLORS.bg,
+    marginBottom: SPACING.s,
   },
   inputIcon: {
     marginRight: SPACING.s,
@@ -136,11 +226,21 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: RADIUS.card,
     alignItems: 'center',
-    marginTop: SPACING.m,
+    marginTop: SPACING.s,
   },
   primaryButtonText: {
     ...TYPE.bodyStrong,
     fontSize: 16,
     color: '#FFFFFF',
+  },
+  primaryButtonDisabled: {
+    opacity: 0.6,
+  },
+  errorText: {
+    ...TYPE.caption,
+    fontSize: 12,
+    color: '#F44336',
+    marginBottom: SPACING.s,
+    marginLeft: SPACING.m,
   },
 });
