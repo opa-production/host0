@@ -29,20 +29,19 @@ export default function UpdateProfileScreen({ navigation, route }) {
   const validateForm = () => {
     const newErrors = {};
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    // Bio validation: max 200 characters (per API requirement)
+    if (formData.bio && formData.bio.length > 200) {
+      newErrors.bio = 'Bio must not exceed 200 characters';
     }
 
-    if (formData.bio && formData.bio.length > 2000) {
-      newErrors.bio = 'Bio must not exceed 2000 characters';
+    // Mobile number validation: max 14 characters (per API requirement)
+    if (formData.mobile_number && formData.mobile_number.length > 14) {
+      newErrors.mobile_number = 'Mobile number must not exceed 14 characters';
     }
 
-    if (formData.mobile_number && formData.mobile_number.replace(/\D/g, '').length < 10) {
-      newErrors.mobile_number = 'Please enter a valid phone number';
-    }
-
-    if (formData.id_number && formData.id_number.trim().length < 5) {
-      newErrors.id_number = 'ID number must be at least 5 characters';
+    // ID number validation (no specific max length in API, but validate format)
+    if (formData.id_number && formData.id_number.trim().length === 0) {
+      newErrors.id_number = 'ID number cannot be empty';
     }
 
     setErrors(newErrors);
@@ -59,13 +58,24 @@ export default function UpdateProfileScreen({ navigation, route }) {
     setIsLoading(true);
 
     try {
-      // Prepare data - only send non-empty fields
+      // Prepare data - only send fields that are allowed by the API
+      // API accepts: bio (optional, max 200), mobile_number (optional, max 14), id_number (optional)
       const updateData = {};
-      if (formData.name?.trim()) updateData.name = formData.name.trim();
-      if (formData.email?.trim()) updateData.email = formData.email.trim();
-      if (formData.bio?.trim()) updateData.bio = formData.bio.trim();
-      if (formData.mobile_number?.trim()) updateData.mobile_number = formData.mobile_number.trim();
-      if (formData.id_number?.trim()) updateData.id_number = formData.id_number.trim();
+      
+      // Send bio if provided (can be empty string to clear it)
+      if (formData.bio !== undefined && formData.bio !== null) {
+        updateData.bio = formData.bio.trim();
+      }
+      
+      // Send mobile_number if provided
+      if (formData.mobile_number !== undefined && formData.mobile_number !== null) {
+        updateData.mobile_number = formData.mobile_number.trim();
+      }
+      
+      // Send id_number if provided
+      if (formData.id_number !== undefined && formData.id_number !== null) {
+        updateData.id_number = formData.id_number.trim();
+      }
 
       // Call backend API
       const result = await updateHostProfile(updateData);
@@ -126,49 +136,20 @@ export default function UpdateProfileScreen({ navigation, route }) {
 
         {/* Form Card */}
         <View style={styles.formCard}>
-          {/* Name Input */}
+          {/* Name Display (Read-only) */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={[styles.input, errors.name && styles.inputError]}
-              placeholder="Enter your full name"
-              placeholderTextColor="#999999"
-              value={formData.name}
-              onChangeText={(text) => {
-                setFormData({ ...formData, name: text });
-                if (errors.name) {
-                  setErrors({ ...errors, name: '' });
-                }
-              }}
-              autoCapitalize="words"
-            />
-            {errors.name && (
-              <Text style={styles.errorText}>{errors.name}</Text>
-            )}
+            <Text style={styles.readOnlyText}>{formData.name || 'Not set'}</Text>
+            <Text style={styles.readOnlyHint}>Name cannot be changed here</Text>
           </View>
 
           <View style={styles.divider} />
 
-          {/* Email Input */}
+          {/* Email Display (Read-only) */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={[styles.input, errors.email && styles.inputError]}
-              placeholder="Enter your email address"
-              placeholderTextColor="#999999"
-              value={formData.email}
-              onChangeText={(text) => {
-                setFormData({ ...formData, email: text });
-                if (errors.email) {
-                  setErrors({ ...errors, email: '' });
-                }
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            {errors.email && (
-              <Text style={styles.errorText}>{errors.email}</Text>
-            )}
+            <Text style={styles.readOnlyText}>{formData.email || 'Not set'}</Text>
+            <Text style={styles.readOnlyHint}>Email cannot be changed here</Text>
           </View>
 
           <View style={styles.divider} />
@@ -189,9 +170,9 @@ export default function UpdateProfileScreen({ navigation, route }) {
               }}
               multiline
               numberOfLines={4}
-              maxLength={2000}
+              maxLength={200}
             />
-            <Text style={styles.characterCount}>{formData.bio.length}/2000 characters</Text>
+            <Text style={styles.characterCount}>{formData.bio.length}/200 characters</Text>
             {errors.bio && (
               <Text style={styles.errorText}>{errors.bio}</Text>
             )}
@@ -386,6 +367,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Nunito-Bold',
     color: '#FFFFFF',
+  },
+  readOnlyText: {
+    ...TYPE.body,
+    fontSize: 15,
+    color: '#1C1C1E',
+    marginTop: 4,
+  },
+  readOnlyHint: {
+    ...TYPE.caption,
+    fontSize: 11,
+    color: '#8E8E93',
+    marginTop: 4,
   },
 });
 

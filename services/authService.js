@@ -5,10 +5,14 @@ import { setUserId, setUserToken, getUserToken, clearUserData } from '../utils/u
  * Register a new host account
  */
 export const registerHost = async (fullName, email, password, passwordConfirmation) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_REGISTER);
+  console.log('Attempting registration to:', url);
+  
   try {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.HOST_REGISTER), {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
+        'accept': 'application/json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -19,21 +23,53 @@ export const registerHost = async (fullName, email, password, passwordConfirmati
       }),
     });
 
-    const data = await response.json();
-
+    // Check if response is ok before parsing JSON
     if (!response.ok) {
-      throw new Error(data.detail || 'Registration failed');
+      let errorMessage = 'Registration failed';
+      try {
+        const errorData = await response.json();
+        // Handle validation errors (FastAPI often returns detail as array or object)
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
+
+    const data = await response.json();
 
     return {
       success: true,
       data: data,
+      // If registration returns host data, include it
+      host: data.host || null,
     };
   } catch (error) {
     console.error('Registration error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      url: url,
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Network error. Please check your connection.';
+    if (error.message === 'Network request failed') {
+      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct: 192.168.88.253:8000\n• Firewall is not blocking the connection`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return {
       success: false,
-      error: error.message || 'Network error. Please check your connection.',
+      error: errorMessage,
     };
   }
 };
@@ -182,6 +218,9 @@ export const getCurrentHost = async () => {
  * Update host profile
  */
 export const updateHostProfile = async (profileData) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_UPDATE_PROFILE);
+  console.log('Attempting profile update to:', url);
+  
   try {
     const token = await getUserToken();
     
@@ -189,24 +228,49 @@ export const updateHostProfile = async (profileData) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(getApiUrl(API_ENDPOINTS.HOST_UPDATE_PROFILE), {
+    // Only send fields that are allowed by the API
+    const allowedFields = {};
+    if (profileData.bio !== undefined) allowedFields.bio = profileData.bio;
+    if (profileData.mobile_number !== undefined) allowedFields.mobile_number = profileData.mobile_number;
+    if (profileData.id_number !== undefined) allowedFields.id_number = profileData.id_number;
+
+    const response = await fetch(url, {
       method: 'PUT',
       headers: {
+        'accept': 'application/json',
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(profileData),
+      body: JSON.stringify(allowedFields),
     });
 
-    const data = await response.json();
-
+    // Check if response is ok before parsing JSON
     if (!response.ok) {
+      let errorMessage = 'Failed to update profile';
+      try {
+        const errorData = await response.json();
+        // Handle validation errors (FastAPI often returns detail as array or object)
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      
       if (response.status === 401) {
         await clearUserData();
         throw new Error('Session expired. Please login again.');
       }
-      throw new Error(data.detail || 'Failed to update profile');
+      
+      throw new Error(errorMessage);
     }
+
+    const data = await response.json();
 
     return {
       success: true,
@@ -214,9 +278,23 @@ export const updateHostProfile = async (profileData) => {
     };
   } catch (error) {
     console.error('Update profile error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      url: url,
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Network error. Please check your connection.';
+    if (error.message === 'Network request failed') {
+      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct: 192.168.88.253:8000`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return {
       success: false,
-      error: error.message || 'Network error',
+      error: errorMessage,
     };
   }
 };

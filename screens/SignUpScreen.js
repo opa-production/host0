@@ -73,23 +73,54 @@ export default function SignUpScreen({ navigation }) {
 
     setIsLoading(true);
 
-    // Bypass authentication - create mock profile and sign up
-    const mockProfile = {
-      id: '1',
-      email: email,
-      full_name: name,
-      phone: '+254712345678',
-      avatar_url: null,
-      bio: 'New host on OpaHost',
-      created_at: new Date().toISOString(),
-    };
+    try {
+      // Call the actual API registration endpoint
+      const result = await registerHost(name, email, password, confirmPassword);
 
-    await login(mockProfile);
-
-    setTimeout(() => {
+      if (result.success) {
+        // Registration successful - auto-login the user
+        if (result.host) {
+          // If API returns host data directly, use it
+          await login(result.host);
+          navigation.replace('MainTabs');
+        } else {
+          // Otherwise, auto-login with the credentials
+          const loginResult = await loginHost(email, password);
+          if (loginResult.success) {
+            await login(loginResult.host);
+            navigation.replace('MainTabs');
+          } else {
+            // Login failed, navigate to login screen
+            Alert.alert(
+              'Account Created',
+              'Your account has been created successfully! Please sign in to continue.',
+              [
+                {
+                  text: 'OK',
+                  onPress: () => navigation.navigate('Login'),
+                },
+              ]
+            );
+          }
+        }
+      } else {
+        // Registration failed - show error
+        Alert.alert(
+          'Registration Failed',
+          result.error || 'Failed to create account. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Sign up error:', error);
+      Alert.alert(
+        'Error',
+        'Failed to connect to server. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
       setIsLoading(false);
-      navigation.replace('MainTabs');
-    }, 500);
+    }
   };
 
   const handleGoogleSignUp = () => {
