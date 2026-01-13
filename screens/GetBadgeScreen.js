@@ -116,7 +116,7 @@ export default function GetBadgeScreen({ navigation }) {
             paymentMethods.map((method) => (
               <TouchableOpacity
                 key={method.id}
-                style={[styles.paymentMethodItem, selectedMethodId === method.id && styles.paymentMethodItemActive]}
+                style={styles.paymentMethodItem}
                 activeOpacity={0.9}
                 onPress={() => setSelectedMethodId(method.id)}
               >
@@ -144,15 +144,14 @@ export default function GetBadgeScreen({ navigation }) {
           )}
         </View>
 
-        <TouchableOpacity 
-          style={[styles.primaryButton, (!selectedMethodId || paymentMethods.length === 0) && styles.primaryButtonDisabled]} 
-          activeOpacity={0.9}
-          disabled={!selectedMethodId || paymentMethods.length === 0}
-        >
-          <Text style={styles.primaryButtonText}>initiate payment</Text>
-        </TouchableOpacity>
-
         <View style={styles.noteCard}>
+          <TouchableOpacity 
+            style={[styles.primaryButton, (!selectedMethodId || paymentMethods.length === 0) && styles.primaryButtonDisabled]} 
+            activeOpacity={0.9}
+            disabled={!selectedMethodId || paymentMethods.length === 0}
+          >
+            <Text style={styles.primaryButtonText}>initiate payment</Text>
+          </TouchableOpacity>
           <Text style={styles.noteTitle}>Secure checkout</Text>
           <Text style={styles.noteText}>We support mobile money, card, and bank transfer.</Text>
         </View>
@@ -241,10 +240,6 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.border,
   },
-  paymentMethodItemActive: {
-    borderColor: '#1D1D1D',
-    backgroundColor: '#F9F9F9',
-  },
   paymentMethodLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -315,7 +310,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
     padding: SPACING.m,
-    gap: 6,
+    gap: 12,
   },
   noteTitle: {
     ...TYPE.bodyStrong,
