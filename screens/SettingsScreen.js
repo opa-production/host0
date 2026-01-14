@@ -1,11 +1,12 @@
 import React, { useState, useLayoutEffect, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput, StatusBar, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput, StatusBar, Switch, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { isBiometricEnabled, setupBiometric, disableBiometric, isBiometricAvailable } from '../utils/biometric';
+import { useHost } from '../utils/HostContext';
 
 // Simple Toggle Component
 const Toggle = ({ value, onValueChange, disabled = false }) => (
@@ -21,10 +22,9 @@ const Toggle = ({ value, onValueChange, disabled = false }) => (
 const SettingsScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { logout } = useHost();
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -118,24 +118,8 @@ const SettingsScreen = () => {
   };
 
   const handleDeleteAccount = () => {
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteConfirm = () => {
-    if (deleteConfirmText.toLowerCase() === 'delete') {
-      // TODO: Implement account deletion
-      console.log('Account deletion confirmed');
-      setShowDeleteModal(false);
-      setDeleteConfirmText('');
-      Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
-    } else {
-      Alert.alert('Invalid Confirmation', 'Please type "delete" exactly to confirm.');
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setShowDeleteModal(false);
-    setDeleteConfirmText('');
+    lightHaptic();
+    navigation.navigate('DeleteAccount');
   };
 
   const SettingItem = ({ icon, title, onPress, rightComponent, showArrow = true }) => (
@@ -267,51 +251,6 @@ const SettingsScreen = () => {
             This app is currently under development. We are working to have all features up based on user feedback.
           </Text>
         </View> */}
-
-        <Modal
-          visible={showDeleteModal}
-          transparent
-          animationType="fade"
-          onRequestClose={handleDeleteCancel}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Delete Account</Text>
-              <Text style={styles.modalMessage}>
-                Type "delete" to confirm account deletion. This action cannot be undone.
-              </Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Type 'delete' to confirm"
-                placeholderTextColor="#999999"
-                value={deleteConfirmText}
-                onChangeText={setDeleteConfirmText}
-                autoCapitalize="none"
-              />
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonCancel]}
-                  onPress={handleDeleteCancel}
-                  activeOpacity={1}
-                >
-                  <Text style={styles.modalButtonTextCancel}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.modalButton,
-                    styles.modalButtonDelete,
-                    deleteConfirmText.toLowerCase() !== 'delete' && { opacity: 0.5 },
-                  ]}
-                  onPress={handleDeleteConfirm}
-                  activeOpacity={1}
-                  disabled={deleteConfirmText.toLowerCase() !== 'delete'}
-                >
-                  <Text style={styles.modalButtonTextDelete}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
       </ScrollView>
     </View>
   );
@@ -416,95 +355,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingHorizontal: 16,
     color: '#666666',
-  },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-  },
-  modalContent: {
-    width: '85%',
-    maxWidth: 400,
-    borderRadius: 24,
-    padding: 32,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-  },
-  logoutIconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    backgroundColor: '#007AFF20',
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontFamily: 'Nunito-Bold',
-    marginBottom: 12,
-    color: '#000000',
-    textAlign: 'center',
-  },
-  modalMessage: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
-    color: '#666666',
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    marginBottom: 24,
-    width: '100%',
-    borderColor: '#e0e0e0',
-    color: '#000000',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalButtonCancel: {
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  modalButtonLogout: {
-    backgroundColor: '#007AFF',
-  },
-  modalButtonDelete: {
-    backgroundColor: '#F44336',
-  },
-  modalButtonTextCancel: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#666666',
-  },
-  modalButtonTextLogout: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#ffffff',
-  },
-  modalButtonTextDelete: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: '#ffffff',
   },
 });
 

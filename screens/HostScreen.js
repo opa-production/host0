@@ -6,8 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostCars } from '../services/carService';
+import { useHost } from '../utils/HostContext';
 
 export default function HostScreen({ navigation }) {
+  const { logout } = useHost();
   const [cars, setCars] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // Start with true for initial load
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -34,10 +36,30 @@ export default function HostScreen({ navigation }) {
         }
       } else {
         console.error('📱 [HostScreen] Failed to load cars:', result.error);
+        // Check if error indicates session expiration
+        if (result.error && (result.error.includes('Session expired') || result.error.includes('Please login again'))) {
+          // Clear context state and navigate to landing
+          await logout();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Landing' }],
+          });
+          return;
+        }
         setCars([]);
       }
     } catch (error) {
       console.error('📱 [HostScreen] Error loading cars:', error);
+      // Check if error indicates session expiration
+      if (error.message && (error.message.includes('Session expired') || error.message.includes('Please login again'))) {
+        // Clear context state and navigate to landing
+        await logout();
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Landing' }],
+        });
+        return;
+      }
       setCars([]);
     } finally {
       setIsLoading(false);

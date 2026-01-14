@@ -20,31 +20,8 @@ export default function ChatScreen({ navigation, route }) {
   const title = route?.params?.title || 'Chat';
   const insets = useSafeAreaInsets();
 
-  const initialMessages = useMemo(
-    () => [
-      {
-        id: 'm1',
-        fromMe: false,
-        text: 'Hi! Just confirming pickup time — does 10:30am work for you?',
-        ts: '2:14 PM',
-      },
-      {
-        id: 'm2',
-        fromMe: true,
-        text: 'Yes that works. I’ll be there a bit earlier just in case.',
-        ts: '2:16 PM',
-      },
-      {
-        id: 'm3',
-        fromMe: false,
-        text: 'Perfect. I’ll share the exact spot once I arrive.',
-        ts: '2:17 PM',
-      },
-    ],
-    []
-  );
-
-  const [messages, setMessages] = useState(initialMessages);
+  // Messages - to be fetched from API
+  const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
 
   const listRef = useRef(null);

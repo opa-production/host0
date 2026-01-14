@@ -2,7 +2,7 @@
  * Car Service - Backend Integration for Host App
  */
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
-import { getUserToken, getUserId } from '../utils/userStorage';
+import { getUserToken, getUserId, clearUserData } from '../utils/userStorage';
 import { supabase, STORAGE_BUCKETS } from '../config/supabase';
 
 /**
@@ -632,6 +632,14 @@ export const getHostCars = async () => {
         console.error('🚗 [GET HOST CARS API] Could not parse error response as JSON:', e);
         errorMessage = response.statusText || errorMessage;
       }
+      
+      // Token expired or invalid - clear local data
+      if (response.status === 401) {
+        console.log('🚗 [GET HOST CARS API] Token expired or invalid (401), clearing local data');
+        await clearUserData();
+        throw new Error('Session expired. Please login again.');
+      }
+      
       throw new Error(errorMessage);
     }
 

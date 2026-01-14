@@ -11,31 +11,30 @@ export default function HomeScreen({ navigation }) {
   const { host } = useHost();
   const [isLoading, setIsLoading] = useState(true);
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
-
-  // Get user name from host profile
-  const userName = host?.name || host?.full_name || 'Host';
   
-  const operationsData = {
+  // Operations data - to be fetched from API
+  const [operationsData, setOperationsData] = useState({
     activeRentals: 0,
     pickups: 0,
     returns: 0,
     pendingRequests: 0,
-  };
+  });
 
-  const financialData = {
+  // Financial data - to be fetched from API
+  const [financialData, setFinancialData] = useState({
     currentEarnings: 0,
     previousEarnings: 0,
     utilization: 0,
     nextPayout: { amount: 0, date: '' }
-  };
+  });
+
+  // Get user name from host profile
+  const userName = host?.name || host?.full_name || 'Host';
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    // TODO: Fetch dashboard data from API
+    // For now, set loading to false immediately
+    setIsLoading(false);
   }, []);
 
   const getGreeting = () => {
@@ -122,9 +121,9 @@ export default function HomeScreen({ navigation }) {
   };
 
   // Calculate financial breakdown
-  const withdrawable = financialData.nextPayout.amount || 0;
-  const netEarnings = 0; // This should come from backend
-  const commission = 0; // This should come from backend
+  const withdrawable = financialData.nextPayout?.amount || 0;
+  const netEarnings = financialData.currentEarnings || 0;
+  const commission = (financialData.currentEarnings || 0) - (financialData.nextPayout?.amount || 0);
 
   return (
     <View style={styles.container}>

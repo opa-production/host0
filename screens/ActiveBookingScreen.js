@@ -7,34 +7,15 @@ import { lightHaptic } from '../ui/haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export default function ActiveBookingScreen({ navigation }) {
+export default function ActiveBookingScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const carouselRef = useRef(null);
   
-  const booking = {
-    vehicleName: 'BMW M3 Competition',
-    vehicleImages: [
-      require('../assets/images/bmw.jpg'),
-      require('../assets/images/bmw.jpg'), // Add more images when available
-    ],
-    plate: 'KDA 452M',
-    startDate: 'Jan 15, 2024 • 09:00',
-    endDate: 'Jan 20, 2024 • 11:00',
-    renter: {
-      name: 'John Doe',
-      phone: '+254 712 345 678',
-      avatar: null,
-      rating: 4.8,
-      trips: 12,
-    },
-    price: {
-      days: 5,
-      commission: 'KSh 8,750',
-      total: 'KSh 45,000',
-      payout: 'KSh 36,250',
-    },
-  };
+  // Booking data - to be fetched from API or passed via route params
+  // TODO: Fetch booking data from API using bookingId from route params
+  const [booking, setBooking] = useState(null);
+  const bookingId = route?.params?.bookingId;
 
   const renderCarouselItem = ({ item, index }) => (
     <View style={styles.carouselItem}>
@@ -51,6 +32,34 @@ export default function ActiveBookingScreen({ navigation }) {
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
   }).current;
+
+  // Show empty state if no booking data
+  if (!booking) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              lightHaptic();
+              navigation.goBack();
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Booking</Text>
+          <View style={styles.backButton} />
+        </View>
+        <View style={styles.emptyState}>
+          <Ionicons name="calendar-outline" size={64} color={COLORS.subtle} />
+          <Text style={styles.emptyTitle}>No booking found</Text>
+          <Text style={styles.emptySubtitle}>Booking details will appear here</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -73,7 +82,7 @@ export default function ActiveBookingScreen({ navigation }) {
         </TouchableOpacity>
         <FlatList
           ref={carouselRef}
-          data={booking.vehicleImages}
+          data={booking?.vehicleImages || []}
           renderItem={renderCarouselItem}
           horizontal
           pagingEnabled
@@ -82,7 +91,7 @@ export default function ActiveBookingScreen({ navigation }) {
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
         />
-        {booking.vehicleImages.length > 1 && (
+        {booking?.vehicleImages?.length > 1 && (
           <View style={styles.carouselIndicators}>
             {booking.vehicleImages.map((_, index) => (
               <View
@@ -102,26 +111,26 @@ export default function ActiveBookingScreen({ navigation }) {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Booking Details</Text>
           <View style={styles.vehicleNameRow}>
-            <Text style={styles.vehicleName}>{booking.vehicleName}</Text>
+            <Text style={styles.vehicleName}>{booking?.vehicleName || ''}</Text>
             <View style={styles.plateRow}>
               <Ionicons name="car-sport-outline" size={14} color={COLORS.text} />
-              <Text style={styles.plateText}>{booking.plate}</Text>
+              <Text style={styles.plateText}>{booking?.plate || ''}</Text>
             </View>
           </View>
           <View style={styles.divider} />
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Duration</Text>
-            <Text style={styles.detailValue}>{booking.price.days} days</Text>
+            <Text style={styles.detailValue}>{booking?.price?.days || 0} days</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Start</Text>
-            <Text style={styles.detailValue}>{booking.startDate}</Text>
+            <Text style={styles.detailValue}>{booking?.startDate || ''}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>End</Text>
-            <Text style={styles.detailValue}>{booking.endDate}</Text>
+            <Text style={styles.detailValue}>{booking?.endDate || ''}</Text>
           </View>
         </View>
 
@@ -129,7 +138,7 @@ export default function ActiveBookingScreen({ navigation }) {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Renter</Text>
           <View style={styles.renterRow}>
-            {booking.renter.avatar ? (
+            {booking?.renter?.avatar ? (
               <Image source={{ uri: booking.renter.avatar }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
@@ -137,12 +146,12 @@ export default function ActiveBookingScreen({ navigation }) {
               </View>
             )}
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.renterName}>{booking.renter.name}</Text>
-              {booking.renter.rating && (
+              <Text style={styles.renterName}>{booking?.renter?.name || ''}</Text>
+              {booking?.renter?.rating && (
                 <View style={styles.renterRating}>
                   <Text style={styles.ratingText}>⭐</Text>
                   <Text style={styles.ratingValue}>{booking.renter.rating}</Text>
-                  {booking.renter.trips && (
+                  {booking?.renter?.trips && (
                     <Text style={styles.tripsText}>• {booking.renter.trips} trips</Text>
                   )}
                 </View>
@@ -157,7 +166,7 @@ export default function ActiveBookingScreen({ navigation }) {
             >
               <Ionicons name="chatbubble-ellipses-outline" size={20} color={COLORS.text} />
             </TouchableOpacity>
-            {booking.renter.phone && (
+            {booking?.renter?.phone && (
               <TouchableOpacity 
                 style={styles.iconButton}
                 onPress={() => {
@@ -176,17 +185,17 @@ export default function ActiveBookingScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Payment</Text>
           <View style={styles.rowBetween}>
             <Text style={styles.label}>Total paid</Text>
-            <Text style={styles.value}>{booking.price.total}</Text>
+            <Text style={styles.value}>{booking?.price?.total || ''}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.rowBetween}>
             <Text style={styles.label}>Platform commission</Text>
-            <Text style={[styles.value, styles.commissionValue]}>- {booking.price.commission}</Text>
+            <Text style={[styles.value, styles.commissionValue]}>- {booking?.price?.commission || ''}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.rowBetween}>
             <Text style={[styles.label, styles.bold]}>Your payout</Text>
-            <Text style={[styles.value, styles.bold]}>{booking.price.payout}</Text>
+            <Text style={[styles.value, styles.bold]}>{booking?.price?.payout || ''}</Text>
           </View>
         </View>
 
@@ -197,7 +206,7 @@ export default function ActiveBookingScreen({ navigation }) {
             activeOpacity={0.7}
             onPress={() => {
               lightHaptic();
-              navigation.navigate('ReportIssue', { bookingRef: `${booking.vehicleName} • ${booking.plate}` });
+              navigation.navigate('ReportIssue', { bookingRef: `${booking?.vehicleName || ''} • ${booking?.plate || ''}` });
             }}
           >
             <Text style={styles.actionLinkText}>Report</Text>
@@ -419,5 +428,44 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: COLORS.text,
     marginHorizontal: SPACING.m,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
+  },
+  headerTitle: {
+    ...TYPE.largeTitle,
+    fontSize: 20,
+    color: COLORS.text,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: SPACING.l,
+  },
+  emptyTitle: {
+    ...TYPE.section,
+    fontSize: 18,
+    color: COLORS.text,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    textAlign: 'center',
   },
 });

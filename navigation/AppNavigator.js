@@ -24,6 +24,7 @@ import LegalComplianceScreen from '../screens/LegalComplianceScreen';
 // Settings and Related Screens
 import SettingsScreen from '../screens/SettingsScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import DeleteAccountScreen from '../screens/DeleteAccountScreen';
 import CustomerSupportScreen from '../screens/CustomerSupportScreen';
 import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
 import LanguageScreen from '../screens/LanguageScreen';
@@ -345,6 +346,7 @@ export default function AppNavigator() {
         {/* Settings and Related Screens */}
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
         <Stack.Screen name="CustomerSupport" component={CustomerSupportScreen} />
         <Stack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
         <Stack.Screen name="Language" component={LanguageScreen} />

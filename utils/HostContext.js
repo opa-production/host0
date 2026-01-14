@@ -127,12 +127,10 @@ export const HostProvider = ({ children }) => {
 
         if (!isMounted) return; // Component unmounted, don't update state
 
-        console.error('Auth initialization error:', error);
-        // On timeout or error, don't clear data - just mark as not authenticated
-        // This allows offline usage and prevents clearing valid tokens on network issues
+        // On timeout or network error, handle gracefully (server may not be ready)
+        // Don't show error to users - these are expected scenarios
         if (error.message === 'Request timeout' || error.message.includes('Network request failed')) {
-          console.log('Network timeout or error - allowing offline mode');
-          // Try to use cached profile if available
+          // Silently handle timeout/network errors - try to use cached profile
           const cachedProfile = await getUserProfile();
           if (!isMounted) return; // Component unmounted, don't update state
           if (cachedProfile) {
@@ -143,7 +141,11 @@ export const HostProvider = ({ children }) => {
             setIsAuthenticated(false);
           }
         } else {
-          // For other errors, clear local data
+          // For other unexpected errors, log in development only
+          if (__DEV__) {
+            console.warn('Auth initialization error:', error.message);
+          }
+          // Clear local data for unexpected errors
           await clearUserData();
           setHost(null);
           setIsAuthenticated(false);

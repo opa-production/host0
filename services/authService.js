@@ -80,9 +80,11 @@ export const registerHost = async (fullName, email, password, passwordConfirmati
  */
 export const loginHost = async (email, password) => {
   const url = getApiUrl(API_ENDPOINTS.HOST_LOGIN);
-  console.log('Attempting login to:', url);
+  console.log('🔐 [loginHost] Attempting login to:', url);
+  console.log('🔐 [loginHost] Email:', email);
   
   try {
+    console.log('🔐 [loginHost] Making fetch request...');
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -95,23 +97,31 @@ export const loginHost = async (email, password) => {
       }),
     });
 
+    console.log('🔐 [loginHost] Response received, status:', response.status, response.statusText);
+
     // Check if response is ok before parsing JSON
     if (!response.ok) {
+      console.error('🔐 [loginHost] Response not OK, status:', response.status);
       const errorMessage = await getApiErrorMessage(response, 'Login failed');
       const formattedError = formatErrorMessage(errorMessage, 'login');
+      console.error('🔐 [loginHost] Error message:', formattedError);
       throw new Error(formattedError);
     }
 
     const data = await response.json();
+    console.log('🔐 [loginHost] Response data received, has access_token:', !!data.access_token, 'has host:', !!data.host);
 
     // Validate response structure
     if (!data.access_token || !data.host) {
+      console.error('🔐 [loginHost] Invalid response structure - missing access_token or host');
       throw new Error('Invalid response from server');
     }
 
     // Store authentication data
+    console.log('🔐 [loginHost] Storing authentication data...');
     await setUserToken(data.access_token);
     await setUserId(data.host.id.toString());
+    console.log('🔐 [loginHost] Authentication data stored successfully');
 
     return {
       success: true,
@@ -119,6 +129,7 @@ export const loginHost = async (email, password) => {
       host: data.host,
     };
   } catch (error) {
+    console.error('🔐 [loginHost] Error occurred:', error.message);
     logError(error, 'Login');
     
     // Format error message for user
@@ -490,6 +501,58 @@ export const updateHostProfile = async (profileData) => {
     } else if (error.message) {
       errorMessage = error.message;
     }
+    
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+};
+
+/**
+ * Delete host account permanently
+ * @param {string} password - Current password for confirmation
+ * @returns {Promise<Object>} Result with success status or error
+ */
+export const deleteHostAccount = async (password) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_DELETE_ACCOUNT);
+  
+  try {
+    const token = await getUserToken();
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        password: password,
+        confirmation: 'DELETE',
+      }),
+    });
+
+    if (!response.ok) {
+      const errorMessage = await getApiErrorMessage(response, 'Account deletion failed');
+      const formattedError = formatErrorMessage(errorMessage, 'account deletion');
+      throw new Error(formattedError);
+    }
+
+    // Clear local data after successful deletion
+    await clearUserData();
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    logError(error, 'Delete Account');
+    
+    const errorMessage = formatErrorMessage(error, 'account deletion');
     
     return {
       success: false,

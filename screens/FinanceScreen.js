@@ -9,12 +9,17 @@ export default function FinanceScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   
-  // Data - Replace with actual API data
-  const netEarnings = 0;
-  const commission = 0;
-  const withdrawable = 0;
+  // Financial data - to be fetched from API
+  const [financialData, setFinancialData] = useState({
+    netEarnings: 0,
+    commission: 0,
+    withdrawable: 0,
+  });
 
-  const recentTransactions = [];
+  // Transactions - to be fetched from API
+  const [recentTransactions, setRecentTransactions] = useState([]);
+
+  const { netEarnings, commission, withdrawable } = financialData;
 
   const formatCurrency = (amount) => {
     const numericAmount = Number(amount) || 0;

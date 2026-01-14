@@ -113,16 +113,21 @@ export default function LoginScreen({ navigation }) {
     }
 
     setIsLoading(true);
+    console.log('🔐 [LoginScreen] Starting login process...');
 
     try {
       // Call the actual API login endpoint
+      console.log('🔐 [LoginScreen] Calling loginHost API...');
       const result = await loginHost(email, password);
+      console.log('🔐 [LoginScreen] loginHost result:', result.success ? 'SUCCESS' : 'FAILED', result.error || '');
 
       if (result.success) {
+        console.log('🔐 [LoginScreen] Login successful, storing profile and navigating...');
         // Login successful - store host profile and navigate
         await login(result.host);
         navigation.replace('MainTabs');
       } else {
+        console.error('🔐 [LoginScreen] Login failed:', result.error);
         // Login failed - show error
         Alert.alert(
           'Login Failed',
@@ -131,6 +136,7 @@ export default function LoginScreen({ navigation }) {
         );
       }
     } catch (error) {
+      console.error('🔐 [LoginScreen] Login error:', error);
       // Error should already be handled by the service, but catch any unexpected errors
       Alert.alert(
         'Error',
