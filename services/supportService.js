@@ -264,21 +264,41 @@ export const getSupportConversation = async () => {
         });
       }
 
-      // Format timestamp
-      let timestamp = 'Now';
-      if (msg.created_at) {
+      // Format timestamp - use the raw timestamp for display
+      // We'll format it in the component to ensure it's always current
+      const rawTimestamp = msg.created_at || msg.timestamp;
+      let timestamp = 'Just now';
+      
+      if (rawTimestamp) {
         try {
-          const date = new Date(msg.created_at);
-          timestamp = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const date = new Date(rawTimestamp);
+          if (!isNaN(date.getTime())) {
+            // For messages, show time if today, or relative time
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            
+            if (messageDate.getTime() === today.getTime()) {
+              // Same day - show time
+              timestamp = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            } else {
+              // Different day - show relative time or date
+              const diffMs = now.getTime() - date.getTime();
+              const diffHours = Math.floor(diffMs / 3600000);
+              const diffDays = Math.floor(diffMs / 86400000);
+              
+              if (diffDays === 1) {
+                timestamp = 'Yesterday';
+              } else if (diffDays < 7) {
+                timestamp = `${diffDays}d ago`;
+              } else {
+                timestamp = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              }
+            }
+          }
         } catch (e) {
-          timestamp = msg.created_at;
-        }
-      } else if (msg.timestamp) {
-        try {
-          const date = new Date(msg.timestamp);
-          timestamp = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        } catch (e) {
-          timestamp = msg.timestamp;
+          console.error('Error formatting timestamp:', e, rawTimestamp);
+          timestamp = rawTimestamp;
         }
       }
 
@@ -287,7 +307,7 @@ export const getSupportConversation = async () => {
         fromMe: isFromMe,
         text: msg.message || msg.content || msg.text || '',
         ts: timestamp,
-        createdAt: msg.created_at || msg.timestamp,
+        createdAt: rawTimestamp,
       };
     });
 

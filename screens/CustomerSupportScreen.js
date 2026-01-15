@@ -94,11 +94,13 @@ export default function CustomerSupportScreen({ navigation }) {
     setIsSending(true);
 
     // Optimistically add message to UI
+    const now = new Date();
     const tempMessage = {
       id: `temp-${Date.now()}`,
       fromMe: true,
       text,
-      ts: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      ts: now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      createdAt: now.toISOString(),
     };
     setMessages((prev) => [...prev, tempMessage]);
     const previousDraft = draft;
@@ -139,6 +141,43 @@ export default function CustomerSupportScreen({ navigation }) {
     }
   };
 
+  const formatMessageTime = (item) => {
+    // If we have createdAt, format it properly
+    if (item.createdAt) {
+      try {
+        const date = new Date(item.createdAt);
+        if (!isNaN(date.getTime())) {
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+          
+          // Same day - show time
+          if (messageDate.getTime() === today.getTime()) {
+            // Check if within last minute for "Just now"
+            const diffMs = now.getTime() - date.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return 'Just now';
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          }
+          
+          // Different day
+          const diffMs = now.getTime() - date.getTime();
+          const diffDays = Math.floor(diffMs / 86400000);
+          if (diffDays === 1) return 'Yesterday';
+          if (diffDays < 7) return `${diffDays}d ago`;
+          
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+      } catch (e) {
+        console.error('Error formatting message time:', e);
+      }
+    }
+    
+    // Fallback to existing ts field
+    return item.ts || 'Just now';
+  };
+
   const renderItem = ({ item }) => {
     const bubbleStyle = item.fromMe ? styles.bubbleMe : styles.bubbleThem;
     const textStyle = item.fromMe ? styles.bubbleTextMe : styles.bubbleTextThem;
@@ -147,7 +186,7 @@ export default function CustomerSupportScreen({ navigation }) {
       <View style={[styles.row, item.fromMe ? styles.rowMe : styles.rowThem]}>
         <View style={[styles.bubble, bubbleStyle]}>
           <Text style={[styles.bubbleText, textStyle]}>{item.text}</Text>
-          <Text style={styles.time}>{item.ts}</Text>
+          <Text style={styles.time}>{formatMessageTime(item)}</Text>
         </View>
       </View>
     );

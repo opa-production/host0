@@ -158,21 +158,47 @@ export default function NotificationsScreen({ navigation }) {
 // Notification Item Component
 const NotificationItem = ({ notification, isLast, onPress }) => {
   const formatDate = (dateString) => {
+    if (!dateString) return '';
+    
     try {
       const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid notification date:', dateString);
+        return '';
+      }
+      
       const now = new Date();
-      const diffMs = now - date;
+      const diffMs = now.getTime() - date.getTime();
+      
+      // Handle future dates (shouldn't happen, but just in case)
+      if (diffMs < 0) {
+        return 'Just now';
+      }
+      
+      const diffSeconds = Math.floor(diffMs / 1000);
       const diffMins = Math.floor(diffMs / 60000);
       const diffHours = Math.floor(diffMs / 3600000);
       const diffDays = Math.floor(diffMs / 86400000);
+      const diffWeeks = Math.floor(diffDays / 7);
 
+      if (diffSeconds < 10) return 'Just now';
+      if (diffSeconds < 60) return `${diffSeconds}s ago`;
       if (diffMins < 1) return 'Just now';
       if (diffMins < 60) return `${diffMins}m ago`;
       if (diffHours < 24) return `${diffHours}h ago`;
       if (diffDays < 7) return `${diffDays}d ago`;
+      if (diffWeeks < 4) return `${diffWeeks}w ago`;
       
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      // For older dates, show actual date
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      });
     } catch (e) {
+      console.error('Error formatting notification date:', e, dateString);
       return '';
     }
   };
