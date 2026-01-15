@@ -96,6 +96,14 @@ export default function HostScreen({ navigation }) {
       return { emoji: '🟡', label: 'Awaiting verification', color: '#FF9500', bgColor: '#FFF3E0' };
     }
     
+    if (status === 'verified') {
+      return { emoji: '🟢', label: 'Verified', color: '#34C759', bgColor: '#E8F5E9' };
+    }
+    
+    if (status === 'denied') {
+      return { emoji: '🔴', label: 'Verification denied', color: '#FF3B30', bgColor: '#FFEBEE' };
+    }
+    
     // Handle incomplete cars only if status is explicitly incomplete
     if (status === 'incomplete' && isComplete === false) {
       return { emoji: '⚪', label: 'Incomplete', color: '#8E8E93', bgColor: '#F2F2F7' };
@@ -108,6 +116,10 @@ export default function HostScreen({ navigation }) {
         return { emoji: '🔵', label: 'Booked', color: '#007AFF', bgColor: '#E3F2FD' };
       case 'awaiting_verification':
         return { emoji: '🟡', label: 'Awaiting verification', color: '#FF9500', bgColor: '#FFF3E0' };
+      case 'verified':
+        return { emoji: '🟢', label: 'Verified', color: '#34C759', bgColor: '#E8F5E9' };
+      case 'denied':
+        return { emoji: '🔴', label: 'Verification denied', color: '#FF3B30', bgColor: '#FFEBEE' };
       case 'pending':
         return { emoji: '🟡', label: 'Pending approval', color: '#FF9500', bgColor: '#FFF3E0' };
       case 'offline':

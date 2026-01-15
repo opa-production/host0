@@ -581,6 +581,92 @@ const fetchCarImagesFromSupabase = async (carId, userId) => {
 };
 
 /**
+ * Get car verification status
+ * @param {number|string} carId - Car ID
+ * @returns {Promise<Object>} Result with success status and verification_status ("awaiting", "verified", or "denied")
+ */
+export const getCarVerificationStatus = async (carId) => {
+  const url = getApiUrl(API_ENDPOINTS.CAR_STATUS(carId));
+  const startTime = Date.now();
+  console.log(`🚗 [CAR STATUS API] Fetching verification status for car ${carId}...`);
+  console.log(`🚗 [CAR STATUS API] Endpoint URL: ${url}`);
+  
+  try {
+    const token = await getUserToken();
+    
+    if (!token) {
+      console.error('🚗 [CAR STATUS API] ERROR: No authentication token found');
+      return {
+        success: false,
+        error: 'No authentication token found',
+        verification_status: 'awaiting', // Default fallback
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log(`🚗 [CAR STATUS API] Response received in ${responseTime}ms`, {
+      status: response.status,
+      statusText: response.statusText,
+    });
+
+    if (!response.ok) {
+      console.error(`🚗 [CAR STATUS API] Request failed with status: ${response.status}`);
+      let errorMessage = 'Failed to fetch car status';
+      try {
+        const errorData = await response.json();
+        if (errorData.detail) {
+          errorMessage = Array.isArray(errorData.detail)
+            ? errorData.detail.map(err => err.msg || err).join(', ')
+            : errorData.detail;
+        }
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      
+      return {
+        success: false,
+        error: errorMessage,
+        verification_status: 'awaiting', // Default fallback
+      };
+    }
+
+    const data = await response.json();
+    console.log(`🚗 [CAR STATUS API] Status for car ${carId}:`, data);
+    
+    // API returns: "awaiting", "verified", or "denied"
+    const verification_status = data.verification_status || 'awaiting';
+    
+    return {
+      success: true,
+      verification_status: verification_status,
+    };
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+    console.error(`🚗 [CAR STATUS API] ❌ ERROR occurred for car ${carId}:`, error);
+    console.error(`🚗 [CAR STATUS API] Error details:`, {
+      message: error.message,
+      name: error.name,
+      url: url,
+      totalTime: `${totalTime}ms`,
+    });
+    
+    return {
+      success: false,
+      error: error.message || 'Network error',
+      verification_status: 'awaiting', // Default fallback
+    };
+  }
+};
+
+/**
  * Get all cars for the authenticated host
  * @returns {Promise<Object>} Result with success status and cars array or error
  */
@@ -683,6 +769,38 @@ export const getHostCars = async () => {
       // Determine if car has images
       const hasImages = !!(coverPhoto || images.length > 0);
 
+      // Fetch verification status from API
+      let verificationStatus = 'awaiting_verification'; // Default
+      if (car.id) {
+        try {
+          const statusResult = await getCarVerificationStatus(car.id);
+          if (statusResult.success) {
+            // Map API response values to UI values
+            const apiStatus = statusResult.verification_status;
+            if (apiStatus === 'verified') {
+              verificationStatus = 'verified';
+            } else if (apiStatus === 'denied') {
+              verificationStatus = 'denied';
+            } else if (apiStatus === 'awaiting') {
+              verificationStatus = 'awaiting_verification';
+            } else {
+              // Fallback: if complete OR has images, show awaiting_verification, otherwise incomplete
+              verificationStatus = car.is_complete || hasImages ? 'awaiting_verification' : 'incomplete';
+            }
+          } else {
+            // If status fetch fails, use fallback logic
+            verificationStatus = car.is_complete || hasImages ? 'awaiting_verification' : 'incomplete';
+          }
+        } catch (error) {
+          console.error(`🚗 [GET HOST CARS] Error fetching status for car ${car.id}:`, error);
+          // Fallback: if complete OR has images, show awaiting_verification, otherwise incomplete
+          verificationStatus = car.is_complete || hasImages ? 'awaiting_verification' : 'incomplete';
+        }
+      } else {
+        // No car ID, use fallback logic
+        verificationStatus = car.is_complete || hasImages ? 'awaiting_verification' : 'incomplete';
+      }
+
       return {
         id: car.id?.toString() || `car-${Date.now()}`,
         carId: car.id,
@@ -729,9 +847,8 @@ export const getHostCars = async () => {
         video: car.video_url || car.video || null,
         videoUrl: car.video_url || car.video || null,
         is_complete: car.is_complete || false,
-        // Status logic: if complete OR has images, show awaiting_verification, otherwise incomplete
         hasImages: hasImages,
-        status: car.is_complete || hasImages ? 'awaiting_verification' : 'incomplete',
+        status: verificationStatus, // Use real API status
         createdAt: car.created_at || new Date().toISOString(),
         updated_at: car.updated_at || new Date().toISOString(),
         totalTrips: 0, // Default value, can be updated from API if available
