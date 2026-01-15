@@ -1,10 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getHostNotifications } from '../services/notificationService';
 
 export default function MessagesScreen({ navigation }) {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const checkUnreadNotifications = async () => {
+    try {
+      const result = await getHostNotifications();
+      if (result.success && result.notifications) {
+        const unread = result.notifications.filter(n => !n.isRead).length;
+        setUnreadCount(unread);
+      } else {
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error('Error checking unread notifications:', error);
+      setUnreadCount(0);
+    }
+  };
+
+  // Check unread count on mount
+  useEffect(() => {
+    checkUnreadNotifications();
+  }, []);
+
+  // Refresh unread count when screen is focused (e.g., when returning from notifications screen)
+  useFocusEffect(
+    useCallback(() => {
+      checkUnreadNotifications();
+    }, [])
+  );
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
@@ -19,7 +50,14 @@ export default function MessagesScreen({ navigation }) {
             }}
             activeOpacity={0.8}
           >
-            <Ionicons name="notifications-outline" size={24} color="#000000" />
+            <View style={styles.notificationIconContainer}>
+              <Ionicons name="notifications-outline" size={24} color="#000000" />
+              {unreadCount > 0 && (
+                <View style={styles.notificationBadge}>
+                  <View style={styles.notificationDot} />
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         </View>
         <Text style={styles.subtitle}>Your conversations</Text>
@@ -113,6 +151,28 @@ const styles = StyleSheet.create({
   headerIconButton: {
     padding: 8,
     borderRadius: 16,
+  },
+  notificationIconContainer: {
+    position: 'relative',
+    width: 24,
+    height: 24,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF3B30',
   },
   emptyState: {
     alignItems: 'center',
