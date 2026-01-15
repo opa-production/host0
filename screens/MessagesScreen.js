@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
@@ -121,9 +121,11 @@ export default function MessagesScreen({ navigation }) {
             activeOpacity={0.7}
           >
             <View style={styles.threadLeft}>
-              <View style={styles.avatar}>
-                <Ionicons name="headset" size={24} color={COLORS.text} />
-              </View>
+              <Image 
+                source={require('../assets/icons/49036.jpg')} 
+                style={styles.avatar}
+                resizeMode="cover"
+              />
             </View>
             <View style={styles.threadBody}>
               <View style={styles.threadTop}>

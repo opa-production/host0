@@ -13,6 +13,7 @@ import {
   Linking,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -170,12 +171,21 @@ export default function CustomerSupportScreen({ navigation }) {
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            Customer Support
-          </Text>
-          <Text style={styles.headerSub} numberOfLines={1}>
-            {isTyping ? 'Agent is typing...' : 'We typically reply within a few minutes'}
-          </Text>
+          <View style={styles.headerCenterContent}>
+            <Image 
+              source={require('../assets/icons/49036.jpg')} 
+              style={styles.headerAvatar}
+              resizeMode="cover"
+            />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                Customer Support
+              </Text>
+              <Text style={styles.headerSub} numberOfLines={1}>
+                {isTyping ? 'Agent is typing...' : 'We typically reply within a few minutes'}
+              </Text>
+            </View>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -282,6 +292,21 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderStrong,
   },
   headerCenter: {
+    flex: 1,
+  },
+  headerCenterContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+  },
+  headerTextContainer: {
     flex: 1,
   },
   headerTitle: {

@@ -203,17 +203,66 @@ export const getSupportConversation = async () => {
 
     // Map API response to UI format
     const mappedMessages = messages.map((msg, index) => {
-      // Determine if message is from user (host) or agent
-      // Common field names: sender, sender_type, from, is_from_user, is_host, role
-      const isFromMe = msg.sender === 'host' || 
+      // Determine if message is from user (host) or agent/admin
+      // Priority: Check for agent/admin indicators first, then host/user indicators
+      // Common field names: sender, sender_type, from, is_from_user, is_host, role, sender_role, is_agent, is_admin
+      
+      // First, check if message is from agent/admin
+      const isAgentOrAdmin = msg.sender === 'agent' || 
+                             msg.sender === 'admin' ||
+                             msg.sender_type === 'agent' ||
+                             msg.sender_type === 'admin' ||
+                             msg.role === 'agent' ||
+                             msg.role === 'admin' ||
+                             msg.sender_role === 'agent' ||
+                             msg.sender_role === 'admin' ||
+                             msg.is_agent === true ||
+                             msg.is_admin === true ||
+                             false;
+      
+      // If it's from agent/admin, then isFromMe should be false (show on left)
+      if (isAgentOrAdmin) {
+        // Log for debugging
+        console.log('💬 [GET SUPPORT CONVERSATION API] Message from agent/admin:', {
+          id: msg.id,
+          sender: msg.sender,
+          sender_type: msg.sender_type,
+          role: msg.role,
+          is_agent: msg.is_agent,
+          is_admin: msg.is_admin,
+        });
+      }
+      
+      // Message is from me (host) if it's NOT from agent/admin
+      // AND it matches host/user indicators
+      const isFromMe = !isAgentOrAdmin && (
+                       msg.sender === 'host' || 
+                       msg.sender === 'user' ||
                        msg.sender_type === 'host' || 
+                       msg.sender_type === 'user' ||
                        msg.from === 'host' ||
+                       msg.from === 'user' ||
                        msg.is_from_user === true ||
                        msg.is_host === true ||
                        msg.role === 'host' ||
                        msg.user_type === 'host' ||
-                       (msg.sender_id && !msg.is_agent) ||
-                       false; // Default to false if we can't determine
+                       false
+                     );
+                     
+      // Log for debugging
+      if (isFromMe) {
+        console.log('💬 [GET SUPPORT CONVERSATION API] Message from host/user:', {
+          id: msg.id,
+          sender: msg.sender,
+          sender_type: msg.sender_type,
+          role: msg.role,
+        });
+      } else if (!isAgentOrAdmin) {
+        console.log('💬 [GET SUPPORT CONVERSATION API] Unknown message sender (defaulting to agent side):', {
+          id: msg.id,
+          msg: msg,
+        });
+      }
 
       // Format timestamp
       let timestamp = 'Now';
