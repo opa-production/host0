@@ -1,15 +1,56 @@
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPE, SPACING } from '../ui/tokens';
+import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getHostNotifications } from '../services/notificationService';
 
 export default function NotificationsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Empty state - no notifications
-  const notifications = [];
+  const loadNotifications = async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    setError(null);
+
+    try {
+      const result = await getHostNotifications();
+      if (result.success) {
+        setNotifications(result.notifications || []);
+      } else {
+        setError(result.error || 'Failed to load notifications');
+        setNotifications([]);
+      }
+    } catch (err) {
+      console.error('Error loading notifications:', err);
+      setError('An unexpected error occurred');
+      setNotifications([]);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Load notifications on mount
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  // Reload when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadNotifications();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
@@ -34,23 +75,101 @@ export default function NotificationsScreen({ navigation }) {
       <ScrollView 
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => loadNotifications(true)}
+            tintColor={COLORS.text}
+          />
+        }
       >
-
-        {/* Empty State */}
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIconWrap}>
-            <Ionicons name="notifications-outline" size={26} color={COLORS.subtle} />
+        {isLoading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color={COLORS.text} />
+            <Text style={styles.loadingText}>Loading notifications...</Text>
           </View>
-          <Text style={styles.emptyStateTitle}>No notifications</Text>
-          <Text style={styles.emptyStateMessage}>
-            You don't have any notifications yet.{'\n'}
-            When you receive updates, they'll appear here.
-          </Text>
-        </View>
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="alert-circle-outline" size={26} color="#FF3B30" />
+            </View>
+            <Text style={styles.emptyStateTitle}>Error loading notifications</Text>
+            <Text style={styles.emptyStateMessage}>{error}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => loadNotifications()}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : notifications.length === 0 ? (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="notifications-outline" size={26} color={COLORS.subtle} />
+            </View>
+            <Text style={styles.emptyStateTitle}>No notifications</Text>
+            <Text style={styles.emptyStateMessage}>
+              You don't have any notifications yet.{'\n'}
+              When you receive updates, they'll appear here.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.notificationsList}>
+            {notifications.map((notification, index) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                isLast={index === notifications.length - 1}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
 }
+
+// Notification Item Component
+const NotificationItem = ({ notification, isLast }) => {
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return '';
+    }
+  };
+
+  return (
+    <View>
+      <View style={styles.notificationItem}>
+        <View style={styles.notificationHeader}>
+          <Text style={styles.notificationTitle}>{notification.title}</Text>
+          {!notification.isRead && <View style={styles.unreadDot} />}
+        </View>
+        <Text style={styles.notificationMessage}>
+          {notification.message}
+        </Text>
+        <Text style={styles.notificationTime}>
+          {formatDate(notification.createdAt)}
+        </Text>
+      </View>
+      {!isLast && <View style={styles.separator} />}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -80,6 +199,17 @@ const styles = StyleSheet.create({
     padding: SPACING.l,
     paddingTop: SPACING.m,
     flexGrow: 1,
+  },
+  loadingState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+  },
+  loadingText: {
+    ...TYPE.body,
+    color: COLORS.subtle,
+    marginTop: 12,
   },
   emptyState: {
     flex: 1,
@@ -115,5 +245,61 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     maxWidth: 280,
+    marginBottom: 16,
+  },
+  retryButton: {
+    marginTop: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.text,
+    borderRadius: RADIUS.button,
+  },
+  retryButtonText: {
+    ...TYPE.bodyStrong,
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  notificationsList: {
+    paddingVertical: SPACING.s,
+  },
+  notificationItem: {
+    paddingVertical: SPACING.m,
+    paddingHorizontal: SPACING.l,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#1C1C1E',
+    marginLeft: SPACING.l,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  notificationTitle: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
+    flex: 1,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#007AFF',
+    marginLeft: SPACING.s,
+  },
+  notificationMessage: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.text,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  notificationTime: {
+    ...TYPE.caption,
+    fontSize: 12,
+    color: COLORS.subtle,
   },
 });

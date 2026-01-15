@@ -45,6 +45,9 @@ export const API_ENDPOINTS = {
   
   // Feedback
   HOST_FEEDBACK: '/api/v1/host/feedback',
+  
+  // Notifications
+  HOST_NOTIFICATIONS: '/api/v1/host/notifications',
 };
 
 /**
