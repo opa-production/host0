@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,11 +12,14 @@ import {
   Keyboard,
   Linking,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { sendSupportMessage, getSupportConversation } from '../services/supportService';
 
 // Support phone number
 const SUPPORT_PHONE = '0702248984';
@@ -26,6 +29,8 @@ export default function CustomerSupportScreen({ navigation }) {
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +40,39 @@ export default function CustomerSupportScreen({ navigation }) {
     return () => sub.remove();
   }, []);
 
+  const loadConversation = async () => {
+    setIsLoading(true);
+    try {
+      const result = await getSupportConversation();
+      if (result.success) {
+        setMessages(result.messages || []);
+        // Scroll to bottom after loading
+        setTimeout(() => {
+          listRef.current?.scrollToEnd?.({ animated: false });
+        }, 100);
+      } else {
+        console.error('Failed to load conversation:', result.error);
+        // Don't show error to user, just log it
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load conversation on mount
+  useEffect(() => {
+    loadConversation();
+  }, []);
+
+  // Reload when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadConversation();
+    }, [])
+  );
+
   const handleCallAgent = () => {
     lightHaptic();
     Linking.openURL(`tel:${SUPPORT_PHONE}`).catch(() => {
@@ -42,42 +80,62 @@ export default function CustomerSupportScreen({ navigation }) {
     });
   };
 
-  const send = () => {
+  const send = async () => {
     const text = draft.trim();
     if (!text) return;
 
-    lightHaptic();
+    if (text.length > 2000) {
+      Alert.alert('Message too long', 'Message must be 2000 characters or less.');
+      return;
+    }
 
-    const next = {
-      id: `m-${Date.now()}`,
+    lightHaptic();
+    setIsSending(true);
+
+    // Optimistically add message to UI
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
       fromMe: true,
       text,
       ts: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
     };
-
-    setMessages((prev) => [...prev, next]);
+    setMessages((prev) => [...prev, tempMessage]);
+    const previousDraft = draft;
     setDraft('');
 
-    // Simulate agent typing
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      // Simulate agent response (in real app, this would come from API)
-      const agentResponse = {
-        id: `m-${Date.now()}`,
-        fromMe: false,
-        text: 'Thank you for your message. Our support team will get back to you shortly.',
-        ts: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, agentResponse]);
-      requestAnimationFrame(() => {
-        listRef.current?.scrollToEnd?.({ animated: true });
-      });
-    }, 1500);
-
+    // Scroll to bottom
     requestAnimationFrame(() => {
       listRef.current?.scrollToEnd?.({ animated: true });
     });
+
+    try {
+      const result = await sendSupportMessage(previousDraft);
+      
+      if (result.success) {
+        // Reload conversation to get the actual message from server
+        await loadConversation();
+      } else {
+        // Remove optimistic message on error
+        setMessages((prev) => prev.filter(msg => msg.id !== tempMessage.id));
+        setDraft(previousDraft);
+        Alert.alert(
+          'Failed to send message',
+          result.error || 'Unable to send message. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter(msg => msg.id !== tempMessage.id));
+      setDraft(previousDraft);
+      Alert.alert(
+        'Error',
+        'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const renderItem = ({ item }) => {
@@ -134,25 +192,32 @@ export default function CustomerSupportScreen({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 56 : 0}
       >
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(m) => m.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => listRef.current?.scrollToEnd?.({ animated: false })}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="chatbubbles-outline" size={64} color={COLORS.subtle} />
-              <Text style={styles.emptyTitle}>Start a conversation</Text>
-              <Text style={styles.emptySubtitle}>
-                Send us a message and we'll get back to you as soon as possible.
-              </Text>
-            </View>
-          }
-        />
+        {isLoading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color={COLORS.text} />
+            <Text style={styles.loadingText}>Loading conversation...</Text>
+          </View>
+        ) : (
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(m) => m.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => listRef.current?.scrollToEnd?.({ animated: false })}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Ionicons name="chatbubbles-outline" size={64} color={COLORS.subtle} />
+                <Text style={styles.emptyTitle}>Start a conversation</Text>
+                <Text style={styles.emptySubtitle}>
+                  Send us a message and we'll get back to you as soon as possible.
+                </Text>
+              </View>
+            }
+          />
+        )}
 
         <View style={[styles.composerWrap, { paddingBottom: Math.max(insets.bottom, SPACING.s) }]}>
           <View style={styles.composer}>
@@ -172,12 +237,16 @@ export default function CustomerSupportScreen({ navigation }) {
             />
 
             <TouchableOpacity
-              style={[styles.sendButton, !draft.trim() && styles.sendButtonDisabled]}
+              style={[styles.sendButton, (!draft.trim() || isSending) && styles.sendButtonDisabled]}
               onPress={send}
               activeOpacity={0.85}
-              disabled={!draft.trim()}
+              disabled={!draft.trim() || isSending}
             >
-              <Ionicons name="arrow-up" size={18} color={'#ffffff'} />
+              {isSending ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Ionicons name="arrow-up" size={18} color={'#ffffff'} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -250,6 +319,18 @@ const styles = StyleSheet.create({
     color: COLORS.subtle,
     textAlign: 'center',
     paddingHorizontal: SPACING.xl,
+  },
+  loadingState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    marginTop: 12,
   },
   row: {
     marginBottom: 10,

@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostNotifications } from '../services/notificationService';
+import { getSupportConversation } from '../services/supportService';
 
 export default function MessagesScreen({ navigation }) {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [supportConversation, setSupportConversation] = useState(null);
+  const [isLoadingSupport, setIsLoadingSupport] = useState(true);
 
   const checkUnreadNotifications = async () => {
     try {
@@ -24,15 +27,56 @@ export default function MessagesScreen({ navigation }) {
     }
   };
 
+  const loadSupportConversation = async () => {
+    setIsLoadingSupport(true);
+    try {
+      const result = await getSupportConversation();
+      if (result.success && result.messages) {
+        // Get the last message for preview
+        const messages = result.messages || [];
+        if (messages.length > 0) {
+          const lastMessage = messages[messages.length - 1];
+          setSupportConversation({
+            id: 'support',
+            title: 'Customer Support',
+            lastMessage: lastMessage.text,
+            timestamp: lastMessage.ts,
+            createdAt: lastMessage.createdAt,
+            hasUnread: false, // Can be enhanced later if API provides unread status
+          });
+        } else {
+          // No messages yet, but conversation exists
+          setSupportConversation({
+            id: 'support',
+            title: 'Customer Support',
+            lastMessage: null,
+            timestamp: null,
+            createdAt: null,
+            hasUnread: false,
+          });
+        }
+      } else {
+        setSupportConversation(null);
+      }
+    } catch (error) {
+      console.error('Error loading support conversation:', error);
+      setSupportConversation(null);
+    } finally {
+      setIsLoadingSupport(false);
+    }
+  };
+
   // Check unread count on mount
   useEffect(() => {
     checkUnreadNotifications();
+    loadSupportConversation();
   }, []);
 
-  // Refresh unread count when screen is focused (e.g., when returning from notifications screen)
+  // Refresh when screen is focused (e.g., when returning from notifications or customer support screen)
   useFocusEffect(
     useCallback(() => {
       checkUnreadNotifications();
+      loadSupportConversation();
     }, [])
   );
 
@@ -62,14 +106,55 @@ export default function MessagesScreen({ navigation }) {
         </View>
         <Text style={styles.subtitle}>Your conversations</Text>
 
-        {/* Messages will be loaded from backend */}
-        <View style={styles.emptyState}>
-          <Ionicons name="chatbubbles-outline" size={64} color={COLORS.subtle} />
-          <Text style={styles.emptyStateText}>No messages yet</Text>
-          <Text style={styles.emptyStateSubtext}>
-            Your conversations with guests will appear here
-          </Text>
-        </View>
+        {/* Support Conversation Thread */}
+        {isLoadingSupport ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={COLORS.text} />
+          </View>
+        ) : supportConversation ? (
+          <TouchableOpacity
+            style={styles.threadCard}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('CustomerSupport');
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.threadLeft}>
+              <View style={styles.avatar}>
+                <Ionicons name="headset" size={24} color={COLORS.text} />
+              </View>
+            </View>
+            <View style={styles.threadBody}>
+              <View style={styles.threadTop}>
+                <Text style={styles.threadTitle}>{supportConversation.title}</Text>
+                {supportConversation.timestamp && (
+                  <Text style={styles.threadTime}>{supportConversation.timestamp}</Text>
+                )}
+              </View>
+              {supportConversation.lastMessage ? (
+                <Text style={styles.threadPreview} numberOfLines={1}>
+                  {supportConversation.lastMessage}
+                </Text>
+              ) : (
+                <Text style={styles.threadPreview} numberOfLines={1}>
+                  Start a conversation with our support team
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
+        ) : null}
+
+        {/* Empty State - Only show if no support conversation exists */}
+        {!isLoadingSupport && !supportConversation && (
+          <View style={styles.emptyState}>
+            <Ionicons name="chatbubbles-outline" size={64} color={COLORS.subtle} />
+            <Text style={styles.emptyStateText}>No messages yet</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Your conversations with guests will appear here
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -192,5 +277,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.subtle,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    paddingVertical: SPACING.m,
+    alignItems: 'center',
   },
 });

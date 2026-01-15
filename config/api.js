@@ -50,6 +50,10 @@ export const API_ENDPOINTS = {
   // Notifications
   HOST_NOTIFICATIONS: '/api/v1/host/notifications',
   HOST_NOTIFICATION_READ: (notificationId) => `/api/v1/host/notifications/${notificationId}/read`,
+  
+  // Support
+  HOST_SUPPORT_SEND_MESSAGE: '/api/v1/host/support/messages',
+  HOST_SUPPORT_CONVERSATION: '/api/v1/host/support/conversation',
 };
 
 /**
