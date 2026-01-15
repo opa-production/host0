@@ -849,9 +849,11 @@ export const getHostCars = async () => {
         is_complete: car.is_complete || false,
         hasImages: hasImages,
         status: verificationStatus, // Use real API status
-        is_visible: car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : true),
-        visible: car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : true),
-        available: car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : (car.available !== undefined ? car.available : true)),
+        // Handle is_hidden field - if is_hidden is true, then visible is false
+        is_hidden: car.is_hidden !== undefined ? car.is_hidden : false,
+        is_visible: car.is_hidden !== undefined ? !car.is_hidden : (car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : true)),
+        visible: car.is_hidden !== undefined ? !car.is_hidden : (car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : true)),
+        available: car.is_hidden !== undefined ? !car.is_hidden : (car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : (car.available !== undefined ? car.available : true))),
         createdAt: car.created_at || new Date().toISOString(),
         updated_at: car.updated_at || new Date().toISOString(),
         totalTrips: 0, // Default value, can be updated from API if available
@@ -962,10 +964,17 @@ export const toggleCarVisibility = async (carId) => {
     });
     console.log('🚗 [TOGGLE CAR VISIBILITY API] Full response:', JSON.stringify(data, null, 2));
 
+    // Handle is_hidden field - if is_hidden is true, then visible is false
+    const isVisible = data.is_hidden !== undefined 
+      ? !data.is_hidden 
+      : (data.is_visible !== undefined 
+        ? data.is_visible 
+        : (data.visible !== undefined ? data.visible : true));
+    
     return {
       success: true,
       car: data,
-      isVisible: data.is_visible !== undefined ? data.is_visible : (data.visible !== undefined ? data.visible : true),
+      isVisible: isVisible,
     };
   } catch (error) {
     const totalTime = Date.now() - startTime;

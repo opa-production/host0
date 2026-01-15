@@ -266,13 +266,43 @@ export default function HostScreen({ navigation }) {
       const result = await toggleCarVisibility(carId);
       
       if (result.success) {
+        // Extract visibility from result - handle is_hidden field
+        let newIsHidden = false; // default to visible
+        let newVisibility = true;
+        
+        if (result.car) {
+          // Check is_hidden first (API returns this field)
+          if (result.car.is_hidden !== undefined) {
+            newIsHidden = result.car.is_hidden;
+            newVisibility = !newIsHidden;
+          } else if (result.isVisible !== undefined) {
+            newVisibility = result.isVisible;
+            newIsHidden = !newVisibility;
+          } else {
+            newVisibility = result.car.is_visible !== undefined 
+              ? result.car.is_visible 
+              : (result.car.visible !== undefined ? result.car.visible : true);
+            newIsHidden = !newVisibility;
+          }
+        } else if (result.isVisible !== undefined) {
+          newVisibility = result.isVisible;
+          newIsHidden = !newVisibility;
+        }
+        
         // Update local state with new visibility status
         setCars(prevCars => 
-          prevCars.map(car => 
-            car.id === item.id || car.carId === carId
-              ? { ...car, is_visible: result.isVisible, available: result.isVisible }
-              : car
-          )
+          prevCars.map(car => {
+            if (car.id === item.id || car.carId === carId) {
+              return {
+                ...car,
+                is_hidden: newIsHidden,
+                is_visible: newVisibility,
+                visible: newVisibility,
+                available: newVisibility,
+              };
+            }
+            return car;
+          })
         );
       } else {
         Alert.alert(
@@ -371,11 +401,11 @@ export default function HostScreen({ navigation }) {
               <View style={styles.visibilityToggleText}>
                 <Text style={styles.visibilityToggleLabel}>Show to renters</Text>
                 <Text style={styles.visibilityToggleSubtext}>
-                  {item.is_visible !== false && item.available !== false ? 'Visible' : 'Hidden'}
+                  {item.is_hidden === true ? 'Hidden' : 'Visible'}
                 </Text>
               </View>
               <Switch
-                value={item.is_visible !== false && item.available !== false}
+                value={item.is_hidden !== true}
                 onValueChange={(value) => handleToggleVisibility(item, value)}
                 trackColor={{ false: '#E5E5EA', true: COLORS.brand }}
                 thumbColor="#FFFFFF"
