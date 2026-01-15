@@ -97,10 +97,6 @@ const SettingsScreen = () => {
     navigation.navigate('ChangePassword');
   };
 
-  const handleCustomerSupport = () => {
-    navigation.navigate('CustomerSupport');
-  };
-
   const handlePrivacy = () => {
     navigation.navigate('Privacy');
   };
@@ -206,11 +202,6 @@ const SettingsScreen = () => {
         {/* Support & Info Section */}
         <SectionHeader title="Support & Information" />
         <View style={styles.section}>
-          <SettingItem
-            icon="headset-outline"
-            title="Customer Support"
-            onPress={handleCustomerSupport}
-          />
           <SettingItem
             icon="hand-left-outline"
             title="Privacy"
