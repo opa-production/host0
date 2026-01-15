@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostNotifications } from '../services/notificationService';
+import { getHostNotifications, markNotificationAsRead } from '../services/notificationService';
 
 export default function NotificationsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -51,6 +51,30 @@ export default function NotificationsScreen({ navigation }) {
       loadNotifications();
     }, [])
   );
+
+  const handleNotificationPress = async (notification) => {
+    // Only mark as read if it's not already read
+    if (!notification.isRead) {
+      lightHaptic();
+      try {
+        const result = await markNotificationAsRead(notification.id);
+        if (result.success) {
+          // Update local state to mark as read
+          setNotifications(prevNotifications =>
+            prevNotifications.map(n =>
+              n.id === notification.id ? { ...n, isRead: true } : n
+            )
+          );
+        } else {
+          console.error('Failed to mark notification as read:', result.error);
+          // Don't show error to user, just log it
+        }
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+        // Don't show error to user, just log it
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -121,6 +145,7 @@ export default function NotificationsScreen({ navigation }) {
                 key={notification.id}
                 notification={notification}
                 isLast={index === notifications.length - 1}
+                onPress={() => handleNotificationPress(notification)}
               />
             ))}
           </View>
@@ -131,7 +156,7 @@ export default function NotificationsScreen({ navigation }) {
 }
 
 // Notification Item Component
-const NotificationItem = ({ notification, isLast }) => {
+const NotificationItem = ({ notification, isLast, onPress }) => {
   const formatDate = (dateString) => {
     try {
       const date = new Date(dateString);
@@ -154,7 +179,11 @@ const NotificationItem = ({ notification, isLast }) => {
 
   return (
     <View>
-      <View style={styles.notificationItem}>
+      <TouchableOpacity
+        style={styles.notificationItem}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
         <View style={styles.notificationHeader}>
           <Text style={styles.notificationTitle}>{notification.title}</Text>
           {!notification.isRead && <View style={styles.unreadDot} />}
@@ -165,7 +194,7 @@ const NotificationItem = ({ notification, isLast }) => {
         <Text style={styles.notificationTime}>
           {formatDate(notification.createdAt)}
         </Text>
-      </View>
+      </TouchableOpacity>
       {!isLast && <View style={styles.separator} />}
     </View>
   );

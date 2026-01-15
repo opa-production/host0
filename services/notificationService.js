@@ -119,3 +119,99 @@ export const getHostNotifications = async () => {
     };
   }
 };
+
+/**
+ * Mark a notification as read
+ * @param {number|string} notificationId - Notification ID
+ * @returns {Promise<Object>} Result with success status or error
+ */
+export const markNotificationAsRead = async (notificationId) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_NOTIFICATION_READ(notificationId));
+  const startTime = Date.now();
+  console.log(`🔔 [MARK NOTIFICATION READ API] Marking notification ${notificationId} as read...`);
+  console.log(`🔔 [MARK NOTIFICATION READ API] Endpoint URL: ${url}`);
+  
+  try {
+    const token = await getUserToken();
+    
+    if (!token) {
+      console.error('🔔 [MARK NOTIFICATION READ API] ERROR: No authentication token found');
+      return {
+        success: false,
+        error: 'No authentication token found',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log('🔔 [MARK NOTIFICATION READ API] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      responseTime: `${responseTime}ms`,
+    });
+
+    if (!response.ok) {
+      console.error('🔔 [MARK NOTIFICATION READ API] Request failed with status:', response.status);
+      let errorMessage = 'Failed to mark notification as read';
+      try {
+        const errorData = await response.json();
+        console.error('🔔 [MARK NOTIFICATION READ API] Error response data:', JSON.stringify(errorData, null, 2));
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+      } catch (e) {
+        console.error('🔔 [MARK NOTIFICATION READ API] Could not parse error response as JSON:', e);
+        errorMessage = response.statusText || errorMessage;
+      }
+      
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const totalTime = Date.now() - startTime;
+    console.log('🔔 [MARK NOTIFICATION READ API] ✅ SUCCESS! Notification marked as read:', {
+      notificationId: notificationId,
+      totalTime: `${totalTime}ms`,
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+    console.error('🔔 [MARK NOTIFICATION READ API] ❌ ERROR occurred:', error);
+    console.error('🔔 [MARK NOTIFICATION READ API] Error details:', {
+      message: error.message,
+      name: error.name,
+      url: url,
+      totalTime: `${totalTime}ms`,
+      stack: error.stack,
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Network error. Please check your connection.';
+    if (error.message === 'Network request failed') {
+      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct\n• Firewall is not blocking the connection`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+};

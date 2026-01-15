@@ -48,6 +48,7 @@ export const API_ENDPOINTS = {
   
   // Notifications
   HOST_NOTIFICATIONS: '/api/v1/host/notifications',
+  HOST_NOTIFICATION_READ: (notificationId) => `/api/v1/host/notifications/${notificationId}/read`,
 };
 
 /**
