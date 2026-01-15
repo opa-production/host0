@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { getPaymentMethods } from '../services/paymentService';
+import { formatPhoneNumber } from '../utils/phoneUtils';
 
 export default function GetBadgeScreen({ navigation }) {
   const [selectedMethodId, setSelectedMethodId] = useState(null);
@@ -38,7 +39,7 @@ export default function GetBadgeScreen({ navigation }) {
             return {
               id: method.id?.toString(),
               name: method.name || 'M-Pesa',
-              details: method.mpesa_number ? `+${method.mpesa_number}` : 'M-Pesa',
+              details: method.mpesa_number ? formatPhoneNumber(method.mpesa_number) : 'M-Pesa',
               icon: require('../assets/images/mpesa.png'),
               isDefault: method.is_default || false,
               type: 'mpesa',

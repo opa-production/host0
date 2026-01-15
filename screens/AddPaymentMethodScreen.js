@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { addMpesaPaymentMethod, addCardPaymentMethod, getPaymentMethods, deletePaymentMethod } from '../services/paymentService';
+import { formatPhoneNumber } from '../utils/phoneUtils';
 
 export default function AddPaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -826,7 +827,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
                     </Text>
                     {method.type === 'mpesa' ? (
                       <Text style={styles.savedCardDetails}>
-                        {method.mobileNumber ? `+${method.mobileNumber}` : 'M-Pesa'}
+                        {method.mobileNumber ? formatPhoneNumber(method.mobileNumber) : 'M-Pesa'}
                         {method.isDefault && (
                           <Text style={styles.defaultBadge}> • Default</Text>
                         )}

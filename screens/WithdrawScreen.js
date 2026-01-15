@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getPaymentMethods } from '../services/paymentService';
+import { formatPhoneNumber } from '../utils/phoneUtils';
 
 export default function WithdrawScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -50,7 +51,7 @@ export default function WithdrawScreen({ navigation, route }) {
             return {
               id: method.id?.toString(),
               name: method.name || '',
-              details: method.mpesa_number ? `+${method.mpesa_number}` : 'M-Pesa',
+              details: method.mpesa_number ? formatPhoneNumber(method.mpesa_number) : 'M-Pesa',
               icon: require('../assets/images/mpesa.png'),
               isDefault: method.is_default || false,
             };
