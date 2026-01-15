@@ -849,6 +849,9 @@ export const getHostCars = async () => {
         is_complete: car.is_complete || false,
         hasImages: hasImages,
         status: verificationStatus, // Use real API status
+        is_visible: car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : true),
+        visible: car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : true),
+        available: car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : (car.available !== undefined ? car.available : true)),
         createdAt: car.created_at || new Date().toISOString(),
         updated_at: car.updated_at || new Date().toISOString(),
         totalTrips: 0, // Default value, can be updated from API if available
@@ -886,6 +889,106 @@ export const getHostCars = async () => {
       success: false,
       error: errorMessage,
       cars: [],
+    };
+  }
+};
+
+/**
+ * Toggle car visibility (show/hide) for verified cars
+ * @param {number|string} carId - Car ID
+ * @returns {Promise<Object>} Result with success status and updated car data or error
+ */
+export const toggleCarVisibility = async (carId) => {
+  const url = getApiUrl(API_ENDPOINTS.CAR_TOGGLE_VISIBILITY(carId));
+  const startTime = Date.now();
+  console.log(`🚗 [TOGGLE CAR VISIBILITY API] Toggling visibility for car ${carId}...`);
+  console.log(`🚗 [TOGGLE CAR VISIBILITY API] Endpoint URL: ${url}`);
+  
+  try {
+    const token = await getUserToken();
+    
+    if (!token) {
+      console.error('🚗 [TOGGLE CAR VISIBILITY API] ERROR: No authentication token found');
+      return {
+        success: false,
+        error: 'No authentication token found',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log('🚗 [TOGGLE CAR VISIBILITY API] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      responseTime: `${responseTime}ms`,
+    });
+
+    if (!response.ok) {
+      console.error('🚗 [TOGGLE CAR VISIBILITY API] Request failed with status:', response.status);
+      let errorMessage = 'Failed to toggle car visibility';
+      try {
+        const errorData = await response.json();
+        console.error('🚗 [TOGGLE CAR VISIBILITY API] Error response data:', JSON.stringify(errorData, null, 2));
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+      } catch (e) {
+        console.error('🚗 [TOGGLE CAR VISIBILITY API] Could not parse error response as JSON:', e);
+        errorMessage = response.statusText || errorMessage;
+      }
+      
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const data = await response.json();
+    const totalTime = Date.now() - startTime;
+    console.log('🚗 [TOGGLE CAR VISIBILITY API] ✅ SUCCESS! Car visibility toggled:', {
+      carId: carId,
+      totalTime: `${totalTime}ms`,
+    });
+    console.log('🚗 [TOGGLE CAR VISIBILITY API] Full response:', JSON.stringify(data, null, 2));
+
+    return {
+      success: true,
+      car: data,
+      isVisible: data.is_visible !== undefined ? data.is_visible : (data.visible !== undefined ? data.visible : true),
+    };
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+    console.error('🚗 [TOGGLE CAR VISIBILITY API] ❌ ERROR occurred:', error);
+    console.error('🚗 [TOGGLE CAR VISIBILITY API] Error details:', {
+      message: error.message,
+      name: error.name,
+      url: url,
+      totalTime: `${totalTime}ms`,
+      stack: error.stack,
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Network error. Please check your connection.';
+    if (error.message === 'Network request failed') {
+      errorMessage = `Cannot connect to server at ${url}. Please check:\n• Backend server is running\n• Device and server are on the same network\n• IP address is correct\n• Firewall is not blocking the connection`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    return {
+      success: false,
+      error: errorMessage,
     };
   }
 };

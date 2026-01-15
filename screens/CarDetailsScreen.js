@@ -8,18 +8,22 @@ import {
   TouchableOpacity,
   Image,
   Switch,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { toggleCarVisibility } from '../services/carService';
 
 export default function CarDetailsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { car } = route.params || {};
   
   // Use car data from route params or mock data for testing
-  const [isListed, setIsListed] = useState(car?.available ?? true);
+  const [isListed, setIsListed] = useState(car?.available ?? car?.is_visible ?? true);
+  const [isToggling, setIsToggling] = useState(false);
 
   // Comprehensive mock data with all fields - merged with passed car data
   const defaultMockData = {
@@ -73,10 +77,52 @@ export default function CarDetailsScreen({ navigation, route }) {
     year: car?.year || (car?.model && car.model.match(/^\d{4}/)?.[0]) || defaultMockData.year,
   };
 
-  const handleToggleListing = (value) => {
-    setIsListed(value);
-    // TODO: Update listing status via API
-    console.log('Toggle listing status:', value);
+  const handleToggleListing = async (value) => {
+    // Only allow toggle if car is verified
+    if (carData.status !== 'verified') {
+      Alert.alert(
+        'Cannot Toggle Visibility',
+        'Only verified cars can have their visibility toggled. Please wait for your car to be verified.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setIsToggling(true);
+    lightHaptic();
+
+    try {
+      const carId = car?.carId || car?.id;
+      if (!carId) {
+        Alert.alert('Error', 'Car ID not found');
+        return;
+      }
+
+      const result = await toggleCarVisibility(carId);
+      
+      if (result.success) {
+        // Update local state with new visibility status
+        setIsListed(result.isVisible);
+      } else {
+        // Revert toggle on error
+        setIsListed(!value);
+        Alert.alert(
+          'Failed to Toggle Visibility',
+          result.error || 'Unable to update car visibility. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      // Revert toggle on error
+      setIsListed(!value);
+      Alert.alert(
+        'Error',
+        'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsToggling(false);
+    }
   };
 
   const handleEdit = () => {
@@ -158,23 +204,30 @@ export default function CarDetailsScreen({ navigation, route }) {
           {carData.model && <Text style={styles.carModel}>{carData.model}</Text>}
         </View>
 
-        {/* Listing Toggle */}
-        <View style={styles.toggleSection}>
-          <View style={styles.toggleContent}>
-            <View>
-              <Text style={styles.toggleLabel}>List this car</Text>
-              <Text style={styles.toggleSubtext}>
-                {isListed ? 'Car is visible to renters' : 'Car is hidden from listings'}
-              </Text>
+        {/* Listing Toggle - Only show for verified cars */}
+        {carData.status === 'verified' && (
+          <View style={styles.toggleSection}>
+            <View style={styles.toggleContent}>
+              <View>
+                <Text style={styles.toggleLabel}>Show car to renters</Text>
+                <Text style={styles.toggleSubtext}>
+                  {isListed ? 'Car is visible to renters' : 'Car is hidden from listings'}
+                </Text>
+              </View>
+              {isToggling ? (
+                <ActivityIndicator size="small" color={COLORS.text} />
+              ) : (
+                <Switch
+                  value={isListed}
+                  onValueChange={handleToggleListing}
+                  trackColor={{ false: '#E5E5EA', true: COLORS.brand }}
+                  thumbColor="#FFFFFF"
+                  disabled={isToggling}
+                />
+              )}
             </View>
-            <Switch
-              value={isListed}
-              onValueChange={handleToggleListing}
-              trackColor={{ false: '#E5E5EA', true: COLORS.brand }}
-              thumbColor="#FFFFFF"
-            />
           </View>
-        </View>
+        )}
 
         {/* Basic Information */}
         <View style={styles.section}>

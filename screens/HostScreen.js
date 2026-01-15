@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostCars } from '../services/carService';
+import { getHostCars, toggleCarVisibility } from '../services/carService';
 import { useHost } from '../utils/HostContext';
 
 export default function HostScreen({ navigation }) {
@@ -243,6 +243,53 @@ export default function HostScreen({ navigation }) {
     );
   };
 
+  const handleToggleVisibility = async (item, value) => {
+    // Only allow toggle if car is verified
+    if (item.status !== 'verified') {
+      Alert.alert(
+        'Cannot Toggle Visibility',
+        'Only verified cars can have their visibility toggled. Please wait for your car to be verified.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    lightHaptic();
+
+    try {
+      const carId = item.carId || item.id;
+      if (!carId) {
+        Alert.alert('Error', 'Car ID not found');
+        return;
+      }
+
+      const result = await toggleCarVisibility(carId);
+      
+      if (result.success) {
+        // Update local state with new visibility status
+        setCars(prevCars => 
+          prevCars.map(car => 
+            car.id === item.id || car.carId === carId
+              ? { ...car, is_visible: result.isVisible, available: result.isVisible }
+              : car
+          )
+        );
+      } else {
+        Alert.alert(
+          'Failed to Toggle Visibility',
+          result.error || 'Unable to update car visibility. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   const renderCarCard = ({ item, index }) => {
     const statusInfo = getStatusInfo(item.status, item.is_complete);
     const isLastItem = index === cars.length - 1;
@@ -316,6 +363,26 @@ export default function HostScreen({ navigation }) {
             </View>
           </View>
         </TouchableOpacity>
+
+        {/* Visibility Toggle - Only show for verified cars */}
+        {item.status === 'verified' && (
+          <View style={styles.visibilityToggleContainer}>
+            <View style={styles.visibilityToggleContent}>
+              <View style={styles.visibilityToggleText}>
+                <Text style={styles.visibilityToggleLabel}>Show to renters</Text>
+                <Text style={styles.visibilityToggleSubtext}>
+                  {item.is_visible !== false && item.available !== false ? 'Visible' : 'Hidden'}
+                </Text>
+              </View>
+              <Switch
+                value={item.is_visible !== false && item.available !== false}
+                onValueChange={(value) => handleToggleVisibility(item, value)}
+                trackColor={{ false: '#E5E5EA', true: COLORS.brand }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+          </View>
+        )}
         
         {/* Delete Button */}
         <TouchableOpacity
@@ -544,5 +611,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
+  },
+  visibilityToggleContainer: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  visibilityToggleContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  visibilityToggleText: {
+    flex: 1,
+  },
+  visibilityToggleLabel: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  visibilityToggleSubtext: {
+    ...TYPE.body,
+    fontSize: 11,
+    color: COLORS.subtle,
   },
 });
