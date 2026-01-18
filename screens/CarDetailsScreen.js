@@ -33,7 +33,7 @@ export default function CarDetailsScreen({ navigation, route }) {
     body: 'Sedan',
     year: '2023',
     description: 'Premium luxury sedan with exceptional performance and comfort. Perfect for long drives and special occasions. This vehicle features top-of-the-line amenities and delivers a smooth, powerful driving experience that makes every journey memorable.',
-    coverPhoto: require('../assets/images/bmw.jpg'),
+    coverPhoto: null, // Will use actual car image from API or placeholder
     seats: '5',
     fuelType: 'Petrol',
     transmission: 'Automatic',

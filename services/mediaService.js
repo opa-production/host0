@@ -780,14 +780,29 @@ export const fetchHostAvatarFromSupabase = async (userId) => {
 
     // Get the most recent avatar (first in the list since we sorted by desc)
     const avatarFile = avatarFiles[0];
+    
+    // Ensure we have valid file data
+    if (!avatarFile || !avatarFile.name) {
+      console.log('📸 [Fetch Avatar] Invalid avatar file data');
+      return null;
+    }
+    
     const filePath = `${folderPath}/${avatarFile.name}`;
+    console.log('📸 [Fetch Avatar] Found avatar file:', filePath);
 
     // Get public URL
     const { data: urlData } = supabase.storage
       .from(STORAGE_BUCKETS.HOST_PROFILE)
       .getPublicUrl(filePath);
 
-    const publicUrl = urlData.publicUrl;
+    const publicUrl = urlData?.publicUrl;
+    
+    // Only return URL if it's actually valid
+    if (!publicUrl || typeof publicUrl !== 'string' || publicUrl.trim() === '') {
+      console.log('📸 [Fetch Avatar] Invalid or empty public URL generated');
+      return null;
+    }
+    
     console.log('📸 [Fetch Avatar] ✅ Avatar found:', publicUrl);
 
     return publicUrl;

@@ -55,7 +55,6 @@ import MyListingsScreen from '../screens/MyListingsScreen';
 import CarDetailsScreen from '../screens/CarDetailsScreen';
 import EditCarScreen from '../screens/EditCarScreen';
 import HostVehicleScreen from '../screens/HostVehicleScreen';
-import CarGalleryScreen from '../screens/CarGalleryScreen';
 import SmartCalendarScreen from '../screens/SmartCalendarScreen';
 import PastBookingDetailScreen from '../screens/PastBookingDetailScreen';
 import ReportIssueScreen from '../screens/ReportIssueScreen';
@@ -335,12 +334,6 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="HostVehicle" 
           component={HostVehicleScreen}
-        />
-        
-        {/* Car Gallery Screen */}
-        <Stack.Screen 
-          name="CarGallery" 
-          component={CarGalleryScreen}
         />
         
         {/* Settings and Related Screens */}
