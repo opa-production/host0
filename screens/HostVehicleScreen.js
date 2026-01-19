@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, TYPE, SPACING } from '../ui/tokens';
-import { createCarBasics, updateCarSpecs, updateCarPricing } from '../services/carService';
+import { createCarBasics, updateCarSpecs, updateCarPricing, saveVehicleImageUrls } from '../services/carService';
 import { uploadVehicleImages, uploadVehicleVideo } from '../services/mediaService';
 import BasicInfoScreen from './HostVehicle/BasicInfoMediaScreen';
 import MediaUploadScreen from './HostVehicle/MediaUploadScreen';
@@ -265,6 +265,23 @@ export default function HostVehicleScreen({ navigation, route }) {
         console.log('📸 [Media Upload] Images uploaded:', uploadResults.images.length);
         console.log('📸 [Media Upload] Cover photo URL:', uploadResults.coverPhoto);
 
+        // Save image URLs to backend database
+        console.log('💾 [Media Upload] Saving image URLs to backend...');
+        const saveUrlsResult = await saveVehicleImageUrls(
+          currentCarId,
+          uploadResults.coverPhoto,
+          uploadResults.images,
+          null // Video will be saved separately if provided
+        );
+
+        if (!saveUrlsResult.success) {
+          console.warn('⚠️ [Media Upload] Failed to save URLs to backend:', saveUrlsResult.error);
+          // Don't block progress - URLs are in Supabase, backend save is for optimization
+          // User can still proceed, but images won't be in backend database
+        } else {
+          console.log('✅ [Media Upload] Image URLs saved to backend successfully');
+        }
+
         // Upload video if provided
         if (formData.video) {
           console.log('📹 [Media Upload] Starting video upload...');
@@ -280,6 +297,20 @@ export default function HostVehicleScreen({ navigation, route }) {
           } else {
             uploadResults.video = videoResult.url;
             console.log('📹 [Media Upload] Video uploaded:', videoResult.url);
+            
+            // Update video URL in backend if images were already saved
+            if (saveUrlsResult.success) {
+              console.log('💾 [Media Upload] Updating video URL in backend...');
+              const updateVideoResult = await saveVehicleImageUrls(
+                currentCarId,
+                uploadResults.coverPhoto,
+                uploadResults.images,
+                uploadResults.video
+              );
+              if (!updateVideoResult.success) {
+                console.warn('⚠️ [Media Upload] Failed to update video URL in backend:', updateVideoResult.error);
+              }
+            }
           }
         }
 

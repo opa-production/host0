@@ -513,6 +513,308 @@ export const updateCarPricing = async (carId, pricing) => {
 };
 
 /**
+ * Save vehicle image URLs to backend database
+ * After uploading images to Supabase Storage, this function saves the URLs to the backend
+ * @param {number|string} carId - Car ID
+ * @param {string} coverImageUrl - Cover image URL (first image)
+ * @param {Array<string>} imageUrls - Array of all image URLs (max 12)
+ * @param {string|null} videoUrl - Optional video URL
+ * @returns {Promise<Object>} Result with success status and car data or error
+ */
+export const saveVehicleImageUrls = async (carId, coverImageUrl, imageUrls, videoUrl = null) => {
+  if (!carId) {
+    return {
+      success: false,
+      error: 'Car ID is required',
+    };
+  }
+
+  // Debug: Log what we received
+  console.log('🖼️ [SAVE IMAGE URLS API] Function called with:', {
+    carId,
+    coverImageUrl: coverImageUrl ? 'Present' : 'Missing',
+    imageUrls_count: imageUrls ? imageUrls.length : 0,
+    imageUrls_type: Array.isArray(imageUrls) ? 'array' : typeof imageUrls,
+    videoUrl: videoUrl ? 'Present' : 'Missing',
+  });
+
+  // Backend requires files array - ensure we have imageUrls
+  if (!imageUrls) {
+    console.error('🖼️ [SAVE IMAGE URLS API] ERROR: imageUrls is null or undefined');
+    console.error('🖼️ [SAVE IMAGE URLS API] Received imageUrls:', imageUrls);
+    return {
+      success: false,
+      error: 'Image URLs array is required',
+    };
+  }
+  
+  if (!Array.isArray(imageUrls)) {
+    console.error('🖼️ [SAVE IMAGE URLS API] ERROR: imageUrls is not an array, type:', typeof imageUrls);
+    console.error('🖼️ [SAVE IMAGE URLS API] Received imageUrls:', imageUrls);
+    return {
+      success: false,
+      error: 'Image URLs must be an array',
+    };
+  }
+  
+  if (imageUrls.length === 0) {
+    console.error('🖼️ [SAVE IMAGE URLS API] ERROR: imageUrls array is empty');
+    return {
+      success: false,
+      error: 'Image URLs array must contain at least one URL',
+    };
+  }
+
+  // Use PUT endpoint that accepts JSON URLs (recommended)
+  // POST /api/v1/host/upload/vehicle/{id}/images expects file uploads, not URLs
+  const url = getApiUrl(API_ENDPOINTS.HOST_CAR_MEDIA(carId));
+  const startTime = Date.now();
+  console.log('🖼️ [SAVE IMAGE URLS API] Saving image URLs to backend...');
+  console.log('🖼️ [SAVE IMAGE URLS API] Endpoint URL:', url);
+  console.log('🖼️ [SAVE IMAGE URLS API] Method: PUT (accepts JSON URLs)');
+  console.log('🖼️ [SAVE IMAGE URLS API] Car ID:', carId);
+  console.log('🖼️ [SAVE IMAGE URLS API] Cover image URL:', coverImageUrl);
+  console.log('🖼️ [SAVE IMAGE URLS API] Total images:', imageUrls?.length || 0);
+  console.log('🖼️ [SAVE IMAGE URLS API] Video URL:', videoUrl || 'N/A');
+
+  try {
+    const token = await getUserToken();
+    
+    if (!token) {
+      console.error('🖼️ [SAVE IMAGE URLS API] ERROR: No authentication token found');
+      return {
+        success: false,
+        error: 'No authentication token found',
+      };
+    }
+
+    // Prepare request body matching backend schema
+    // Backend expects: files (array of URLs) - REQUIRED, cover_image, car_video
+    const requestBody = {};
+    
+    // files is REQUIRED by backend - always include it
+    // Validate and limit image count (max 12 as per backend)
+    if (!imageUrls || imageUrls.length === 0) {
+      console.error('🖼️ [SAVE IMAGE URLS API] ERROR: No image URLs provided');
+      return {
+        success: false,
+        error: 'Image URLs are required',
+      };
+    }
+    
+    const limitedUrls = imageUrls.length > 12 ? imageUrls.slice(0, 12) : imageUrls;
+    if (imageUrls.length > 12) {
+      console.warn('🖼️ [SAVE IMAGE URLS API] Warning: More than 12 images, truncating to 12');
+    }
+    
+    // files is REQUIRED - always include it
+    requestBody.files = limitedUrls;
+    
+    // Add cover_image if provided (optional)
+    if (coverImageUrl) {
+      requestBody.cover_image = coverImageUrl;
+    }
+    
+    // Add car_video if provided (optional)
+    if (videoUrl) {
+      requestBody.car_video = videoUrl;
+    }
+
+    // Debug: Log what we're sending
+    console.log('🖼️ [SAVE IMAGE URLS API] Request body structure:', {
+      has_files: !!requestBody.files,
+      files_length: requestBody.files ? requestBody.files.length : 0,
+      files_type: Array.isArray(requestBody.files) ? 'array' : typeof requestBody.files,
+      has_cover_image: !!requestBody.cover_image,
+      has_car_video: !!requestBody.car_video,
+    });
+
+    // Log the actual request body that will be sent
+    const requestBodyString = JSON.stringify(requestBody);
+    console.log('🖼️ [SAVE IMAGE URLS API] Request body JSON:', requestBodyString);
+    console.log('🖼️ [SAVE IMAGE URLS API] Request body parsed:', JSON.parse(requestBodyString));
+    console.log('🖼️ [SAVE IMAGE URLS API] Files in body:', requestBody.files);
+    console.log('🖼️ [SAVE IMAGE URLS API] Files is array?', Array.isArray(requestBody.files));
+    console.log('🖼️ [SAVE IMAGE URLS API] Files length:', requestBody.files?.length);
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: requestBodyString,
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log(`🖼️ [SAVE IMAGE URLS API] Response received in ${responseTime}ms`);
+    console.log('🖼️ [SAVE IMAGE URLS API] Response status:', response.status);
+
+    const responseData = await response.json();
+    console.log('🖼️ [SAVE IMAGE URLS API] Response data:', responseData);
+
+    if (!response.ok) {
+      const errorMessage = responseData.detail || responseData.message || `HTTP ${response.status}`;
+      console.error('🖼️ [SAVE IMAGE URLS API] ERROR:', errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+        status: response.status,
+      };
+    }
+
+    console.log('🖼️ [SAVE IMAGE URLS API] ✅ Image URLs saved successfully');
+    return {
+      success: true,
+      car: responseData,
+      message: 'Image URLs saved successfully',
+    };
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error(`🖼️ [SAVE IMAGE URLS API] ❌ Error after ${responseTime}ms:`, error);
+    return {
+      success: false,
+      error: error.message || 'Failed to save image URLs',
+    };
+  }
+};
+
+/**
+ * Migrate existing car images from Supabase Storage to backend database
+ * This function fetches all cars, gets their images from Supabase, and saves URLs to backend
+ * @param {boolean} dryRun - If true, only logs what would be migrated without actually saving
+ * @returns {Promise<Object>} Result with migration statistics
+ */
+export const migrateExistingCarImages = async (dryRun = false) => {
+  console.log('🔄 [MIGRATION] Starting car images migration...');
+  console.log('🔄 [MIGRATION] Mode:', dryRun ? 'DRY RUN (no changes will be saved)' : 'LIVE (will save to backend)');
+  
+  const startTime = Date.now();
+  const stats = {
+    total: 0,
+    migrated: 0,
+    skipped: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  try {
+    // Get all cars for the current user
+    const carsResult = await getHostCars();
+    
+    if (!carsResult.success || !carsResult.cars || carsResult.cars.length === 0) {
+      console.log('🔄 [MIGRATION] No cars found to migrate');
+      return {
+        success: true,
+        message: 'No cars found to migrate',
+        stats,
+      };
+    }
+
+    stats.total = carsResult.cars.length;
+    console.log(`🔄 [MIGRATION] Found ${stats.total} cars to process`);
+
+    const userId = await getUserId();
+    if (!userId) {
+      throw new Error('User ID not found');
+    }
+
+    // Process each car
+    for (const car of carsResult.cars) {
+      try {
+        console.log(`\n🔄 [MIGRATION] Processing car ${car.id} (${car.name || 'Unnamed'})...`);
+        
+        // Check if car already has images in backend
+        const hasBackendImages = !!(car.cover_image || (car.car_images && car.car_images.length > 0));
+        
+        if (hasBackendImages) {
+          console.log(`⏭️  [MIGRATION] Car ${car.id} already has backend images, skipping`);
+          stats.skipped++;
+          continue;
+        }
+
+        // Fetch images from Supabase
+        console.log(`📥 [MIGRATION] Fetching images from Supabase for car ${car.id}...`);
+        const supabaseImages = await fetchCarImagesFromSupabase(car.id, userId);
+        
+        if (!supabaseImages.coverPhoto && supabaseImages.images.length === 0) {
+          console.log(`⏭️  [MIGRATION] Car ${car.id} has no images in Supabase, skipping`);
+          stats.skipped++;
+          continue;
+        }
+
+        console.log(`✅ [MIGRATION] Found ${supabaseImages.images.length} images in Supabase`);
+        console.log(`   Cover photo: ${supabaseImages.coverPhoto ? '✓' : '✗'}`);
+
+        if (dryRun) {
+          console.log(`🔍 [MIGRATION] DRY RUN: Would save ${supabaseImages.images.length} images to backend`);
+          stats.migrated++;
+        } else {
+          // Save to backend
+          console.log(`💾 [MIGRATION] Saving images to backend...`);
+          const saveResult = await saveVehicleImageUrls(
+            car.id,
+            supabaseImages.coverPhoto,
+            supabaseImages.images,
+            null // Video can be added separately if needed
+          );
+
+          if (saveResult.success) {
+            console.log(`✅ [MIGRATION] Successfully migrated car ${car.id}`);
+            stats.migrated++;
+          } else {
+            console.error(`❌ [MIGRATION] Failed to migrate car ${car.id}:`, saveResult.error);
+            stats.failed++;
+            stats.errors.push({
+              carId: car.id,
+              carName: car.name,
+              error: saveResult.error,
+            });
+          }
+        }
+      } catch (error) {
+        console.error(`❌ [MIGRATION] Error processing car ${car.id}:`, error);
+        stats.failed++;
+        stats.errors.push({
+          carId: car.id,
+          carName: car.name,
+          error: error.message,
+        });
+      }
+    }
+
+    const totalTime = Date.now() - startTime;
+    console.log(`\n🔄 [MIGRATION] Migration completed in ${totalTime}ms`);
+    console.log(`📊 [MIGRATION] Statistics:`, {
+      total: stats.total,
+      migrated: stats.migrated,
+      skipped: stats.skipped,
+      failed: stats.failed,
+    });
+
+    if (stats.errors.length > 0) {
+      console.log(`⚠️  [MIGRATION] Errors encountered:`, stats.errors);
+    }
+
+    return {
+      success: true,
+      message: dryRun 
+        ? `Dry run completed: ${stats.migrated} cars would be migrated`
+        : `Migration completed: ${stats.migrated} cars migrated successfully`,
+      stats,
+    };
+  } catch (error) {
+    console.error('🔄 [MIGRATION] ❌ Migration failed:', error);
+    return {
+      success: false,
+      error: error.message,
+      stats,
+    };
+  }
+};
+
+/**
  * Fetch car images from Supabase Storage
  * @param {number} carId - Car ID
  * @param {number} userId - User ID
@@ -751,20 +1053,47 @@ export const getHostCars = async () => {
 
     // Map API response to UI format and fetch images from Supabase
     const mappedCarsPromises = carsArray.map(async (car) => {
-      // Check if API already provides image URLs
-      const hasApiImages = !!(car.cover_photo_url || (car.image_urls && car.image_urls.length > 0));
+      // Backend returns: cover_image, car_images (JSON array), car_video
+      // Also check for legacy field names: cover_photo_url, image_urls
+      const coverImageFromApi = car.cover_image || car.cover_photo_url;
+      let imageUrlsFromApi = [];
       
-      // Fetch images from Supabase if not provided by API
+      // Handle car_images (can be JSON string or array)
+      if (car.car_images) {
+        if (typeof car.car_images === 'string') {
+          try {
+            imageUrlsFromApi = JSON.parse(car.car_images);
+          } catch (e) {
+            console.warn('🚗 [GET HOST CARS] Failed to parse car_images JSON:', e);
+            imageUrlsFromApi = [];
+          }
+        } else if (Array.isArray(car.car_images)) {
+          imageUrlsFromApi = car.car_images;
+        }
+      }
+      
+      // Fallback to legacy field names
+      if (imageUrlsFromApi.length === 0 && car.image_urls) {
+        if (Array.isArray(car.image_urls)) {
+          imageUrlsFromApi = car.image_urls;
+        } else if (typeof car.image_urls === 'string') {
+          imageUrlsFromApi = [car.image_urls];
+        }
+      }
+      
+      // Check if API already provides image URLs
+      const hasApiImages = !!(coverImageFromApi || imageUrlsFromApi.length > 0);
+      
+      // Fetch images from Supabase if not provided by API (fallback for backward compatibility)
       let supabaseImages = { coverPhoto: null, images: [] };
       if (!hasApiImages && userId && car.id) {
+        console.log(`🚗 [GET HOST CARS] No API images for car ${car.id}, fetching from Supabase...`);
         supabaseImages = await fetchCarImagesFromSupabase(car.id, userId);
       }
 
       // Determine cover photo and images (prioritize API data, fallback to Supabase)
-      const coverPhoto = car.cover_photo_url || car.coverPhoto || supabaseImages.coverPhoto;
-      const images = Array.isArray(car.image_urls) && car.image_urls.length > 0 
-        ? car.image_urls 
-        : (car.image_urls ? [car.image_urls] : supabaseImages.images);
+      const coverPhoto = coverImageFromApi || car.coverPhoto || supabaseImages.coverPhoto;
+      const images = imageUrlsFromApi.length > 0 ? imageUrlsFromApi : supabaseImages.images;
       
       // Determine if car has images
       const hasImages = !!(coverPhoto || images.length > 0);

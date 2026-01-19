@@ -37,6 +37,8 @@ export const API_ENDPOINTS = {
   CAR_MEDIA_VIDEO: (carId) => `/api/v1/cars/${carId}/media/video`,
   CAR_STATUS: (carId) => `/api/v1/cars/${carId}/status`,
   CAR_TOGGLE_VISIBILITY: (carId) => `/api/v1/host/cars/${carId}/toggle-visibility`,
+  HOST_UPLOAD_VEHICLE_IMAGES: (carId) => `/api/v1/host/upload/vehicle/${carId}/images`,
+  HOST_CAR_MEDIA: (carId) => `/api/v1/host/cars/${carId}/media`, // PUT endpoint for URLs (recommended)
   
   // Payment Methods
   PAYMENT_METHODS: '/api/v1/host/payment-methods',
