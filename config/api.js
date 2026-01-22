@@ -11,7 +11,7 @@
 // Default to localhost for development
 // Change this to your computer's IP address when testing on physical devices
 export const API_BASE_URL = __DEV__ 
-  ? 'http://192.168.100.69:8000'  // Local development server (your computer's IP)
+  ? 'http://192.168.100.69:8001'  // Local development server (your computer's IP)
   : 'https://your-production-api.com';
 
 export const API_ENDPOINTS = {
@@ -56,6 +56,10 @@ export const API_ENDPOINTS = {
   // Support
   HOST_SUPPORT_SEND_MESSAGE: '/api/v1/host/support/messages',
   HOST_SUPPORT_CONVERSATION: '/api/v1/host/support/conversation',
+  
+  // Messages
+  HOST_MESSAGES: '/api/v1/host/messages',
+  HOST_MESSAGES_CLIENT: (clientId) => `/api/v1/host/messages/client/${clientId}`,
 };
 
 /**

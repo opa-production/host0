@@ -6,11 +6,14 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostNotifications } from '../services/notificationService';
 import { getSupportConversation } from '../services/supportService';
+import { getHostConversations } from '../services/messageService';
 
 export default function MessagesScreen({ navigation }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [supportConversation, setSupportConversation] = useState(null);
   const [isLoadingSupport, setIsLoadingSupport] = useState(true);
+  const [clientConversations, setClientConversations] = useState([]);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
 
   const checkUnreadNotifications = async () => {
     try {
@@ -52,6 +55,50 @@ export default function MessagesScreen({ navigation }) {
     } catch (e) {
       console.error('Error formatting timestamp:', e);
       return null;
+    }
+  };
+
+  const loadClientConversations = async () => {
+    setIsLoadingConversations(true);
+    try {
+      const result = await getHostConversations();
+      if (result.success && result.conversations) {
+        // Map API response to UI format
+        const mappedConversations = result.conversations.map((conv) => {
+          const lastMessage = conv.messages && conv.messages.length > 0 
+            ? conv.messages[conv.messages.length - 1] 
+            : null;
+          
+          return {
+            id: conv.id,
+            clientId: conv.client_id,
+            clientName: conv.client_name || 'Client',
+            clientEmail: conv.client_email,
+            lastMessage: lastMessage?.message || null,
+            timestamp: lastMessage ? formatTimestamp(lastMessage.created_at) : formatTimestamp(conv.last_message_at),
+            createdAt: lastMessage?.created_at || conv.last_message_at,
+            hasUnread: !conv.is_read_by_host,
+            unreadCount: conv.messages?.filter(m => !m.is_read && m.sender_type === 'client').length || 0,
+          };
+        });
+        
+        // Sort by last message time (most recent first)
+        mappedConversations.sort((a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return timeB - timeA;
+        });
+        
+        setClientConversations(mappedConversations);
+        setUnreadCount(result.unreadCount || 0);
+      } else {
+        setClientConversations([]);
+      }
+    } catch (error) {
+      console.error('Error loading client conversations:', error);
+      setClientConversations([]);
+    } finally {
+      setIsLoadingConversations(false);
     }
   };
 
@@ -98,6 +145,7 @@ export default function MessagesScreen({ navigation }) {
   useEffect(() => {
     checkUnreadNotifications();
     loadSupportConversation();
+    loadClientConversations();
   }, []);
 
   // Refresh when screen is focused (e.g., when returning from notifications or customer support screen)
@@ -105,6 +153,7 @@ export default function MessagesScreen({ navigation }) {
     useCallback(() => {
       checkUnreadNotifications();
       loadSupportConversation();
+      loadClientConversations();
     }, [])
   );
 
@@ -175,8 +224,61 @@ export default function MessagesScreen({ navigation }) {
           </TouchableOpacity>
         ) : null}
 
-        {/* Empty State - Only show if no support conversation exists */}
-        {!isLoadingSupport && !supportConversation && (
+        {/* Client Conversations */}
+        {isLoadingConversations ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={COLORS.text} />
+          </View>
+        ) : clientConversations.length > 0 ? (
+          clientConversations.map((conv) => (
+            <TouchableOpacity
+              key={conv.id}
+              style={styles.threadCard}
+              onPress={() => {
+                lightHaptic();
+                navigation.navigate('Chat', {
+                  clientId: conv.clientId,
+                  clientName: conv.clientName,
+                  conversationId: conv.id,
+                });
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={styles.threadLeft}>
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person" size={24} color={COLORS.subtle} />
+                </View>
+                {conv.hasUnread && conv.unreadCount > 0 && (
+                  <View style={styles.unreadBadge}>
+                    <Text style={styles.unreadBadgeText}>
+                      {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.threadBody}>
+                <View style={styles.threadTop}>
+                  <Text style={styles.threadTitle}>{conv.clientName}</Text>
+                  {conv.timestamp && (
+                    <Text style={styles.threadTime}>{conv.timestamp}</Text>
+                  )}
+                </View>
+                {conv.lastMessage ? (
+                  <Text style={[styles.threadPreview, conv.hasUnread && styles.threadPreviewUnread]} numberOfLines={1}>
+                    {conv.lastMessage}
+                  </Text>
+                ) : (
+                  <Text style={styles.threadPreview} numberOfLines={1}>
+                    No messages yet
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : null}
+
+        {/* Empty State - Only show if no conversations exist */}
+        {!isLoadingSupport && !isLoadingConversations && !supportConversation && clientConversations.length === 0 && (
           <View style={styles.emptyState}>
             <Ionicons name="chatbubbles-outline" size={64} color={COLORS.subtle} />
             <Text style={styles.emptyStateText}>No messages yet</Text>
@@ -237,6 +339,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#1C1C1E',
+  },
+  avatarPlaceholder: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: COLORS.bg,
+  },
+  unreadBadgeText: {
+    ...TYPE.micro,
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  threadPreviewUnread: {
+    fontWeight: '600',
+    color: COLORS.text,
   },
   threadBody: {
     flex: 1,

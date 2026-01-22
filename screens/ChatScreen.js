@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,21 +10,83 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getClientConversation, sendMessageToClient } from '../services/messageService';
 
 export default function ChatScreen({ navigation, route }) {
-  const title = route?.params?.title || 'Chat';
+  const clientId = route?.params?.clientId;
+  const clientName = route?.params?.clientName || 'Client';
+  const conversationId = route?.params?.conversationId;
+  const title = route?.params?.title || clientName;
   const insets = useSafeAreaInsets();
 
-  // Messages - to be fetched from API
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
 
   const listRef = useRef(null);
+
+  const formatTime = (createdAt) => {
+    if (!createdAt) return 'Now';
+    try {
+      const date = new Date(createdAt);
+      if (isNaN(date.getTime())) return 'Now';
+      
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    } catch (e) {
+      return 'Now';
+    }
+  };
+
+  const loadConversation = async () => {
+    if (!clientId) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await getClientConversation(clientId);
+      if (result.success && result.conversation) {
+        // Map API messages to UI format
+        const mappedMessages = (result.conversation.messages || []).map((msg) => ({
+          id: msg.id.toString(),
+          fromMe: msg.sender_type === 'host',
+          text: msg.message,
+          ts: formatTime(msg.created_at),
+          createdAt: msg.created_at,
+          isRead: msg.is_read,
+        }));
+        
+        setMessages(mappedMessages);
+      } else {
+        setMessages([]);
+        if (result.error) {
+          console.error('Error loading conversation:', result.error);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+      setMessages([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const sub = Keyboard.addListener('keyboardDidShow', () => {
@@ -33,25 +95,75 @@ export default function ChatScreen({ navigation, route }) {
     return () => sub.remove();
   }, []);
 
-  const send = () => {
+  useEffect(() => {
+    loadConversation();
+  }, [clientId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (clientId) {
+        loadConversation();
+      }
+    }, [clientId])
+  );
+
+  const send = async () => {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || !clientId) return;
 
     lightHaptic();
+    setIsSending(true);
 
-    const next = {
-      id: `m-${Date.now()}`,
+    // Optimistically add message to UI
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
       fromMe: true,
       text,
-      ts: 'Now',
+      ts: 'Sending...',
+      createdAt: new Date().toISOString(),
+      isRead: false,
     };
 
-    setMessages((prev) => [...prev, next]);
+    setMessages((prev) => [...prev, tempMessage]);
     setDraft('');
 
     requestAnimationFrame(() => {
       listRef.current?.scrollToEnd?.({ animated: true });
     });
+
+    try {
+      const result = await sendMessageToClient(clientId, text);
+      if (result.success && result.message) {
+        // Replace temp message with real one from API
+        setMessages((prev) => {
+          const filtered = prev.filter(m => m.id !== tempMessage.id);
+          return [...filtered, {
+            id: result.message.id.toString(),
+            fromMe: true,
+            text: result.message.message,
+            ts: formatTime(result.message.created_at),
+            createdAt: result.message.created_at,
+            isRead: result.message.is_read,
+          }];
+        });
+
+        requestAnimationFrame(() => {
+          listRef.current?.scrollToEnd?.({ animated: true });
+        });
+      } else {
+        // Remove temp message on error
+        setMessages((prev) => prev.filter(m => m.id !== tempMessage.id));
+        Alert.alert('Error', result.error || 'Failed to send message');
+        setDraft(text); // Restore draft
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages((prev) => prev.filter(m => m.id !== tempMessage.id));
+      Alert.alert('Error', 'Failed to send message. Please try again.');
+      setDraft(text); // Restore draft
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const renderItem = ({ item }) => {
@@ -86,10 +198,10 @@ export default function ChatScreen({ navigation, route }) {
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} numberOfLines={1}>
-            {title}
+            {clientName || title}
           </Text>
           <Text style={styles.headerSub} numberOfLines={1}>
-            Active now
+            {messages.length > 0 ? 'Active' : 'No messages yet'}
           </Text>
         </View>
 
@@ -101,16 +213,29 @@ export default function ChatScreen({ navigation, route }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 56 : 0}
       >
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(m) => m.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => listRef.current?.scrollToEnd?.({ animated: false })}
-        />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.text} />
+          </View>
+        ) : (
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(m) => m.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => listRef.current?.scrollToEnd?.({ animated: false })}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Ionicons name="chatbubbles-outline" size={48} color={COLORS.subtle} />
+                <Text style={styles.emptyStateText}>No messages yet</Text>
+                <Text style={styles.emptyStateSubtext}>Start the conversation</Text>
+              </View>
+            }
+          />
+        )}
 
         <View style={[styles.composerWrap, { paddingBottom: Math.max(insets.bottom, SPACING.s) }]}>
           <View style={styles.composer}>
@@ -130,12 +255,16 @@ export default function ChatScreen({ navigation, route }) {
             />
 
             <TouchableOpacity
-              style={[styles.sendButton, !draft.trim() && styles.sendButtonDisabled]}
+              style={[styles.sendButton, (!draft.trim() || isSending) && styles.sendButtonDisabled]}
               onPress={send}
               activeOpacity={0.85}
-              disabled={!draft.trim()}
+              disabled={!draft.trim() || isSending}
             >
-              <Ionicons name="arrow-up" size={18} color={'#ffffff'} />
+              {isSending ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Ionicons name="arrow-up" size={18} color={'#ffffff'} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -267,5 +396,28 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     opacity: 0.4,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    ...TYPE.section,
+    fontSize: 16,
+    color: COLORS.text,
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  emptyStateSubtext: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
   },
 });
