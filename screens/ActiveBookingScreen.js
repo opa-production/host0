@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, FlatList, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,11 +11,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ActiveBookingScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const carouselRef = useRef(null);
   
   const [booking, setBooking] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [countdown, setCountdown] = useState(null);
   const bookingId = route?.params?.bookingId || route?.params?.booking_id;
 
   const formatDate = (dateString) => {
@@ -56,6 +55,86 @@ export default function ActiveBookingScreen({ navigation, route }) {
     if (!status) return 'Unknown';
     return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   };
+
+  const calculateCountdown = (startDate, endDate, status) => {
+    if (!startDate || !endDate) return null;
+    
+    try {
+      const now = new Date();
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      const statusLower = status?.toLowerCase() || '';
+      let targetDate;
+      let label;
+      
+      // Determine target date based on status
+      if (statusLower === 'confirmed' || statusLower === 'pending' || statusLower === 'upcoming') {
+        // Countdown to pickup
+        targetDate = start;
+        label = 'Pickup in';
+      } else if (statusLower === 'active') {
+        // Countdown to return
+        targetDate = end;
+        label = 'Return in';
+      } else {
+        // Completed or cancelled - no countdown
+        return null;
+      }
+      
+      const diffMs = targetDate.getTime() - now.getTime();
+      
+      if (diffMs <= 0) {
+        return {
+          label: statusLower === 'active' ? 'Return overdue' : 'Pickup overdue',
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          isOverdue: true,
+        };
+      }
+      
+      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      
+      return {
+        label,
+        days,
+        hours,
+        minutes,
+        isOverdue: false,
+      };
+    } catch (e) {
+      console.error('Error calculating countdown:', e);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (booking?.startDateRaw && booking?.endDateRaw && booking?.status) {
+      const countdownData = calculateCountdown(
+        booking.startDateRaw,
+        booking.endDateRaw,
+        booking.status
+      );
+      setCountdown(countdownData);
+      
+      // Update countdown every minute
+      const interval = setInterval(() => {
+        const updated = calculateCountdown(
+          booking.startDateRaw,
+          booking.endDateRaw,
+          booking.status
+        );
+        setCountdown(updated);
+      }, 60000); // Update every minute
+      
+      return () => clearInterval(interval);
+    } else {
+      setCountdown(null);
+    }
+  }, [booking?.startDateRaw, booking?.endDateRaw, booking?.status]);
 
   const loadBookingDetails = async () => {
     if (!bookingId) {
@@ -144,15 +223,6 @@ export default function ActiveBookingScreen({ navigation, route }) {
     }, [bookingId])
   );
 
-  const onViewableItemsChanged = useRef(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      setCurrentImageIndex(viewableItems[0].index || 0);
-    }
-  }).current;
-
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 50,
-  }).current;
 
   // Show loading or empty state
   if (isLoading) {
@@ -211,9 +281,8 @@ export default function ActiveBookingScreen({ navigation, route }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Car Image Carousel */}
+      {/* Car Cover Image */}
       <View style={styles.carouselContainer}>
-        {/* Floating Back Button */}
         <TouchableOpacity
           style={[styles.floatingBackButton, { top: insets.top + 10 }]}
           onPress={() => {
@@ -226,49 +295,49 @@ export default function ActiveBookingScreen({ navigation, route }) {
             <Ionicons name="arrow-back" size={24} color={COLORS.text} />
           </View>
         </TouchableOpacity>
-        <FlatList
-          ref={carouselRef}
-          data={booking?.vehicleImages || []}
-          renderItem={({ item }) => (
-            <View style={styles.carouselItem}>
-              <Image 
-                source={{ uri: typeof item === 'string' ? item : item.uri || item }} 
-                style={styles.carouselImage} 
-                resizeMode="cover"
-                defaultSource={require('../assets/images/logo.png')}
-              />
-            </View>
-          )}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item, index) => index.toString()}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-          ListEmptyComponent={
-            <View style={styles.carouselItem}>
-              <View style={styles.carouselImagePlaceholder}>
-                <Ionicons name="car-outline" size={48} color={COLORS.subtle} />
-              </View>
-            </View>
-          }
-        />
-        {booking?.vehicleImages?.length > 1 && (
-          <View style={styles.carouselIndicators}>
-            {booking.vehicleImages.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.indicator,
-                  index === currentImageIndex && styles.indicatorActive,
-                ]}
-              />
-            ))}
+        {booking?.vehicleImages && booking.vehicleImages.length > 0 ? (
+          <Image 
+            source={{ uri: booking.vehicleImages[0] }} 
+            style={styles.carouselImage} 
+            resizeMode="cover"
+            defaultSource={require('../assets/images/logo.png')}
+          />
+        ) : (
+          <View style={styles.carouselImagePlaceholder}>
+            <Ionicons name="car-outline" size={48} color={COLORS.subtle} />
           </View>
         )}
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Countdown Section */}
+        {countdown && (
+          <View style={styles.countdownCard}>
+            <View style={styles.countdownContent}>
+              <Text style={styles.countdownLabel}>{countdown.label}</Text>
+              {countdown.isOverdue ? (
+                <Text style={styles.countdownOverdue}>{countdown.label}</Text>
+              ) : (
+                <View style={styles.countdownTime}>
+                  {countdown.days > 0 && (
+                    <View style={styles.countdownUnit}>
+                      <Text style={styles.countdownValue}>{countdown.days}</Text>
+                      <Text style={styles.countdownUnitLabel}>d</Text>
+                    </View>
+                  )}
+                  <View style={styles.countdownUnit}>
+                    <Text style={styles.countdownValue}>{countdown.hours}</Text>
+                    <Text style={styles.countdownUnitLabel}>h</Text>
+                  </View>
+                  <View style={styles.countdownUnit}>
+                    <Text style={styles.countdownValue}>{countdown.minutes}</Text>
+                    <Text style={styles.countdownUnitLabel}>m</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
         {/* Booking ID & Status */}
         <View style={styles.card}>
           <View style={styles.statusHeader}>
@@ -619,10 +688,6 @@ const styles = StyleSheet.create({
     height: 280,
     position: 'relative',
   },
-  carouselItem: {
-    width: SCREEN_WIDTH,
-    height: 250,
-  },
   carouselImage: {
     width: '100%',
     height: '100%',
@@ -634,23 +699,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  carouselIndicators: {
-    position: 'absolute',
-    bottom: 16,
-    left: 0,
-    right: 0,
+  countdownCard: {
+    backgroundColor: COLORS.text,
+    borderRadius: 12,
+    padding: SPACING.m,
+    marginHorizontal: SPACING.l,
+    marginBottom: 16,
+    marginTop: 16,
+  },
+  countdownContent: {
+    alignItems: 'center',
+  },
+  countdownLabel: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 8,
+    fontFamily: 'Nunito-Regular',
+  },
+  countdownTime: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
+    alignItems: 'flex-end',
+    gap: 16,
   },
-  indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  countdownUnit: {
+    alignItems: 'center',
   },
-  indicatorActive: {
-    backgroundColor: '#FFFFFF',
+  countdownValue: {
+    ...TYPE.largeTitle,
+    fontSize: 32,
+    color: '#FFFFFF',
+    fontFamily: 'Nunito-Bold',
+    lineHeight: 38,
+  },
+  countdownUnitLabel: {
+    ...TYPE.body,
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 2,
+    fontFamily: 'Nunito-Regular',
+  },
+  countdownOverdue: {
+    ...TYPE.title,
+    fontSize: 18,
+    color: '#FF3B30',
+    fontFamily: 'Nunito-Bold',
   },
   vehicleNameRow: {
     marginBottom: 12,
