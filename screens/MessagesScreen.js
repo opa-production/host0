@@ -318,13 +318,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   threadCard: {
-    paddingVertical: SPACING.l,
+    paddingVertical: SPACING.m,
     paddingLeft: 0,
     paddingRight: SPACING.m,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    marginBottom: SPACING.s,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
   threadLeft: {
     width: 56,

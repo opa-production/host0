@@ -317,7 +317,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
         {/* Pickup Details */}
         <View style={styles.card}>
           <View style={styles.locationHeader}>
-            <Ionicons name="location" size={20} color="#007AFF" />
+            <Ionicons name="location" size={20} color={COLORS.text} />
             <Text style={styles.sectionTitle}>Pickup</Text>
           </View>
           {booking?.pickupLocation && booking.pickupLocation.length > 0 && (
@@ -348,7 +348,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
         {/* Dropoff Details */}
         <View style={styles.card}>
           <View style={styles.locationHeader}>
-            <Ionicons name="location-outline" size={20} color="#34C759" />
+            <Ionicons name="location-outline" size={20} color={COLORS.text} />
             <Text style={styles.sectionTitle}>Dropoff</Text>
             {booking?.dropoffSameAsPickup && (
               <View style={styles.sameLocationBadge}>
@@ -926,6 +926,7 @@ const styles = StyleSheet.create({
     color: COLORS.subtle,
     fontStyle: 'italic',
     marginBottom: 8,
+    fontFamily: 'Nunito-Regular',
   },
   specialRequirementsContainer: {
     marginTop: 8,
