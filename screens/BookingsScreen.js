@@ -1,11 +1,130 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, Image, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getHostBookings } from '../services/bookingService';
 
 export default function BookingsScreen({ navigation }) {
+  const [bookings, setBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    return timeString;
+  };
+
+  const getStatusColor = (status) => {
+    const statusLower = status?.toLowerCase() || '';
+    switch (statusLower) {
+      case 'confirmed':
+      case 'active':
+        return '#007AFF';
+      case 'completed':
+        return '#34C759';
+      case 'pending':
+      case 'upcoming':
+        return '#FF9500';
+      case 'cancelled':
+        return '#FF3B30';
+      default:
+        return '#8E8E93';
+    }
+  };
+
+  const getStatusText = (status) => {
+    if (!status) return 'Unknown';
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  };
+
+  const loadBookings = async () => {
+    setIsLoading(true);
+    try {
+      const result = await getHostBookings();
+      if (result.success && result.bookings) {
+        // Map API response to UI format
+        const mappedBookings = result.bookings.map((booking) => ({
+          id: booking.id,
+          bookingId: booking.booking_id,
+          clientId: booking.client_id,
+          carId: booking.car_id,
+          carName: booking.car_name || 'Unknown Car',
+          carModel: booking.car_model || '',
+          carYear: booking.car_year,
+          carMake: booking.car_make || '',
+          carImageUrls: booking.car_image_urls || [],
+          clientName: booking.client_name || 'Client',
+          clientEmail: booking.client_email,
+          clientMobile: booking.client_mobile_number,
+          startDate: booking.start_date,
+          endDate: booking.end_date,
+          pickupTime: booking.pickup_time,
+          returnTime: booking.return_time,
+          pickupLocation: booking.pickup_location || [],
+          returnLocation: booking.return_location || [],
+          dropoffSameAsPickup: booking.dropoff_same_as_pickup,
+          dailyRate: booking.daily_rate,
+          rentalDays: booking.rental_days,
+          basePrice: booking.base_price,
+          damageWaiverFee: booking.damage_waiver_fee,
+          totalPrice: booking.total_price,
+          damageWaiverEnabled: booking.damage_waiver_enabled,
+          driveType: booking.drive_type,
+          checkInPreference: booking.check_in_preference,
+          specialRequirements: booking.special_requirements,
+          status: booking.status,
+          statusUpdatedAt: booking.status_updated_at,
+          cancellationReason: booking.cancellation_reason,
+          createdAt: booking.created_at,
+          updatedAt: booking.updated_at,
+        }));
+        
+        setBookings(mappedBookings);
+      } else {
+        setBookings([]);
+      }
+    } catch (error) {
+      console.error('Error loading bookings:', error);
+      setBookings([]);
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadBookings();
+  }, []);
+
+  useEffect(() => {
+    loadBookings();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadBookings();
+    }, [])
+  );
+
+  const handleBookingPress = (booking) => {
+    lightHaptic();
+    navigation.navigate('ActiveBooking', {
+      bookingId: booking.bookingId || booking.id,
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -13,6 +132,9 @@ export default function BookingsScreen({ navigation }) {
       <ScrollView 
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -46,12 +168,78 @@ export default function BookingsScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Empty State */}
-        <View style={styles.emptyState}>
-          <Ionicons name="calendar-outline" size={64} color="#C7C7CC" />
-          <Text style={styles.emptyTitle}>No active bookings</Text>
-          <Text style={styles.emptySubtitle}>Your active bookings will appear here</Text>
-        </View>
+        {/* Bookings List */}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.text} />
+          </View>
+        ) : bookings.length > 0 ? (
+          <View style={styles.grid}>
+            {bookings.map((booking) => {
+              const coverImage = booking.carImageUrls && booking.carImageUrls.length > 0 
+                ? booking.carImageUrls[0] 
+                : null;
+              
+              return (
+                <TouchableOpacity
+                  key={booking.id}
+                  style={styles.gridCard}
+                  onPress={() => handleBookingPress(booking)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.gridHeaderRow}>
+                    {coverImage ? (
+                      <Image 
+                        source={{ uri: coverImage }} 
+                        style={styles.vehicleAvatar}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.vehicleAvatar}>
+                        <Ionicons name="car-outline" size={24} color={COLORS.subtle} />
+                      </View>
+                    )}
+                    <View style={styles.gridDetails}>
+                      <Text style={styles.gridTitle} numberOfLines={1}>
+                        {booking.carName} {booking.carModel ? `• ${booking.carModel}` : ''}
+                      </Text>
+                      <View style={styles.gridMetrics}>
+                        <View style={styles.gridMetricItem}>
+                          <Ionicons name="person-outline" size={14} color={COLORS.subtle} />
+                          <Text style={styles.gridMetricText} numberOfLines={1}>
+                            {booking.clientName}
+                          </Text>
+                        </View>
+                        <View style={styles.gridMetricItem}>
+                          <Ionicons name="calendar-outline" size={14} color={COLORS.subtle} />
+                          <Text style={styles.gridMetricText}>
+                            {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
+                          </Text>
+                        </View>
+                        <View style={styles.gridMetricItem}>
+                          <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
+                          <Text style={[styles.gridMetricText, { color: getStatusColor(booking.status) }]}>
+                            {getStatusText(booking.status)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={styles.viewLink}>
+                    <Text style={styles.viewLinkText}>View Details</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#007AFF" />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="calendar-outline" size={64} color="#C7C7CC" />
+            <Text style={styles.emptyTitle}>No active bookings</Text>
+            <Text style={styles.emptySubtitle}>Your active bookings will appear here</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -332,5 +520,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.subtle,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
   },
 });

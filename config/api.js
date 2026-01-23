@@ -60,6 +60,10 @@ export const API_ENDPOINTS = {
   // Messages
   HOST_MESSAGES: '/api/v1/host/messages',
   HOST_MESSAGES_CLIENT: (clientId) => `/api/v1/host/messages/client/${clientId}`,
+  
+  // Bookings
+  HOST_BOOKINGS: '/api/v1/host/bookings',
+  HOST_BOOKING_DETAIL: (bookingId) => `/api/v1/host/bookings/${bookingId}`,
 };
 
 /**

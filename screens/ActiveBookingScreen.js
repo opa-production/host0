@@ -1,9 +1,11 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, FlatList } from 'react-native';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, FlatList, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getBookingDetails } from '../services/bookingService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -12,15 +14,134 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const carouselRef = useRef(null);
   
-  // Booking data - to be fetched from API or passed via route params
-  // TODO: Fetch booking data from API using bookingId from route params
   const [booking, setBooking] = useState(null);
-  const bookingId = route?.params?.bookingId;
+  const [isLoading, setIsLoading] = useState(true);
+  const bookingId = route?.params?.bookingId || route?.params?.booking_id;
 
-  const renderCarouselItem = ({ item, index }) => (
-    <View style={styles.carouselItem}>
-      <Image source={item} style={styles.carouselImage} resizeMode="cover" />
-    </View>
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return 'N/A';
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return `KSh ${numAmount.toLocaleString()}`;
+  };
+
+  const getStatusColor = (status) => {
+    const statusLower = status?.toLowerCase() || '';
+    switch (statusLower) {
+      case 'confirmed':
+      case 'active':
+        return '#007AFF';
+      case 'completed':
+        return '#34C759';
+      case 'pending':
+      case 'upcoming':
+        return '#FF9500';
+      case 'cancelled':
+        return '#FF3B30';
+      default:
+        return '#8E8E93';
+    }
+  };
+
+  const getStatusText = (status) => {
+    if (!status) return 'Unknown';
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  };
+
+  const loadBookingDetails = async () => {
+    if (!bookingId) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await getBookingDetails(bookingId);
+      if (result.success && result.booking) {
+        const bookingData = result.booking;
+        
+        // Map API response to UI format
+        const mappedBooking = {
+          id: bookingData.id,
+          bookingId: bookingData.booking_id,
+          vehicleName: bookingData.car_name || 'Unknown Car',
+          vehicleModel: bookingData.car_model || '',
+          vehicleYear: bookingData.car_year,
+          vehicleMake: bookingData.car_make || '',
+          vehicleImages: bookingData.car_image_urls || [],
+          plate: '', // Not in API response
+          clientId: bookingData.client_id,
+          renter: {
+            name: bookingData.client_name || 'Client',
+            email: bookingData.client_email,
+            phone: bookingData.client_mobile_number,
+            avatar: null, // Not in API response
+            rating: null,
+            trips: null,
+          },
+          startDate: formatDate(bookingData.start_date),
+          endDate: formatDate(bookingData.end_date),
+          startDateRaw: bookingData.start_date,
+          endDateRaw: bookingData.end_date,
+          pickupTime: bookingData.pickup_time || '',
+          returnTime: bookingData.return_time || '',
+          pickupLocation: Array.isArray(bookingData.pickup_location) 
+            ? bookingData.pickup_location 
+            : bookingData.pickup_location ? [bookingData.pickup_location] : [],
+          returnLocation: Array.isArray(bookingData.return_location) 
+            ? bookingData.return_location 
+            : bookingData.return_location ? [bookingData.return_location] : [],
+          dropoffSameAsPickup: bookingData.dropoff_same_as_pickup || false,
+          price: {
+            days: bookingData.rental_days || 0,
+            dailyRate: bookingData.daily_rate || 0,
+            basePrice: bookingData.base_price || 0,
+            total: formatCurrency(bookingData.total_price),
+            commission: formatCurrency(0), // Not in API response
+            payout: formatCurrency(bookingData.total_price), // Assuming total is payout for now
+          },
+          status: bookingData.status,
+          specialRequirements: bookingData.special_requirements,
+          damageWaiverEnabled: bookingData.damage_waiver_enabled,
+          damageWaiverFee: formatCurrency(bookingData.damage_waiver_fee || 0),
+          driveType: bookingData.drive_type,
+          checkInPreference: bookingData.check_in_preference,
+          statusUpdatedAt: bookingData.status_updated_at,
+          cancellationReason: bookingData.cancellation_reason,
+          createdAt: bookingData.created_at,
+        };
+        
+        setBooking(mappedBooking);
+      } else {
+        setBooking(null);
+      }
+    } catch (error) {
+      console.error('Error loading booking details:', error);
+      setBooking(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBookingDetails();
+  }, [bookingId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (bookingId) {
+        loadBookingDetails();
+      }
+    }, [bookingId])
   );
 
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
@@ -33,7 +154,32 @@ export default function ActiveBookingScreen({ navigation, route }) {
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  // Show empty state if no booking data
+  // Show loading or empty state
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              lightHaptic();
+              navigation.goBack();
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Booking</Text>
+          <View style={styles.backButton} />
+        </View>
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color={COLORS.text} />
+        </View>
+      </View>
+    );
+  }
+
   if (!booking) {
     return (
       <View style={styles.container}>
@@ -83,13 +229,29 @@ export default function ActiveBookingScreen({ navigation, route }) {
         <FlatList
           ref={carouselRef}
           data={booking?.vehicleImages || []}
-          renderItem={renderCarouselItem}
+          renderItem={({ item }) => (
+            <View style={styles.carouselItem}>
+              <Image 
+                source={{ uri: typeof item === 'string' ? item : item.uri || item }} 
+                style={styles.carouselImage} 
+                resizeMode="cover"
+                defaultSource={require('../assets/images/logo.png')}
+              />
+            </View>
+          )}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item, index) => index.toString()}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
+          ListEmptyComponent={
+            <View style={styles.carouselItem}>
+              <View style={styles.carouselImagePlaceholder}>
+                <Ionicons name="car-outline" size={48} color={COLORS.subtle} />
+              </View>
+            </View>
+          }
         />
         {booking?.vehicleImages?.length > 1 && (
           <View style={styles.carouselIndicators}>
@@ -107,31 +269,118 @@ export default function ActiveBookingScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Booking details */}
+        {/* Booking ID & Status */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Booking Details</Text>
-          <View style={styles.vehicleNameRow}>
-            <Text style={styles.vehicleName}>{booking?.vehicleName || ''}</Text>
-            <View style={styles.plateRow}>
-              <Ionicons name="car-sport-outline" size={14} color={COLORS.text} />
-              <Text style={styles.plateText}>{booking?.plate || ''}</Text>
+          <View style={styles.statusHeader}>
+            <View style={styles.bookingIdRow}>
+              <Text style={styles.bookingIdLabel}>Booking ID</Text>
+              <Text style={styles.bookingIdValue}>{booking?.bookingId || `#${booking?.id}`}</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(booking?.status) + '1A' }]}>
+              <Text style={[styles.statusBadgeText, { color: getStatusColor(booking?.status) }]}>
+                {getStatusText(booking?.status)}
+              </Text>
             </View>
           </View>
+        </View>
+
+        {/* Vehicle Details */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Vehicle</Text>
+          <View style={styles.vehicleNameRow}>
+            <Text style={styles.vehicleName}>
+              {booking?.vehicleName || ''} {booking?.vehicleModel ? `• ${booking.vehicleModel}` : ''}
+            </Text>
+            {booking?.vehicleYear && (
+              <Text style={styles.vehicleYear}>{booking.vehicleYear}</Text>
+            )}
+          </View>
+          {booking?.vehicleMake && (
+            <Text style={styles.vehicleMake}>{booking.vehicleMake}</Text>
+          )}
           <View style={styles.divider} />
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Duration</Text>
+            <Text style={styles.detailLabel}>Rental Duration</Text>
             <Text style={styles.detailValue}>{booking?.price?.days || 0} days</Text>
           </View>
+          {booking?.price?.dailyRate > 0 && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Daily Rate</Text>
+                <Text style={styles.detailValue}>{formatCurrency(booking.price.dailyRate)}</Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Pickup Details */}
+        <View style={styles.card}>
+          <View style={styles.locationHeader}>
+            <Ionicons name="location" size={20} color="#007AFF" />
+            <Text style={styles.sectionTitle}>Pickup</Text>
+          </View>
+          {booking?.pickupLocation && booking.pickupLocation.length > 0 && (
+            <View style={styles.locationContent}>
+              <Text style={styles.locationText}>
+                {Array.isArray(booking.pickupLocation) 
+                  ? booking.pickupLocation.join(', ') 
+                  : booking.pickupLocation}
+              </Text>
+            </View>
+          )}
           <View style={styles.divider} />
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Start</Text>
+            <Text style={styles.detailLabel}>Date</Text>
             <Text style={styles.detailValue}>{booking?.startDate || ''}</Text>
           </View>
+          {booking?.pickupTime && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Time</Text>
+                <Text style={styles.detailValue}>{booking.pickupTime}</Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Dropoff Details */}
+        <View style={styles.card}>
+          <View style={styles.locationHeader}>
+            <Ionicons name="location-outline" size={20} color="#34C759" />
+            <Text style={styles.sectionTitle}>Dropoff</Text>
+            {booking?.dropoffSameAsPickup && (
+              <View style={styles.sameLocationBadge}>
+                <Text style={styles.sameLocationText}>Same as pickup</Text>
+              </View>
+            )}
+          </View>
+          {booking?.dropoffSameAsPickup ? (
+            <Text style={styles.sameLocationNote}>Same location as pickup</Text>
+          ) : booking?.returnLocation && booking.returnLocation.length > 0 ? (
+            <View style={styles.locationContent}>
+              <Text style={styles.locationText}>
+                {Array.isArray(booking.returnLocation) 
+                  ? booking.returnLocation.join(', ') 
+                  : booking.returnLocation}
+              </Text>
+            </View>
+          ) : null}
           <View style={styles.divider} />
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>End</Text>
+            <Text style={styles.detailLabel}>Date</Text>
             <Text style={styles.detailValue}>{booking?.endDate || ''}</Text>
           </View>
+          {booking?.returnTime && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Time</Text>
+                <Text style={styles.detailValue}>{booking.returnTime}</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Renter profile */}
@@ -147,6 +396,12 @@ export default function ActiveBookingScreen({ navigation, route }) {
             )}
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.renterName}>{booking?.renter?.name || ''}</Text>
+              {booking?.renter?.email && (
+                <Text style={styles.renterEmail}>{booking.renter.email}</Text>
+              )}
+              {booking?.renter?.phone && (
+                <Text style={styles.renterPhone}>{booking.renter.phone}</Text>
+              )}
               {booking?.renter?.rating && (
                 <View style={styles.renterRating}>
                   <Text style={styles.ratingText}>⭐</Text>
@@ -161,7 +416,10 @@ export default function ActiveBookingScreen({ navigation, route }) {
               style={styles.iconButton}
               onPress={() => {
                 lightHaptic();
-                navigation.navigate('Messages');
+                navigation.navigate('Chat', {
+                  clientId: booking.clientId,
+                  clientName: booking.renter?.name || 'Client',
+                });
               }}
             >
               <Ionicons name="chatbubble-ellipses-outline" size={20} color={COLORS.text} />
@@ -180,9 +438,58 @@ export default function ActiveBookingScreen({ navigation, route }) {
           </View>
         </View>
 
+        {/* Additional Details */}
+        {(booking?.driveType || booking?.checkInPreference || booking?.specialRequirements) && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Additional Details</Text>
+            {booking?.driveType && (
+              <>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Drive Type</Text>
+                  <Text style={styles.detailValue}>{booking.driveType}</Text>
+                </View>
+                <View style={styles.divider} />
+              </>
+            )}
+            {booking?.checkInPreference && (
+              <>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Check-in Preference</Text>
+                  <Text style={styles.detailValue}>{booking.checkInPreference}</Text>
+                </View>
+                <View style={styles.divider} />
+              </>
+            )}
+            {booking?.specialRequirements && (
+              <View style={styles.specialRequirementsContainer}>
+                <Text style={styles.detailLabel}>Special Requirements</Text>
+                <Text style={styles.specialRequirementsText}>{booking.specialRequirements}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Payment breakdown */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Payment</Text>
+          <Text style={styles.sectionTitle}>Payment Breakdown</Text>
+          {booking?.price?.basePrice > 0 && (
+            <>
+              <View style={styles.rowBetween}>
+                <Text style={styles.label}>Base Price ({booking?.price?.days || 0} days)</Text>
+                <Text style={styles.value}>{formatCurrency(booking.price.basePrice)}</Text>
+              </View>
+              <View style={styles.divider} />
+            </>
+          )}
+          {booking?.damageWaiverEnabled && booking?.damageWaiverFee && (
+            <>
+              <View style={styles.rowBetween}>
+                <Text style={styles.label}>Damage Waiver</Text>
+                <Text style={styles.value}>{booking.damageWaiverFee}</Text>
+              </View>
+              <View style={styles.divider} />
+            </>
+          )}
           <View style={styles.rowBetween}>
             <Text style={styles.label}>Total paid</Text>
             <Text style={styles.value}>{booking?.price?.total || ''}</Text>
@@ -190,7 +497,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
           <View style={styles.divider} />
           <View style={styles.rowBetween}>
             <Text style={styles.label}>Platform commission</Text>
-            <Text style={[styles.value, styles.commissionValue]}>- {booking?.price?.commission || ''}</Text>
+            <Text style={[styles.value, styles.commissionValue]}>- {booking?.price?.commission || formatCurrency(0)}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.rowBetween}>
@@ -201,16 +508,75 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
         {/* Actions */}
         <View style={styles.actionsCard}>
+          {booking?.renter?.phone && (
+            <>
+              <TouchableOpacity
+                style={styles.actionLink}
+                activeOpacity={0.7}
+                onPress={() => {
+                  lightHaptic();
+                  // TODO: Implement phone call
+                }}
+              >
+                <View style={styles.actionLeft}>
+                  <Ionicons name="call-outline" size={20} color={COLORS.text} />
+                  <Text style={styles.actionLinkText}>Call Client</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
+              </TouchableOpacity>
+              <View style={styles.actionDivider} />
+            </>
+          )}
           <TouchableOpacity
             style={styles.actionLink}
             activeOpacity={0.7}
             onPress={() => {
               lightHaptic();
-              navigation.navigate('ReportIssue', { bookingRef: `${booking?.vehicleName || ''} • ${booking?.plate || ''}` });
+              navigation.navigate('Chat', {
+                clientId: booking.clientId,
+                clientName: booking.renter?.name || 'Client',
+              });
             }}
           >
-            <Text style={styles.actionLinkText}>Report</Text>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.text} />
+            <View style={styles.actionLeft}>
+              <Ionicons name="chatbubble-ellipses-outline" size={20} color={COLORS.text} />
+              <Text style={styles.actionLinkText}>Message Client</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
+          </TouchableOpacity>
+          {(booking?.pickupLocation?.length > 0 || booking?.returnLocation?.length > 0) && (
+            <>
+              <View style={styles.actionDivider} />
+              <TouchableOpacity
+                style={styles.actionLink}
+                activeOpacity={0.7}
+                onPress={() => {
+                  lightHaptic();
+                  // TODO: Open map with location
+                }}
+              >
+                <View style={styles.actionLeft}>
+                  <Ionicons name="map-outline" size={20} color={COLORS.text} />
+                  <Text style={styles.actionLinkText}>View on Map</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
+              </TouchableOpacity>
+            </>
+          )}
+          <View style={styles.actionDivider} />
+          <TouchableOpacity
+            style={styles.actionLink}
+            activeOpacity={0.7}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('ReportIssue', { bookingRef: `${booking?.vehicleName || ''} • ${booking?.bookingId || ''}` });
+            }}
+          >
+            <View style={styles.actionLeft}>
+              <Ionicons name="flag-outline" size={20} color={COLORS.text} />
+              <Text style={styles.actionLinkText}>Report Issue</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -260,6 +626,13 @@ const styles = StyleSheet.create({
   carouselImage: {
     width: '100%',
     height: '100%',
+  },
+  carouselImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   carouselIndicators: {
     position: 'absolute',
@@ -335,6 +708,18 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 15,
     color: COLORS.text,
+    marginBottom: 4,
+  },
+  renterEmail: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    marginBottom: 2,
+  },
+  renterPhone: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
     marginBottom: 4,
   },
   renterRating: {
@@ -467,5 +852,94 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.subtle,
     textAlign: 'center',
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bookingIdRow: {
+    flex: 1,
+  },
+  bookingIdLabel: {
+    ...TYPE.body,
+    fontSize: 12,
+    color: COLORS.subtle,
+    marginBottom: 4,
+  },
+  bookingIdValue: {
+    ...TYPE.bodyStrong,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+  },
+  vehicleYear: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    marginTop: 4,
+  },
+  vehicleMake: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    marginTop: 4,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  locationContent: {
+    marginBottom: 8,
+  },
+  locationText: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.text,
+    lineHeight: 20,
+  },
+  sameLocationBadge: {
+    backgroundColor: '#34C7591A',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 'auto',
+  },
+  sameLocationText: {
+    fontSize: 11,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#34C759',
+  },
+  sameLocationNote: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  specialRequirementsContainer: {
+    marginTop: 8,
+  },
+  specialRequirementsText: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.text,
+    marginTop: 4,
+    lineHeight: 20,
+  },
+  actionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
 });
