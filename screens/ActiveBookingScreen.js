@@ -279,37 +279,40 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-
-      {/* Car Cover Image */}
-      <View style={styles.carouselContainer}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+      
+      {/* Header with Back Button */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
-          style={[styles.floatingBackButton, { top: insets.top + 10 }]}
+          style={styles.backButton}
           onPress={() => {
             lightHaptic();
             navigation.goBack();
           }}
           activeOpacity={0.7}
         >
-          <View style={styles.backButtonCircle}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-          </View>
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        {booking?.vehicleImages && booking.vehicleImages.length > 0 ? (
-          <Image 
-            source={{ uri: booking.vehicleImages[0] }} 
-            style={styles.carouselImage} 
-            resizeMode="cover"
-            defaultSource={require('../assets/images/logo.png')}
-          />
-        ) : (
-          <View style={styles.carouselImagePlaceholder}>
-            <Ionicons name="car-outline" size={48} color={COLORS.subtle} />
-          </View>
-        )}
+        <Text style={styles.headerTitle}>Booking</Text>
+        <View style={styles.backButton} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Car Cover Image */}
+        <View style={styles.carouselContainer}>
+          {booking?.vehicleImages && booking.vehicleImages.length > 0 ? (
+            <Image 
+              source={{ uri: booking.vehicleImages[0] }} 
+              style={styles.carouselImage} 
+              resizeMode="cover"
+              defaultSource={require('../assets/images/logo.png')}
+            />
+          ) : (
+            <View style={styles.carouselImagePlaceholder}>
+              <Ionicons name="car-outline" size={48} color={COLORS.subtle} />
+            </View>
+          )}
+        </View>
         {/* Countdown Section */}
         {countdown && (
           <View style={styles.countdownCard}>
@@ -385,10 +388,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
         {/* Pickup Details */}
         <View style={styles.card}>
-          <View style={styles.locationHeader}>
-            <Ionicons name="location" size={20} color={COLORS.text} />
-            <Text style={styles.sectionTitle}>Pickup</Text>
-          </View>
+          <Text style={styles.sectionTitle}>Pickup</Text>
           {booking?.pickupLocation && booking.pickupLocation.length > 0 && (
             <View style={styles.locationContent}>
               <Text style={styles.locationText}>
@@ -416,15 +416,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
         {/* Dropoff Details */}
         <View style={styles.card}>
-          <View style={styles.locationHeader}>
-            <Ionicons name="location-outline" size={20} color={COLORS.text} />
-            <Text style={styles.sectionTitle}>Dropoff</Text>
-            {booking?.dropoffSameAsPickup && (
-              <View style={styles.sameLocationBadge}>
-                <Text style={styles.sameLocationText}>Same as pickup</Text>
-              </View>
-            )}
-          </View>
+          <Text style={styles.sectionTitle}>Dropoff</Text>
           {booking?.dropoffSameAsPickup ? (
             <Text style={styles.sameLocationNote}>Same location as pickup</Text>
           ) : booking?.returnLocation && booking.returnLocation.length > 0 ? (
@@ -680,17 +672,21 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   content: {
-    paddingTop: 16,
+    paddingTop: 0,
     paddingBottom: 110,
   },
   carouselContainer: {
     width: SCREEN_WIDTH,
     height: 280,
     position: 'relative',
+    overflow: 'hidden',
+    marginBottom: 16,
   },
   carouselImage: {
     width: '100%',
     height: '100%',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
   carouselImagePlaceholder: {
     width: '100%',
@@ -698,6 +694,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
   countdownCard: {
     backgroundColor: COLORS.text,
@@ -1015,9 +1013,9 @@ const styles = StyleSheet.create({
   },
   sameLocationNote: {
     ...TYPE.body,
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.subtle,
-    fontStyle: 'italic',
+    marginTop: 8,
     marginBottom: 8,
     fontFamily: 'Nunito-Regular',
   },
