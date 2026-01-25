@@ -74,6 +74,7 @@ export default function MessagesScreen({ navigation }) {
             clientId: conv.client_id,
             clientName: conv.client_name || 'Client',
             clientEmail: conv.client_email,
+            clientAvatarUrl: conv.client_avatar_url,
             lastMessage: lastMessage?.message || null,
             timestamp: lastMessage ? formatTimestamp(lastMessage.created_at) : formatTimestamp(conv.last_message_at),
             createdAt: lastMessage?.created_at || conv.last_message_at,
@@ -245,9 +246,17 @@ export default function MessagesScreen({ navigation }) {
               activeOpacity={0.7}
             >
               <View style={styles.threadLeft}>
-                <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="person" size={24} color={COLORS.subtle} />
-                </View>
+                {conv.clientAvatarUrl ? (
+                  <Image 
+                    source={{ uri: conv.clientAvatarUrl }} 
+                    style={styles.avatar}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Ionicons name="person" size={24} color={COLORS.subtle} />
+                  </View>
+                )}
                 {conv.hasUnread && conv.unreadCount > 0 && (
                   <View style={styles.unreadBadge}>
                     <Text style={styles.unreadBadgeText}>

@@ -64,6 +64,8 @@ export const API_ENDPOINTS = {
   // Bookings
   HOST_BOOKINGS: '/api/v1/host/bookings',
   HOST_BOOKING_DETAIL: (bookingId) => `/api/v1/host/bookings/${bookingId}`,
+  HOST_CONFIRM_PICKUP: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-pickup`,
+  HOST_CONFIRM_DROPOFF: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-dropoff`,
 };
 
 /**

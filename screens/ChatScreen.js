@@ -71,6 +71,7 @@ export default function ChatScreen({ navigation, route }) {
           ts: formatTime(msg.created_at),
           createdAt: msg.created_at,
           isRead: msg.is_read,
+          senderAvatarUrl: msg.sender_avatar_url,
         }));
         
         setMessages(mappedMessages);

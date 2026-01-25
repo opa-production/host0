@@ -16,12 +16,12 @@
     "@react-navigation/native": "^6.1.9",
     "@react-navigation/native-stack": "^6.9.17",
     "@supabase/supabase-js": "^2.89.0",
-    "expo": "~54.0.30",
+    "expo": "~54.0.32",
     "expo-blur": "~15.0.8",
     "expo-calendar": "^15.0.8",
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "^19.0.21",
-    "expo-font": "~14.0.10",
+    "expo-font": "~14.0.11",
     "expo-haptics": "~15.0.8",
     "expo-image-picker": "~17.0.10",
     "expo-linear-gradient": "~15.0.8",
@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "babel-preset-expo": "~54.0.9",
+    "babel-preset-expo": "~54.0.10",
     "google-webfonts-helper": "^0.0.1-security",
     "react-native-svg-transformer": "^1.5.2"
   },

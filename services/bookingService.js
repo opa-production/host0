@@ -236,3 +236,219 @@ export const getBookingDetails = async (bookingId) => {
     };
   }
 };
+
+/**
+ * Confirm pickup for a booking
+ * @param {number|string} bookingId - Booking ID
+ * @returns {Promise<Object>} Result with success status and updated booking data or error
+ */
+export const confirmPickup = async (bookingId) => {
+  if (!bookingId) {
+    return {
+      success: false,
+      error: 'Booking ID is required',
+      booking: null,
+    };
+  }
+
+  const url = getApiUrl(API_ENDPOINTS.HOST_CONFIRM_PICKUP(bookingId));
+  const startTime = Date.now();
+  console.log('📅 [CONFIRM PICKUP API] Confirming pickup...');
+  console.log('📅 [CONFIRM PICKUP API] Endpoint URL:', url);
+  console.log('📅 [CONFIRM PICKUP API] Booking ID:', bookingId);
+  
+  try {
+    const token = await getUserToken();
+    
+    if (!token) {
+      console.error('📅 [CONFIRM PICKUP API] ERROR: No authentication token found');
+      return {
+        success: false,
+        error: 'No authentication token found',
+        booking: null,
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log('📅 [CONFIRM PICKUP API] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      responseTime: `${responseTime}ms`,
+    });
+
+    if (!response.ok) {
+      console.error('📅 [CONFIRM PICKUP API] Request failed with status:', response.status);
+      let errorMessage = 'Failed to confirm pickup';
+      try {
+        const errorData = await response.json();
+        console.error('📅 [CONFIRM PICKUP API] Error response data:', JSON.stringify(errorData, null, 2));
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+      } catch (e) {
+        console.error('📅 [CONFIRM PICKUP API] Could not parse error response as JSON:', e);
+        errorMessage = response.statusText || errorMessage;
+      }
+      
+      if (response.status === 401) {
+        console.log('📅 [CONFIRM PICKUP API] Token expired or invalid (401), clearing local data');
+        await clearUserData();
+        throw new Error('Session expired. Please login again.');
+      }
+      
+      return {
+        success: false,
+        error: errorMessage,
+        booking: null,
+      };
+    }
+
+    const data = await response.json();
+    const totalTime = Date.now() - startTime;
+    
+    console.log('📅 [CONFIRM PICKUP API] ✅ SUCCESS! Pickup confirmed:', {
+      bookingId: data.id || data.booking_id,
+      totalTime: `${totalTime}ms`,
+    });
+
+    return {
+      success: true,
+      booking: data,
+    };
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+    console.error(`📅 [CONFIRM PICKUP API] ❌ ERROR occurred after ${totalTime}ms:`, error);
+    console.error(`📅 [CONFIRM PICKUP API] Error details:`, {
+      message: error.message,
+      name: error.name,
+      url: url,
+      totalTime: `${totalTime}ms`,
+    });
+    
+    return {
+      success: false,
+      error: error.message || 'Network error',
+      booking: null,
+    };
+  }
+};
+
+/**
+ * Confirm dropoff for a booking
+ * @param {number|string} bookingId - Booking ID
+ * @returns {Promise<Object>} Result with success status and updated booking data or error
+ */
+export const confirmDropoff = async (bookingId) => {
+  if (!bookingId) {
+    return {
+      success: false,
+      error: 'Booking ID is required',
+      booking: null,
+    };
+  }
+
+  const url = getApiUrl(API_ENDPOINTS.HOST_CONFIRM_DROPOFF(bookingId));
+  const startTime = Date.now();
+  console.log('📅 [CONFIRM DROPOFF API] Confirming dropoff...');
+  console.log('📅 [CONFIRM DROPOFF API] Endpoint URL:', url);
+  console.log('📅 [CONFIRM DROPOFF API] Booking ID:', bookingId);
+  
+  try {
+    const token = await getUserToken();
+    
+    if (!token) {
+      console.error('📅 [CONFIRM DROPOFF API] ERROR: No authentication token found');
+      return {
+        success: false,
+        error: 'No authentication token found',
+        booking: null,
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log('📅 [CONFIRM DROPOFF API] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      responseTime: `${responseTime}ms`,
+    });
+
+    if (!response.ok) {
+      console.error('📅 [CONFIRM DROPOFF API] Request failed with status:', response.status);
+      let errorMessage = 'Failed to confirm dropoff';
+      try {
+        const errorData = await response.json();
+        console.error('📅 [CONFIRM DROPOFF API] Error response data:', JSON.stringify(errorData, null, 2));
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+      } catch (e) {
+        console.error('📅 [CONFIRM DROPOFF API] Could not parse error response as JSON:', e);
+        errorMessage = response.statusText || errorMessage;
+      }
+      
+      if (response.status === 401) {
+        console.log('📅 [CONFIRM DROPOFF API] Token expired or invalid (401), clearing local data');
+        await clearUserData();
+        throw new Error('Session expired. Please login again.');
+      }
+      
+      return {
+        success: false,
+        error: errorMessage,
+        booking: null,
+      };
+    }
+
+    const data = await response.json();
+    const totalTime = Date.now() - startTime;
+    
+    console.log('📅 [CONFIRM DROPOFF API] ✅ SUCCESS! Dropoff confirmed:', {
+      bookingId: data.id || data.booking_id,
+      totalTime: `${totalTime}ms`,
+    });
+
+    return {
+      success: true,
+      booking: data,
+    };
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+    console.error(`📅 [CONFIRM DROPOFF API] ❌ ERROR occurred after ${totalTime}ms:`, error);
+    console.error(`📅 [CONFIRM DROPOFF API] Error details:`, {
+      message: error.message,
+      name: error.name,
+      url: url,
+      totalTime: `${totalTime}ms`,
+    });
+    
+    return {
+      success: false,
+      error: error.message || 'Network error',
+      booking: null,
+    };
+  }
+};

@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getBookingDetails } from '../services/bookingService';
+import { getBookingDetails, confirmPickup, confirmDropoff } from '../services/bookingService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -15,6 +15,8 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const [booking, setBooking] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [countdown, setCountdown] = useState(null);
+  const [isConfirmingPickup, setIsConfirmingPickup] = useState(false);
+  const [isConfirmingDropoff, setIsConfirmingDropoff] = useState(false);
   const bookingId = route?.params?.bookingId || route?.params?.booking_id;
 
   const formatDate = (dateString) => {
@@ -223,6 +225,61 @@ export default function ActiveBookingScreen({ navigation, route }) {
     }, [bookingId])
   );
 
+  const handleConfirmPickup = async () => {
+    if (!bookingId || isConfirmingPickup) return;
+    
+    lightHaptic();
+    setIsConfirmingPickup(true);
+    
+    try {
+      const result = await confirmPickup(bookingId);
+      if (result.success) {
+        // Reload booking details to get updated status
+        await loadBookingDetails();
+      } else {
+        // Show error (you might want to add an Alert here)
+        console.error('Failed to confirm pickup:', result.error);
+      }
+    } catch (error) {
+      console.error('Error confirming pickup:', error);
+    } finally {
+      setIsConfirmingPickup(false);
+    }
+  };
+
+  const handleConfirmDropoff = async () => {
+    if (!bookingId || isConfirmingDropoff) return;
+    
+    lightHaptic();
+    setIsConfirmingDropoff(true);
+    
+    try {
+      const result = await confirmDropoff(bookingId);
+      if (result.success) {
+        // Reload booking details to get updated status
+        await loadBookingDetails();
+      } else {
+        // Show error (you might want to add an Alert here)
+        console.error('Failed to confirm dropoff:', result.error);
+      }
+    } catch (error) {
+      console.error('Error confirming dropoff:', error);
+    } finally {
+      setIsConfirmingDropoff(false);
+    }
+  };
+
+  // Determine if pickup/dropoff buttons should be shown
+  const shouldShowConfirmPickup = () => {
+    const status = booking?.status?.toLowerCase() || '';
+    return (status === 'confirmed' || status === 'pending' || status === 'upcoming') && !isConfirmingPickup;
+  };
+
+  const shouldShowConfirmDropoff = () => {
+    const status = booking?.status?.toLowerCase() || '';
+    return status === 'active' && !isConfirmingDropoff;
+  };
+
 
   // Show loading or empty state
   if (isLoading) {
@@ -341,6 +398,48 @@ export default function ActiveBookingScreen({ navigation, route }) {
             </View>
           </View>
         )}
+
+        {/* Confirm Pickup/Dropoff Actions */}
+        {shouldShowConfirmPickup() && (
+          <View style={styles.confirmActionCard}>
+            <TouchableOpacity
+              style={[styles.confirmButton, styles.confirmPickupButton]}
+              onPress={handleConfirmPickup}
+              disabled={isConfirmingPickup}
+              activeOpacity={0.8}
+            >
+              {isConfirmingPickup ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle-outline" size={24} color="#FFFFFF" />
+                  <Text style={styles.confirmButtonText}>Confirm Pickup</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {shouldShowConfirmDropoff() && (
+          <View style={styles.confirmActionCard}>
+            <TouchableOpacity
+              style={[styles.confirmButton, styles.confirmDropoffButton]}
+              onPress={handleConfirmDropoff}
+              disabled={isConfirmingDropoff}
+              activeOpacity={0.8}
+            >
+              {isConfirmingDropoff ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle-outline" size={24} color="#FFFFFF" />
+                  <Text style={styles.confirmButtonText}>Confirm Dropoff</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Booking ID & Status */}
         <View style={styles.card}>
           <View style={styles.statusHeader}>
@@ -1033,5 +1132,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  confirmActionCard: {
+    marginHorizontal: SPACING.l,
+    marginBottom: 16,
+  },
+  confirmButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: SPACING.l,
+    borderRadius: 12,
+    gap: 10,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  confirmPickupButton: {
+    backgroundColor: '#007AFF',
+  },
+  confirmDropoffButton: {
+    backgroundColor: '#34C759',
+  },
+  confirmButtonText: {
+    ...TYPE.bodyStrong,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontFamily: 'Nunito-SemiBold',
   },
 });
