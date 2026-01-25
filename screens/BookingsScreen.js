@@ -26,6 +26,18 @@ export default function BookingsScreen({ navigation }) {
     return timeString;
   };
 
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return 'N/A';
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return `KSh ${numAmount.toLocaleString()}`;
+  };
+
+  const formatDuration = (days) => {
+    if (!days && days !== 0) return '';
+    if (days === 1) return '1 day';
+    return `${days} days`;
+  };
+
   const getStatusColor = (status) => {
     const statusLower = status?.toLowerCase() || '';
     switch (statusLower) {
@@ -216,6 +228,14 @@ export default function BookingsScreen({ navigation }) {
                             {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
                           </Text>
                         </View>
+                        {booking.rentalDays && (
+                          <View style={styles.gridMetricItem}>
+                            <Ionicons name="time-outline" size={14} color={COLORS.subtle} />
+                            <Text style={styles.gridMetricText}>
+                              {formatDuration(booking.rentalDays)}
+                            </Text>
+                          </View>
+                        )}
                         <View style={styles.gridMetricItem}>
                           <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
                           <Text style={[styles.gridMetricText, { color: getStatusColor(booking.status) }]}>
@@ -223,11 +243,13 @@ export default function BookingsScreen({ navigation }) {
                           </Text>
                         </View>
                       </View>
+                      {booking.totalPrice && (
+                        <View style={styles.amountRow}>
+                          <Text style={styles.amountLabel}>Amount Earned</Text>
+                          <Text style={styles.amountValue}>{formatCurrency(booking.totalPrice)}</Text>
+                        </View>
+                      )}
                     </View>
-                  </View>
-                  <View style={styles.viewLink}>
-                    <Text style={styles.viewLinkText}>View Details</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#007AFF" />
                   </View>
                 </TouchableOpacity>
               );
@@ -501,7 +523,28 @@ const styles = StyleSheet.create({
   viewLinkText: {
     ...TYPE.bodyStrong,
     fontSize: 13,
-    color: '#007AFF',
+    color: COLORS.text,
+    textDecorationLine: 'underline',
+  },
+  amountRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderStrong,
+  },
+  amountLabel: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+  },
+  amountValue: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
+    fontFamily: 'Nunito-SemiBold',
   },
   emptyState: {
     flex: 1,
