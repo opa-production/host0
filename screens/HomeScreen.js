@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { useHost } from '../utils/HostContext';
+import { getHostBookings } from '../services/bookingService';
 
 const { width } = Dimensions.get('window');
 
@@ -31,10 +32,104 @@ export default function HomeScreen({ navigation }) {
   // Get user name from host profile
   const userName = host?.name || host?.full_name || 'Host';
 
+  // Calculate today's actions from bookings
+  const calculateTodayActions = (bookings) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    let pickups = 0;
+    let returns = 0;
+    let activeRentals = 0;
+    let pendingRequests = 0;
+
+    bookings.forEach((booking) => {
+      const status = booking.status?.toLowerCase() || '';
+      
+      // Active Rentals: bookings with status = 'active'
+      if (status === 'active') {
+        activeRentals++;
+      }
+
+      // Pending Requests: bookings with status = 'pending'
+      if (status === 'pending') {
+        pendingRequests++;
+      }
+
+      // Today's Pickups: bookings with start_date = today and status = confirmed/pending/upcoming
+      if (booking.start_date) {
+        try {
+          const startDate = new Date(booking.start_date);
+          startDate.setHours(0, 0, 0, 0);
+          
+          if (startDate.getTime() === today.getTime()) {
+            if (status === 'confirmed' || status === 'pending' || status === 'upcoming') {
+              pickups++;
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing start_date:', e);
+        }
+      }
+
+      // Car Returns: bookings with end_date = today and status = active
+      if (booking.end_date) {
+        try {
+          const endDate = new Date(booking.end_date);
+          endDate.setHours(0, 0, 0, 0);
+          
+          if (endDate.getTime() === today.getTime() && status === 'active') {
+            returns++;
+          }
+        } catch (e) {
+          console.error('Error parsing end_date:', e);
+        }
+      }
+    });
+
+    return {
+      pickups,
+      returns,
+      activeRentals,
+      pendingRequests,
+    };
+  };
+
+  const loadTodayActions = async () => {
+    try {
+      const result = await getHostBookings();
+      if (result.success && result.bookings) {
+        const actions = calculateTodayActions(result.bookings);
+        setOperationsData(actions);
+      } else {
+        setOperationsData({
+          activeRentals: 0,
+          pickups: 0,
+          returns: 0,
+          pendingRequests: 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading today\'s actions:', error);
+      setOperationsData({
+        activeRentals: 0,
+        pickups: 0,
+        returns: 0,
+        pendingRequests: 0,
+      });
+    }
+  };
+
   useEffect(() => {
-    // TODO: Fetch dashboard data from API
-    // For now, set loading to false immediately
-    setIsLoading(false);
+    const fetchData = async () => {
+      setIsLoading(true);
+      // TODO: Fetch financial dashboard data from API
+      await loadTodayActions();
+      setIsLoading(false);
+    };
+    
+    fetchData();
   }, []);
 
   const getGreeting = () => {
