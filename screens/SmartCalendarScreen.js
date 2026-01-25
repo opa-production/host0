@@ -8,12 +8,16 @@ import {
   ScrollView,
   Switch,
   Alert,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getHostCars } from '../services/carService';
+import { blockCarDates, getBlockedDates, unblockCarDate } from '../services/calendarService';
 
 function startOfDay(d) {
   const x = new Date(d);
@@ -112,14 +116,21 @@ export default function SmartCalendarScreen({ navigation }) {
   const [selectionStart, setSelectionStart] = useState(null);
   const [selectionEnd, setSelectionEnd] = useState(null);
 
-  const [unavailable, setUnavailable] = useState([
-    // sample
-    // { start: new Date(2025, 11, 26), end: new Date(2025, 11, 28) },
-  ]);
+  const [unavailable, setUnavailable] = useState([]);
+  const [blockedDatesData, setBlockedDatesData] = useState([]); // Store API blocked dates with IDs
 
   const [instantBooking, setInstantBooking] = useState(false);
   const [bufferHours, setBufferHours] = useState(0);
   const [syncEnabled, setSyncEnabled] = useState(false);
+
+  // Car selection
+  const [cars, setCars] = useState([]);
+  const [selectedCarId, setSelectedCarId] = useState(null);
+  const [selectedCar, setSelectedCar] = useState(null);
+  const [isLoadingCars, setIsLoadingCars] = useState(true);
+  const [isLoadingBlockedDates, setIsLoadingBlockedDates] = useState(false);
+  const [isCarPickerVisible, setIsCarPickerVisible] = useState(false);
+  const [isBlocking, setIsBlocking] = useState(false);
 
   const monthGrid = useMemo(() => {
     const y = month.getFullYear();
@@ -153,7 +164,12 @@ export default function SmartCalendarScreen({ navigation }) {
   };
 
   const onDayPress = (d) => {
-    if (!d) return;
+    if (!d || !selectedCarId) {
+      if (!selectedCarId) {
+        Alert.alert('Select Car', 'Please select a car first to manage its calendar');
+      }
+      return;
+    }
 
     if (!selectionStart || (selectionStart && selectionEnd)) {
       setSelectionStart(d);
@@ -169,60 +185,153 @@ export default function SmartCalendarScreen({ navigation }) {
     setSelectionEnd(null);
   };
 
-  const blockSelected = () => {
-    if (!selectionStart) return;
+  const blockSelected = async () => {
+    if (!selectionStart || !selectedCarId) {
+      Alert.alert('Error', 'Please select a car first');
+      return;
+    }
+
     const end = selectionEnd || selectionStart;
-    const next = mergeRanges([...unavailable, normalizeRange(selectionStart, end)]);
-    setUnavailable(next);
-    clearSelection();
+    // Backend expects datetime format (ISO with time), not just date
+    const startDate = startOfDay(selectionStart).toISOString();
+    const endDate = startOfDay(end).toISOString();
+
+    setIsBlocking(true);
+    try {
+      const result = await blockCarDates(selectedCarId, startDate, endDate);
+      if (result.success) {
+        // Reload blocked dates
+        await loadBlockedDates();
+        clearSelection();
+        Alert.alert('Success', 'Dates blocked successfully');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to block dates');
+      }
+    } catch (error) {
+      console.error('Error blocking dates:', error);
+      Alert.alert('Error', 'Failed to block dates. Please try again.');
+    } finally {
+      setIsBlocking(false);
+    }
   };
 
-  const unblockSelected = () => {
-    if (!selectionStart) return;
+  const unblockSelected = async () => {
+    if (!selectionStart || !selectedCarId) {
+      Alert.alert('Error', 'Please select a car first');
+      return;
+    }
+
     const end = selectionEnd || selectionStart;
     const sel = normalizeRange(selectionStart, end);
 
-    // remove any ranges that overlap selection by splitting
-    const next = [];
-    for (const r of unavailable) {
-      if (!rangesOverlap(r, sel)) {
-        next.push(r);
-        continue;
-      }
+    // Find blocked dates that overlap with selection
+    const overlappingBlockedDates = blockedDatesData.filter((bd) => {
+      const bdStart = startOfDay(new Date(bd.start_date));
+      const bdEnd = startOfDay(new Date(bd.end_date));
+      return rangesOverlap({ start: bdStart, end: bdEnd }, sel);
+    });
 
-      const rN = normalizeRange(r.start, r.end);
-      const s = startOfDay(sel.start).getTime();
-      const e = startOfDay(sel.end).getTime();
-      const rS = startOfDay(rN.start).getTime();
-      const rE = startOfDay(rN.end).getTime();
-      const oneDay = 24 * 60 * 60 * 1000;
-
-      // left remainder
-      if (rS < s) {
-        next.push({ start: new Date(rS), end: new Date(s - oneDay) });
-      }
-      // right remainder
-      if (rE > e) {
-        next.push({ start: new Date(e + oneDay), end: new Date(rE) });
-      }
+    if (overlappingBlockedDates.length === 0) {
+      Alert.alert('Info', 'No blocked dates found for the selected range');
+      return;
     }
 
-    setUnavailable(mergeRanges(next));
-    clearSelection();
+    // Unblock all overlapping dates
+    setIsBlocking(true);
+    try {
+      const unblockPromises = overlappingBlockedDates.map((bd) =>
+        unblockCarDate(selectedCarId, bd.id || bd.blocked_date_id)
+      );
+      const results = await Promise.all(unblockPromises);
+      
+      if (results.every((r) => r.success)) {
+        // Reload blocked dates
+        await loadBlockedDates();
+        clearSelection();
+        Alert.alert('Success', 'Dates unblocked successfully');
+      } else {
+        const errors = results.filter((r) => !r.success).map((r) => r.error);
+        Alert.alert('Error', errors.join('\n') || 'Failed to unblock some dates');
+      }
+    } catch (error) {
+      console.error('Error unblocking dates:', error);
+      Alert.alert('Error', 'Failed to unblock dates. Please try again.');
+    } finally {
+      setIsBlocking(false);
+    }
   };
 
-  // Load sync status and blocked dates on mount
+  // Load cars on mount
   useEffect(() => {
-    loadSyncStatus();
+    loadCars();
   }, []);
+
+  // Load blocked dates when car is selected
+  useEffect(() => {
+    if (selectedCarId) {
+      loadBlockedDates();
+    } else {
+      setUnavailable([]);
+      setBlockedDatesData([]);
+    }
+  }, [selectedCarId]);
 
   // Reload sync status when screen is focused
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadSyncStatus();
+      if (selectedCarId) {
+        loadBlockedDates();
+      }
     });
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, selectedCarId]);
+
+  const loadCars = async () => {
+    setIsLoadingCars(true);
+    try {
+      const result = await getHostCars();
+      if (result.success && result.cars) {
+        setCars(result.cars);
+        // Auto-select first car if available
+        if (result.cars.length > 0 && !selectedCarId) {
+          setSelectedCarId(result.cars[0].id);
+          setSelectedCar(result.cars[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading cars:', error);
+    } finally {
+      setIsLoadingCars(false);
+    }
+  };
+
+  const loadBlockedDates = async () => {
+    if (!selectedCarId) return;
+    
+    setIsLoadingBlockedDates(true);
+    try {
+      const result = await getBlockedDates(selectedCarId);
+      if (result.success && result.blockedDates) {
+        setBlockedDatesData(result.blockedDates);
+        // Convert API blocked dates to unavailable ranges
+        const ranges = result.blockedDates.map((bd) => ({
+          start: new Date(bd.start_date),
+          end: new Date(bd.end_date),
+          id: bd.id || bd.blocked_date_id,
+          reason: bd.reason,
+        }));
+        setUnavailable(ranges);
+      } else {
+        setBlockedDatesData([]);
+        setUnavailable([]);
+      }
+    } catch (error) {
+      console.error('Error loading blocked dates:', error);
+    } finally {
+      setIsLoadingBlockedDates(false);
+    }
+  };
 
   const loadSyncStatus = async () => {
     try {
@@ -292,6 +401,40 @@ export default function SmartCalendarScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
+          {/* Car Selector */}
+          <View style={styles.carSelectorContainer}>
+            <Text style={styles.carSelectorLabel}>Select Car</Text>
+            {isLoadingCars ? (
+              <ActivityIndicator size="small" color={COLORS.text} />
+            ) : (
+              <TouchableOpacity
+                style={styles.carSelectorButton}
+                onPress={() => setIsCarPickerVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.carSelectorText} numberOfLines={1}>
+                  {selectedCar 
+                    ? `${selectedCar.name || 'Car'} ${selectedCar.model ? `• ${selectedCar.model}` : ''}`
+                    : 'Select a car'}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color={COLORS.text} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {selectedCarId && isLoadingBlockedDates && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={COLORS.text} />
+              <Text style={styles.loadingText}>Loading blocked dates...</Text>
+            </View>
+          )}
+
+          {!selectedCarId && (
+            <Text style={styles.helperText}>
+              Please select a car to manage its calendar
+            </Text>
+          )}
+
           <View style={styles.monthRow}>
             <TouchableOpacity style={styles.monthNav} onPress={() => shiftMonth(-1)} activeOpacity={0.8}>
               <Ionicons name="chevron-back" size={18} color={COLORS.text} />
@@ -367,12 +510,30 @@ export default function SmartCalendarScreen({ navigation }) {
               <Text style={styles.secondaryButtonText}>Clear</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.dangerButton} onPress={unblockSelected} activeOpacity={0.9}>
-              <Text style={styles.dangerButtonText}>Unblock</Text>
+            <TouchableOpacity 
+              style={[styles.dangerButton, (!selectedCarId || isBlocking) && styles.dangerButtonDisabled]} 
+              onPress={unblockSelected} 
+              activeOpacity={0.9}
+              disabled={!selectedCarId || isBlocking}
+            >
+              {isBlocking ? (
+                <ActivityIndicator size="small" color={COLORS.danger} />
+              ) : (
+                <Text style={styles.dangerButtonText}>Unblock</Text>
+              )}
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.primaryButton} onPress={blockSelected} activeOpacity={0.9}>
-              <Text style={styles.primaryButtonText}>Block</Text>
+            <TouchableOpacity 
+              style={[styles.primaryButton, (!selectedCarId || isBlocking) && styles.primaryButtonDisabled]} 
+              onPress={blockSelected} 
+              activeOpacity={0.9}
+              disabled={!selectedCarId || isBlocking}
+            >
+              {isBlocking ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Block</Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -444,18 +605,117 @@ export default function SmartCalendarScreen({ navigation }) {
         <View style={[styles.card, { marginBottom: SPACING.xl }]}
         >
           <Text style={styles.sectionTitle}>Blocked dates</Text>
-          {unavailable.length === 0 ? (
+          {!selectedCarId ? (
+            <Text style={styles.helperText}>Select a car to view blocked dates</Text>
+          ) : unavailable.length === 0 ? (
             <Text style={styles.helperText}>No blocked dates yet.</Text>
           ) : (
             unavailable.map((r, i) => (
-              <View key={`${i}-${startOfDay(r.start).toISOString()}`} style={styles.blockedRow}>
-                <Text style={styles.blockedText}>{fmtRange(r.start, r.end)}</Text>
+              <TouchableOpacity
+                key={`${i}-${startOfDay(r.start).toISOString()}`}
+                style={styles.blockedRow}
+                onPress={async () => {
+                  if (r.id && selectedCarId) {
+                    Alert.alert(
+                      'Unblock Date',
+                      `Remove blocked date: ${fmtRange(r.start, r.end)}?`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Unblock',
+                          style: 'destructive',
+                          onPress: async () => {
+                            setIsBlocking(true);
+                            try {
+                              const result = await unblockCarDate(selectedCarId, r.id);
+                              if (result.success) {
+                                await loadBlockedDates();
+                                Alert.alert('Success', 'Date unblocked successfully');
+                              } else {
+                                Alert.alert('Error', result.error || 'Failed to unblock date');
+                              }
+                            } catch (error) {
+                              console.error('Error unblocking date:', error);
+                              Alert.alert('Error', 'Failed to unblock date. Please try again.');
+                            } finally {
+                              setIsBlocking(false);
+                            }
+                          },
+                        },
+                      ]
+                    );
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.blockedRowLeft}>
+                  <Text style={styles.blockedText}>{fmtRange(r.start, r.end)}</Text>
+                  {r.reason && (
+                    <Text style={styles.blockedReason}>{r.reason}</Text>
+                  )}
+                </View>
                 <Ionicons name="close-circle" size={18} color={COLORS.subtle} />
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>
       </ScrollView>
+
+      {/* Car Picker Modal */}
+      <Modal
+        visible={isCarPickerVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsCarPickerVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Car</Text>
+              <TouchableOpacity
+                onPress={() => setIsCarPickerVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalScrollView}>
+              {cars.length === 0 ? (
+                <Text style={styles.modalEmptyText}>No cars available</Text>
+              ) : (
+                cars.map((car) => (
+                  <TouchableOpacity
+                    key={car.id}
+                    style={[
+                      styles.carOption,
+                      selectedCarId === car.id && styles.carOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedCarId(car.id);
+                      setSelectedCar(car);
+                      setIsCarPickerVisible(false);
+                      lightHaptic();
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.carOptionContent}>
+                      <Text style={styles.carOptionName}>
+                        {car.name || 'Car'} {car.model ? `• ${car.model}` : ''}
+                      </Text>
+                      {car.year && (
+                        <Text style={styles.carOptionYear}>{car.year}</Text>
+                      )}
+                    </View>
+                    {selectedCarId === car.id && (
+                      <Ionicons name="checkmark-circle" size={24} color={COLORS.brand} />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -725,5 +985,124 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontFamily: 'Nunito-SemiBold',
+  },
+  carSelectorContainer: {
+    marginBottom: SPACING.m,
+    paddingBottom: SPACING.m,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
+  },
+  carSelectorLabel: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    marginBottom: 8,
+  },
+  carSelectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.button,
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.m,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderStrong,
+  },
+  carSelectorText: {
+    ...TYPE.bodyStrong,
+    flex: 1,
+    marginRight: 8,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.m,
+    gap: 8,
+  },
+  loadingText: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.5,
+  },
+  dangerButtonDisabled: {
+    opacity: 0.5,
+  },
+  blockedRowLeft: {
+    flex: 1,
+  },
+  blockedReason: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
+    marginTop: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+    paddingBottom: SPACING.xl,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingTop: SPACING.l,
+    paddingBottom: SPACING.m,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    ...TYPE.section,
+    fontSize: 18,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalScrollView: {
+    maxHeight: 400,
+  },
+  modalEmptyText: {
+    ...TYPE.body,
+    textAlign: 'center',
+    paddingVertical: SPACING.xl,
+    color: COLORS.subtle,
+  },
+  carOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.l,
+    paddingVertical: SPACING.m,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
+  },
+  carOptionSelected: {
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+  },
+  carOptionContent: {
+    flex: 1,
+  },
+  carOptionName: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+  },
+  carOptionYear: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
+    marginTop: 2,
   },
 });

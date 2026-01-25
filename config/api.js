@@ -66,6 +66,11 @@ export const API_ENDPOINTS = {
   HOST_BOOKING_DETAIL: (bookingId) => `/api/v1/host/bookings/${bookingId}`,
   HOST_CONFIRM_PICKUP: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-pickup`,
   HOST_CONFIRM_DROPOFF: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-dropoff`,
+  
+  // Car Date Blocking
+  HOST_BLOCK_DATES: (carId) => `/api/v1/host/cars/${carId}/block-dates`,
+  HOST_GET_BLOCKED_DATES: (carId) => `/api/v1/host/cars/${carId}/blocked-dates`,
+  HOST_UNBLOCK_DATE: (carId, blockedDateId) => `/api/v1/host/cars/${carId}/blocked-dates/${blockedDateId}`,
 };
 
 /**
