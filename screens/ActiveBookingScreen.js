@@ -122,7 +122,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
       );
       setCountdown(countdownData);
       
-      // Update countdown every minute
+      // Update countdown every minute (this also triggers re-render for dropoff button state)
       const interval = setInterval(() => {
         const updated = calculateCountdown(
           booking.startDateRaw,
@@ -269,6 +269,36 @@ export default function ActiveBookingScreen({ navigation, route }) {
     }
   };
 
+  // Check if dropoff time has been reached
+  const isDropoffTimeReached = () => {
+    if (!booking?.endDateRaw) return false;
+    
+    try {
+      const now = new Date();
+      const endDate = new Date(booking.endDateRaw);
+      
+      // If returnTime is provided, combine it with the end date
+      if (booking.returnTime) {
+        // Parse returnTime (format: "HH:MM" or "HH:MM:SS")
+        const timeParts = booking.returnTime.split(':');
+        if (timeParts.length >= 2) {
+          const hours = parseInt(timeParts[0], 10);
+          const minutes = parseInt(timeParts[1], 10);
+          endDate.setHours(hours, minutes, 0, 0);
+        }
+      } else {
+        // If no specific time, use end of day (23:59:59)
+        endDate.setHours(23, 59, 59, 999);
+      }
+      
+      // Check if current time is >= dropoff time
+      return now >= endDate;
+    } catch (e) {
+      console.error('Error checking dropoff time:', e);
+      return false;
+    }
+  };
+
   // Determine if pickup/dropoff buttons should be shown
   const shouldShowConfirmPickup = () => {
     const status = booking?.status?.toLowerCase() || '';
@@ -278,6 +308,10 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const shouldShowConfirmDropoff = () => {
     const status = booking?.status?.toLowerCase() || '';
     return status === 'active' && !isConfirmingDropoff;
+  };
+
+  const canConfirmDropoff = () => {
+    return shouldShowConfirmDropoff() && isDropoffTimeReached();
   };
 
 
@@ -423,20 +457,38 @@ export default function ActiveBookingScreen({ navigation, route }) {
         {shouldShowConfirmDropoff() && (
           <View style={styles.confirmActionCard}>
             <TouchableOpacity
-              style={[styles.confirmButton, styles.confirmDropoffButton]}
+              style={[
+                styles.confirmButton, 
+                styles.confirmDropoffButton,
+                !canConfirmDropoff() && styles.confirmButtonDisabled
+              ]}
               onPress={handleConfirmDropoff}
-              disabled={isConfirmingDropoff}
-              activeOpacity={0.8}
+              disabled={isConfirmingDropoff || !canConfirmDropoff()}
+              activeOpacity={canConfirmDropoff() ? 0.8 : 1}
             >
               {isConfirmingDropoff ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <Ionicons name="checkmark-circle-outline" size={24} color="#FFFFFF" />
-                  <Text style={styles.confirmButtonText}>Confirm Dropoff</Text>
+                  <Ionicons 
+                    name="checkmark-circle-outline" 
+                    size={24} 
+                    color={canConfirmDropoff() ? "#FFFFFF" : "rgba(255, 255, 255, 0.5)"} 
+                  />
+                  <Text style={[
+                    styles.confirmButtonText,
+                    !canConfirmDropoff() && styles.confirmButtonTextDisabled
+                  ]}>
+                    Confirm Dropoff
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
+            {!canConfirmDropoff() && (
+              <Text style={styles.disabledHint}>
+                Dropoff can only be confirmed after the scheduled dropoff time
+              </Text>
+            )}
           </View>
         )}
 
@@ -1165,5 +1217,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontFamily: 'Nunito-SemiBold',
+  },
+  confirmButtonDisabled: {
+    backgroundColor: '#8E8E93',
+    opacity: 0.6,
+  },
+  confirmButtonTextDisabled: {
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  disabledHint: {
+    ...TYPE.body,
+    fontSize: 12,
+    color: COLORS.subtle,
+    textAlign: 'center',
+    marginTop: 8,
+    fontFamily: 'Nunito-Regular',
   },
 });
