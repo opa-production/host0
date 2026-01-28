@@ -1,6 +1,7 @@
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { setUserId, setUserToken, getUserToken, clearUserData } from '../utils/userStorage';
 import { formatApiError, formatErrorMessage, logError, getApiErrorMessage } from '../utils/errorHandler';
+import { handleTokenExpiration } from '../utils/logoutHandler';
 
 /**
  * Register a new host account
@@ -381,8 +382,8 @@ export const getCurrentHost = async () => {
       
       // Token expired or invalid
       if (response.status === 401) {
-        console.log('Token expired or invalid, clearing local data');
-        await clearUserData();
+        console.log('Token expired or invalid, logging out');
+        await handleTokenExpiration();
         return {
           success: false,
           error: 'Session expired. Please login again.',
@@ -473,7 +474,7 @@ export const updateHostProfile = async (profileData) => {
       }
       
       if (response.status === 401) {
-        await clearUserData();
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       

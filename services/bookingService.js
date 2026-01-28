@@ -3,7 +3,7 @@
  * Handles booking-related API calls
  */
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
-import { getUserToken, clearUserData } from '../utils/userStorage';
+import { getUserToken } from '../utils/userStorage';
 
 /**
  * Get all bookings for the host
@@ -61,10 +61,10 @@ export const getHostBookings = async () => {
         errorMessage = response.statusText || errorMessage;
       }
       
-      // Token expired or invalid - clear local data
+      // Token expired or invalid - logout user
       if (response.status === 401) {
-        console.log('📅 [GET HOST BOOKINGS API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('📅 [GET HOST BOOKINGS API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
@@ -187,8 +187,8 @@ export const getBookingDetails = async (bookingId) => {
       }
       
       if (response.status === 401) {
-        console.log('📅 [GET BOOKING DETAILS API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('📅 [GET BOOKING DETAILS API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
@@ -303,8 +303,8 @@ export const confirmPickup = async (bookingId) => {
       }
       
       if (response.status === 401) {
-        console.log('📅 [CONFIRM PICKUP API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('📅 [CONFIRM PICKUP API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
@@ -411,8 +411,8 @@ export const confirmDropoff = async (bookingId) => {
       }
       
       if (response.status === 401) {
-        console.log('📅 [CONFIRM DROPOFF API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('📅 [CONFIRM DROPOFF API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       

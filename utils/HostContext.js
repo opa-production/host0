@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { getCurrentHost } from '../services/authService';
 import { getUserToken, clearUserData, setUserProfile, getUserProfile, getUserId } from './userStorage';
 import { fetchHostAvatarFromSupabase } from '../services/mediaService';
+import { setLogoutHandler } from './logoutHandler';
 
 const HostContext = createContext();
 
@@ -181,6 +182,14 @@ export const HostProvider = ({ children }) => {
     // Clear all storage
     await clearUserData();
   };
+
+  // Register logout handler so it can be called from services
+  useEffect(() => {
+    setLogoutHandler(logout);
+    return () => {
+      setLogoutHandler(null);
+    };
+  }, []);
 
   const updateHost = async (updates) => {
     const updatedHost = { ...host, ...updates };

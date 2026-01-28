@@ -3,7 +3,7 @@
  * Handles car date blocking/unblocking
  */
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
-import { getUserToken, clearUserData } from '../utils/userStorage';
+import { getUserToken } from '../utils/userStorage';
 
 /**
  * Block dates for a car
@@ -95,8 +95,8 @@ export const blockCarDates = async (carId, startDate, endDate, reason = null) =>
       }
       
       if (response.status === 401) {
-        console.log('📅 [BLOCK CAR DATES API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('📅 [BLOCK CAR DATES API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
@@ -203,8 +203,8 @@ export const getBlockedDates = async (carId) => {
       }
       
       if (response.status === 401) {
-        console.log('📅 [GET BLOCKED DATES API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('📅 [GET BLOCKED DATES API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
@@ -326,8 +326,8 @@ export const unblockCarDate = async (carId, blockedDateId) => {
       }
       
       if (response.status === 401) {
-        console.log('📅 [UNBLOCK CAR DATE API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('📅 [UNBLOCK CAR DATE API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       

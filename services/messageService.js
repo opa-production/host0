@@ -3,7 +3,7 @@
  * Handles client-host messaging
  */
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
-import { getUserToken, clearUserData } from '../utils/userStorage';
+import { getUserToken } from '../utils/userStorage';
 
 /**
  * Get all conversations for the host
@@ -62,10 +62,10 @@ export const getHostConversations = async () => {
         errorMessage = response.statusText || errorMessage;
       }
       
-      // Token expired or invalid - clear local data
+      // Token expired or invalid - logout user
       if (response.status === 401) {
-        console.log('💬 [GET HOST CONVERSATIONS API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('💬 [GET HOST CONVERSATIONS API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
@@ -180,8 +180,8 @@ export const getClientConversation = async (clientId) => {
       }
       
       if (response.status === 401) {
-        console.log('💬 [GET CLIENT CONVERSATION API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('💬 [GET CLIENT CONVERSATION API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
@@ -307,8 +307,8 @@ export const sendMessageToClient = async (clientId, message) => {
       }
       
       if (response.status === 401) {
-        console.log('💬 [SEND MESSAGE TO CLIENT API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('💬 [SEND MESSAGE TO CLIENT API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       

@@ -1,17 +1,44 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, Image, Alert, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { fetchCarImagesFromSupabase } from '../services/carService';
+import { getUserId } from '../utils/userStorage';
 
 export default function PastBookingDetailScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const [rateOpen, setRateOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [note, setNote] = useState('');
+  const [vehicleImage, setVehicleImage] = useState(null);
 
   const routeBooking = route?.params?.booking || {};
+
+  // Fetch car image if not provided
+  useEffect(() => {
+    const loadCarImage = async () => {
+      // If vehicleImage is already provided and is a URL string, use it
+      if (routeBooking.vehicleImage && typeof routeBooking.vehicleImage === 'string') {
+        setVehicleImage(routeBooking.vehicleImage);
+        return;
+      }
+
+      // Otherwise, try to fetch from Supabase
+      if (routeBooking.carId) {
+        const userId = await getUserId();
+        if (userId) {
+          const imageResult = await fetchCarImagesFromSupabase(routeBooking.carId, userId);
+          if (imageResult.coverPhoto) {
+            setVehicleImage(imageResult.coverPhoto);
+          }
+        }
+      }
+    };
+
+    loadCarImage();
+  }, [routeBooking.vehicleImage, routeBooking.carId]);
   
   // Convert payout to number if it's a string
   let payout = 0;
@@ -37,7 +64,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   
   const booking = {
     vehicleName: routeBooking.vehicleName || '',
-    vehicleImage: routeBooking.vehicleImage || null,
+    vehicleImage: vehicleImage || routeBooking.vehicleImage || null,
     plate: routeBooking.plate || '',
     location: routeBooking.location || '',
     startDate: routeBooking.startDate || '',
@@ -128,7 +155,13 @@ export default function PastBookingDetailScreen({ navigation, route }) {
             {/* Vehicle Info */}
             <View style={styles.heroCard}>
               {booking.vehicleImage ? (
-                <Image source={booking.vehicleImage} style={styles.heroAvatar} resizeMode="cover" />
+                <Image 
+                  source={typeof booking.vehicleImage === 'string' 
+                    ? { uri: booking.vehicleImage } 
+                    : booking.vehicleImage} 
+                  style={styles.heroAvatar} 
+                  resizeMode="cover" 
+                />
               ) : (
                 <View style={styles.heroAvatar}>
                   <Ionicons name="car-outline" size={24} color={COLORS.subtle} />
@@ -155,7 +188,9 @@ export default function PastBookingDetailScreen({ navigation, route }) {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.detailLabel}>Start</Text>
-              <Text style={styles.detailValue}>{booking.startDate} • {booking.startTime}</Text>
+              <Text style={styles.detailValue}>
+                {booking.startDate || ''}{booking.startTime ? ` • ${booking.startTime}` : ''}
+              </Text>
             </View>
           </View>
           <View style={styles.divider} />
@@ -165,7 +200,9 @@ export default function PastBookingDetailScreen({ navigation, route }) {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.detailLabel}>End</Text>
-              <Text style={styles.detailValue}>{booking.endDate} • {booking.endTime}</Text>
+              <Text style={styles.detailValue}>
+                {booking.endDate || ''}{booking.endTime ? ` • ${booking.endTime}` : ''}
+              </Text>
             </View>
           </View>
         </View>
@@ -201,9 +238,9 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                 <Text style={styles.renterBio} numberOfLines={2}>{booking.renter.bio}</Text>
               )}
               <View style={styles.renterMetaRow}>
-                {booking?.renter?.rating && (
+                {booking?.renter?.rating ? (
                   <Text style={styles.renterMeta}>{booking.renter.rating}★</Text>
-                )}
+                ) : null}
                 <Text style={styles.renterMeta}> · {booking?.renter?.trips ?? 0} trips</Text>
               </View>
             </View>

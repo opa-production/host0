@@ -3,6 +3,7 @@
  */
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken } from '../utils/userStorage';
+import { handleTokenExpiration } from '../utils/logoutHandler';
 
 /**
  * Add a new M-Pesa payment method
@@ -63,6 +64,7 @@ export const addMpesaPaymentMethod = async (name, mpesaNumber, isDefault = false
       }
       
       if (response.status === 401) {
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
@@ -256,6 +258,7 @@ export const addCardPaymentMethod = async (name, cardNumber, expiryDate, cvc, ca
       }
       
       if (response.status === 401) {
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
@@ -335,6 +338,7 @@ export const deletePaymentMethod = async (paymentMethodId) => {
       }
       
       if (response.status === 401) {
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       

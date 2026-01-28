@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostBookings } from '../services/bookingService';
+import { fetchCarImagesFromSupabase } from '../services/carService';
+import { getUserId } from '../utils/userStorage';
 
 export default function BookingsScreen({ navigation }) {
   const [bookings, setBookings] = useState([]);
@@ -66,42 +68,57 @@ export default function BookingsScreen({ navigation }) {
     try {
       const result = await getHostBookings();
       if (result.success && result.bookings) {
-        // Map API response to UI format
-        const mappedBookings = result.bookings.map((booking) => ({
-          id: booking.id,
-          bookingId: booking.booking_id,
-          clientId: booking.client_id,
-          carId: booking.car_id,
-          carName: booking.car_name || 'Unknown Car',
-          carModel: booking.car_model || '',
-          carYear: booking.car_year,
-          carMake: booking.car_make || '',
-          carImageUrls: booking.car_image_urls || [],
-          clientName: booking.client_name || 'Client',
-          clientEmail: booking.client_email,
-          clientMobile: booking.client_mobile_number,
-          startDate: booking.start_date,
-          endDate: booking.end_date,
-          pickupTime: booking.pickup_time,
-          returnTime: booking.return_time,
-          pickupLocation: booking.pickup_location || [],
-          returnLocation: booking.return_location || [],
-          dropoffSameAsPickup: booking.dropoff_same_as_pickup,
-          dailyRate: booking.daily_rate,
-          rentalDays: booking.rental_days,
-          basePrice: booking.base_price,
-          damageWaiverFee: booking.damage_waiver_fee,
-          totalPrice: booking.total_price,
-          damageWaiverEnabled: booking.damage_waiver_enabled,
-          driveType: booking.drive_type,
-          checkInPreference: booking.check_in_preference,
-          specialRequirements: booking.special_requirements,
-          status: booking.status,
-          statusUpdatedAt: booking.status_updated_at,
-          cancellationReason: booking.cancellation_reason,
-          createdAt: booking.created_at,
-          updatedAt: booking.updated_at,
-        }));
+        // Fetch car images for each booking
+        const userId = await getUserId();
+        const mappedBookings = await Promise.all(
+          result.bookings.map(async (booking) => {
+            let carImageUrls = booking.car_image_urls || [];
+            
+            // If no images from API, fetch from Supabase (same as my cars page)
+            if (carImageUrls.length === 0 && booking.car_id && userId) {
+              const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
+              if (imageResult.images && imageResult.images.length > 0) {
+                carImageUrls = imageResult.images;
+              }
+            }
+
+            return {
+              id: booking.id,
+              bookingId: booking.booking_id,
+              clientId: booking.client_id,
+              carId: booking.car_id,
+              carName: booking.car_name || 'Unknown Car',
+              carModel: booking.car_model || '',
+              carYear: booking.car_year,
+              carMake: booking.car_make || '',
+              carImageUrls: carImageUrls,
+              clientName: booking.client_name || 'Client',
+              clientEmail: booking.client_email,
+              clientMobile: booking.client_mobile_number,
+              startDate: booking.start_date,
+              endDate: booking.end_date,
+              pickupTime: booking.pickup_time,
+              returnTime: booking.return_time,
+              pickupLocation: booking.pickup_location || [],
+              returnLocation: booking.return_location || [],
+              dropoffSameAsPickup: booking.dropoff_same_as_pickup,
+              dailyRate: booking.daily_rate,
+              rentalDays: booking.rental_days,
+              basePrice: booking.base_price,
+              damageWaiverFee: booking.damage_waiver_fee,
+              totalPrice: booking.total_price,
+              damageWaiverEnabled: booking.damage_waiver_enabled,
+              driveType: booking.drive_type,
+              checkInPreference: booking.check_in_preference,
+              specialRequirements: booking.special_requirements,
+              status: booking.status,
+              statusUpdatedAt: booking.status_updated_at,
+              cancellationReason: booking.cancellation_reason,
+              createdAt: booking.created_at,
+              updatedAt: booking.updated_at,
+            };
+          })
+        );
         
         setBookings(mappedBookings);
       } else {
@@ -131,11 +148,48 @@ export default function BookingsScreen({ navigation }) {
     }, [])
   );
 
-  const handleBookingPress = (booking) => {
+  const handleBookingPress = async (booking) => {
     lightHaptic();
-    navigation.navigate('ActiveBooking', {
-      bookingId: booking.bookingId || booking.id,
-    });
+    // Route completed bookings to past booking detail screen
+    if (booking.status?.toLowerCase() === 'completed') {
+      // Format booking data for past booking detail screen
+      const pastBookingData = {
+        id: booking.id,
+        bookingId: booking.bookingId || booking.id,
+        carId: booking.carId,
+        vehicleName: booking.carName || 'Unknown Car',
+        carModel: booking.carModel || '',
+        vehicleImage: booking.carImageUrls && booking.carImageUrls.length > 0 
+          ? booking.carImageUrls[0] 
+          : null,
+        location: Array.isArray(booking.pickupLocation) 
+          ? booking.pickupLocation[0] || '' 
+          : booking.pickupLocation || '',
+        startDate: formatDate(booking.startDate),
+        endDate: formatDate(booking.endDate),
+        startTime: booking.pickupTime || '',
+        endTime: booking.returnTime || '',
+        duration: booking.rentalDays 
+          ? `${booking.rentalDays} ${booking.rentalDays === 1 ? 'day' : 'days'}` 
+          : '',
+        status: booking.status,
+        totalPaid: booking.totalPrice || 0,
+        payout: booking.totalPrice || 0,
+        plate: '',
+        renter: {
+          name: booking.clientName || 'Client',
+          bio: '',
+          rating: 0,
+          trips: 0,
+          avatar: null,
+        },
+      };
+      navigation.navigate('PastBookingDetail', { booking: pastBookingData });
+    } else {
+      navigation.navigate('ActiveBooking', {
+        bookingId: booking.bookingId || booking.id,
+      });
+    }
   };
 
   return (

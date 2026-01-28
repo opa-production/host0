@@ -512,7 +512,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
           <Text style={styles.sectionTitle}>Vehicle</Text>
           <View style={styles.vehicleNameRow}>
             <Text style={styles.vehicleName}>
-              {booking?.vehicleName || ''} {booking?.vehicleModel ? `• ${booking.vehicleModel}` : ''}
+              {booking?.vehicleName || ''}{booking?.vehicleModel ? ` • ${booking.vehicleModel}` : ''}
             </Text>
             {booking?.vehicleYear && (
               <Text style={styles.vehicleYear}>{booking.vehicleYear}</Text>
@@ -607,10 +607,10 @@ export default function ActiveBookingScreen({ navigation, route }) {
               </View>
             )}
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.renterName}>{booking?.renter?.name || ''}</Text>
-              {booking?.renter?.email && (
+              <Text style={styles.renterName}>{booking?.renter?.name || 'Client'}</Text>
+              {booking?.renter?.email ? (
                 <Text style={styles.renterEmail}>{booking.renter.email}</Text>
-              )}
+              ) : null}
               {booking?.renter?.phone && (
                 <Text style={styles.renterPhone}>{booking.renter.phone}</Text>
               )}
@@ -704,7 +704,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
           )}
           <View style={styles.rowBetween}>
             <Text style={styles.label}>Total paid</Text>
-            <Text style={styles.value}>{booking?.price?.total || ''}</Text>
+            <Text style={styles.value}>{booking?.price?.total || formatCurrency(0)}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.rowBetween}>
@@ -714,7 +714,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
           <View style={styles.divider} />
           <View style={styles.rowBetween}>
             <Text style={[styles.label, styles.bold]}>Your payout</Text>
-            <Text style={[styles.value, styles.bold]}>{booking?.price?.payout || ''}</Text>
+            <Text style={[styles.value, styles.bold]}>{booking?.price?.payout || formatCurrency(0)}</Text>
           </View>
         </View>
 
@@ -781,7 +781,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
             activeOpacity={0.7}
             onPress={() => {
               lightHaptic();
-              navigation.navigate('ReportIssue', { bookingRef: `${booking?.vehicleName || ''} • ${booking?.bookingId || ''}` });
+              navigation.navigate('ReportIssue', { bookingRef: `${booking?.vehicleName || 'Booking'} • ${booking?.bookingId || booking?.id || ''}` });
             }}
           >
             <View style={styles.actionLeft}>

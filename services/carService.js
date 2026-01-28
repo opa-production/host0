@@ -820,7 +820,7 @@ export const migrateExistingCarImages = async (dryRun = false) => {
  * @param {number} userId - User ID
  * @returns {Promise<Object>} Object with coverPhoto URL and images array
  */
-const fetchCarImagesFromSupabase = async (carId, userId) => {
+export const fetchCarImagesFromSupabase = async (carId, userId) => {
   try {
     if (!carId || !userId) {
       return { coverPhoto: null, images: [] };
@@ -1021,10 +1021,10 @@ export const getHostCars = async () => {
         errorMessage = response.statusText || errorMessage;
       }
       
-      // Token expired or invalid - clear local data
+      // Token expired or invalid - logout user
       if (response.status === 401) {
-        console.log('🚗 [GET HOST CARS API] Token expired or invalid (401), clearing local data');
-        await clearUserData();
+        console.log('🚗 [GET HOST CARS API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
         throw new Error('Session expired. Please login again.');
       }
       
