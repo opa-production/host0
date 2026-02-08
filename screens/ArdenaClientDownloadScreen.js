@@ -5,11 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 
-export default function OpaClientDownloadScreen({ navigation }) {
+export default function ArdenaClientDownloadScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
   const handleDownload = () => {
-    // TODO: Link to Opa client app store / download URL
+    // TODO: Link to Ardena client app store / download URL
   };
 
   return (
@@ -27,7 +27,7 @@ export default function OpaClientDownloadScreen({ navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Download Opa Client</Text>
+        <Text style={styles.headerTitle}>Download Ardena Client</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -36,13 +36,13 @@ export default function OpaClientDownloadScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerSection}>
-          <Text style={styles.subtitle}>Get the Opa client app for a smoother booking experience.</Text>
+          <Text style={styles.subtitle}>Get the Ardena client app for a smoother booking experience.</Text>
         </View>
 
         <View style={styles.card}>
           <View style={styles.row}>
             <Ionicons name="download-outline" size={20} color="#111111" />
-            <Text style={styles.cardText}>Install the latest Opa client to manage rides faster.</Text>
+            <Text style={styles.cardText}>Install the latest Ardena client to manage rides faster.</Text>
           </View>
           <TouchableOpacity style={styles.primaryButton} activeOpacity={0.9} onPress={handleDownload}>
             <Text style={styles.primaryButtonText}>Download</Text>

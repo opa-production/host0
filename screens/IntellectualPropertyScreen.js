@@ -15,15 +15,15 @@ const IntellectualPropertyScreen = () => {
   const sections = [
     {
       title: 'Ownership of Content',
-      content: 'All content on the OpaHost platform, including logos, designs, text, graphics, images, software, code, and user interfaces, is the exclusive property of OpaHost and is protected by copyright, trademark, and other intellectual property laws.',
+      content: 'All content on the Ardena Host platform, including logos, designs, text, graphics, images, software, code, and user interfaces, is the exclusive property of Ardena Host and is protected by copyright, trademark, and other intellectual property laws.',
     },
     {
       title: 'Trademarks',
-      content: 'The OpaHost name, logo, and all related marks, graphics, and designs are trademarks of OpaHost. These trademarks may not be used without our prior written permission.',
+      content: 'The Ardena Host name, logo, and all related marks, graphics, and designs are trademarks of Ardena Host. These trademarks may not be used without our prior written permission.',
     },
     {
       title: 'User-Generated Content',
-      content: 'When you upload content to our platform, you grant OpaHost a non-exclusive, worldwide, royalty-free license to use, display, and distribute that content for the purpose of operating and promoting the platform.',
+      content: 'When you upload content to our platform, you grant Ardena Host a non-exclusive, worldwide, royalty-free license to use, display, and distribute that content for the purpose of operating and promoting the platform.',
     },
     {
       title: 'Prohibited Uses',
@@ -35,23 +35,23 @@ const IntellectualPropertyScreen = () => {
     },
     {
       title: 'Copyright Protection',
-      content: 'All original content on the OpaHost platform is protected by copyright law. If you believe your copyright has been infringed, please contact us with details.',
+      content: 'All original content on the Ardena Host platform is protected by copyright law. If you believe your copyright has been infringed, please contact us with details.',
     },
     {
       title: 'License to Use Platform',
-      content: 'OpaHost grants users a limited, non-exclusive, non-transferable license to access and use the platform for its intended purposes.',
+      content: 'Ardena Host grants users a limited, non-exclusive, non-transferable license to access and use the platform for its intended purposes.',
     },
     {
       title: 'Enforcement',
-      content: 'OpaHost takes intellectual property rights seriously. Violations of these terms may result in immediate account termination, removal of infringing content, and potential legal action.',
+      content: 'Ardena Host takes intellectual property rights seriously. Violations of these terms may result in immediate account termination, removal of infringing content, and potential legal action.',
     },
     {
       title: 'Reporting Infringement',
-      content: 'If you believe your intellectual property rights have been violated on our platform, please contact us at legal@opahost.com with detailed information.',
+      content: 'If you believe your intellectual property rights have been violated on our platform, please contact us at legal@ardena.xyz with detailed information.',
     },
     {
       title: 'Reservation of Rights',
-      content: 'All rights not expressly granted in these terms are reserved by OpaHost. Nothing in these terms should be construed as granting any license or right to use any intellectual property without our explicit written permission.',
+      content: 'All rights not expressly granted in these terms are reserved by Ardena Host. Nothing in these terms should be construed as granting any license or right to use any intellectual property without our explicit written permission.',
     },
   ];
 

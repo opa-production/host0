@@ -19,11 +19,11 @@ const TermsOfServiceScreen = () => {
   const sections = [
     {
       title: '1. Acceptance of Terms',
-      content: 'By accessing and using the OpaHost platform, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use our services.',
+      content: 'By accessing and using the Ardena Host platform, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use our services.',
     },
     {
       title: '2. Platform Services',
-      content: 'OpaHost provides a platform for car rental hosting, connecting car owners with renters through a secure marketplace.',
+      content: 'Ardena Host provides a platform for car rental hosting, connecting car owners with renters through a secure marketplace.',
     },
     {
       title: '3. User Accounts',
@@ -43,11 +43,11 @@ const TermsOfServiceScreen = () => {
     },
     {
       title: '7. Liability and Disclaimers',
-      content: 'OpaHost provides the platform "as is" and does not guarantee uninterrupted or error-free service.',
+      content: 'Ardena Host provides the platform "as is" and does not guarantee uninterrupted or error-free service.',
     },
     {
       title: '8. Modifications to Terms',
-      content: 'OpaHost reserves the right to modify these terms at any time. Users will be notified of significant changes.',
+      content: 'Ardena Host reserves the right to modify these terms at any time. Users will be notified of significant changes.',
     },
     {
       title: '9. Termination',

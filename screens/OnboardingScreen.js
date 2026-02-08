@@ -23,7 +23,7 @@ const slides = [
   {
     key: 'income',
     title: 'Turn your car into income',
-    description: 'Opa lets you list your car and earn from it without stress. No chasing renters, no confusion just a clear, structured way to make money from what you already own.',
+    description: 'Ardena lets you list your car and earn from it without stress. No chasing renters, no confusion just a clear, structured way to make money from what you already own.',
     Icon: SavingsSvg
   },
   {
@@ -40,7 +40,7 @@ const slides = [
   },
   {
     key: 'welcome',
-    title: 'Welcome to Opa Hosts',
+    title: 'Welcome to Ardena Host',
     description: 'List your car, earn with confidence, and join a trusted community of car owners building the future of car rentals.',
     Icon: WelcomeSvg
   },

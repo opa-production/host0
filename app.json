@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "OpaHost",
-    "slug": "opahost",
+    "name": "Ardena Host",
+    "slug": "ardenahost",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -16,14 +16,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.opahost.app"
+      "bundleIdentifier": "com.ardenahost.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.opahost.app",
+      "package": "com.ardenahost.app",
       "versionCode": 1,
       "permissions": [
         "android.permission.READ_EXTERNAL_STORAGE",

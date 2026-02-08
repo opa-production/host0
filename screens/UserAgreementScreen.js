@@ -19,7 +19,7 @@ const UserAgreementScreen = () => {
   const sections = [
     {
       title: 'Agreement Overview',
-      content: 'This User Agreement establishes the relationship between OpaHost and its users, including car owners, renters, and service providers. By using our platform, you agree to the terms outlined in this agreement.',
+      content: 'This User Agreement establishes the relationship between Ardena Host and its users, including car owners, renters, and service providers. By using our platform, you agree to the terms outlined in this agreement.',
     },
     {
       title: 'Car Owner Responsibilities',
@@ -43,7 +43,7 @@ const UserAgreementScreen = () => {
     },
     {
       title: 'Dispute Resolution',
-      content: 'In case of disputes between users, OpaHost provides a dispute resolution process. Users should first attempt to resolve issues directly.',
+      content: 'In case of disputes between users, Ardena Host provides a dispute resolution process. Users should first attempt to resolve issues directly.',
     },
     {
       title: 'Service Provider Terms',

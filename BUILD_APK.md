@@ -1,4 +1,4 @@
-# Building Standalone APK for OpaHost
+# Building Standalone APK for Ardena Host
 
 This guide will help you build a standalone APK that can be installed on Android devices without requiring your PC to be running.
 
@@ -24,7 +24,7 @@ eas login
 
 The project is already configured with:
 - App icon: `assets/images/logo.png`
-- Package name: `com.opahost.app`
+- Package name: `com.ardenahost.app`
 - Version: `1.0.0`
 
 ## Step 4: Build APK

@@ -15,7 +15,7 @@ const LiabilityInsuranceScreen = () => {
   const sections = [
     {
       title: 'Insurance Coverage',
-      content: 'OpaHost provides comprehensive insurance coverage for all vehicle rentals through our platform. This includes third-party liability, comprehensive coverage for vehicle damage, and protection for both car owners and renters.',
+      content: 'Ardena Host provides comprehensive insurance coverage for all vehicle rentals through our platform. This includes third-party liability, comprehensive coverage for vehicle damage, and protection for both car owners and renters.',
     },
     {
       title: 'Car Owner Protection',
@@ -31,7 +31,7 @@ const LiabilityInsuranceScreen = () => {
     },
     {
       title: 'Liability Limitations',
-      content: 'OpaHost is not liable for damages resulting from user negligence, illegal activities, or violations of traffic laws. Users are responsible for their own actions.',
+      content: 'Ardena Host is not liable for damages resulting from user negligence, illegal activities, or violations of traffic laws. Users are responsible for their own actions.',
     },
     {
       title: 'Exclusions',
@@ -47,7 +47,7 @@ const LiabilityInsuranceScreen = () => {
     },
     {
       title: 'Service Provider Insurance',
-      content: 'Professional service providers must maintain their own professional liability insurance. OpaHost provides platform liability coverage.',
+      content: 'Professional service providers must maintain their own professional liability insurance. Ardena Host provides platform liability coverage.',
     },
     {
       title: 'Legal Compliance',

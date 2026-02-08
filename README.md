@@ -1,4 +1,4 @@
-# OpaHost - Car Rental Host App
+# Ardena Host - Car Rental Host App
 
 A React Native app built with Expo for managing car rental hosting.
 
@@ -61,7 +61,7 @@ A React Native app built with Expo for managing car rental hosting.
 ## Project Structure
 
 ```
-opahost/
+ardenahost/
 ├── App.js                    # Main app entry point
 ├── app.json                  # Expo configuration
 ├── package.json              # Dependencies

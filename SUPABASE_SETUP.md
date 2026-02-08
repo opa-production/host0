@@ -1,6 +1,6 @@
 # Supabase Setup Guide for Legal Compliance Documents
 
-This guide explains how to set up Supabase for uploading legal compliance documents (PDFs and images) in the OpaHost app.
+This guide explains how to set up Supabase for uploading legal compliance documents (PDFs and images) in the Ardena Host app.
 
 ## Important Architecture Note
 
@@ -76,7 +76,7 @@ By default, Supabase has a 50MB file size limit. If you need larger files:
 ## Project Structure
 
 ```
-opahost/
+ardenahost/
 ├── config/
 │   └── supabase.js          # Supabase client configuration
 ├── services/

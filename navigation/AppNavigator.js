@@ -46,7 +46,7 @@ import AllTransactionsScreen from '../screens/AllTransactionsScreen';
 import HostLearnMoreScreen from '../screens/HostLearnMoreScreen';
 import HostStatsScreen from '../screens/HostStatsScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
-import OpaClientDownloadScreen from '../screens/OpaClientDownloadScreen';
+import ArdenaClientDownloadScreen from '../screens/ArdenaClientDownloadScreen';
 import SupaHostScreen from '../screens/SupaHostScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
@@ -269,10 +269,10 @@ export default function AppNavigator() {
           component={FeedbackScreen}
         />
 
-        {/* Opa Client Download Screen */}
+        {/* Ardena Client Download Screen */}
         <Stack.Screen 
-          name="OpaClientDownload" 
-          component={OpaClientDownloadScreen}
+          name="ArdenaClientDownload" 
+          component={ArdenaClientDownloadScreen}
         />
 
         {/* SupaHost Screen */}
