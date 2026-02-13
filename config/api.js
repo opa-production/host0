@@ -11,8 +11,8 @@
 // Default to localhost for development
 // Change this to your computer's IP address when testing on physical devices
 export const API_BASE_URL = __DEV__ 
-  ? 'http://192.168.1.31:8001'  // Local development server (your computer's IP)
-  : 'https://your-production-api.com';
+  ? 'http://192.168.0.102:8001'  // Local development server (your computer's IP)
+  : 'https://api.ardena.xyz';
 
 export const API_ENDPOINTS = {
   // Host Authentication
