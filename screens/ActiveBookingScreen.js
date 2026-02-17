@@ -5,7 +5,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getBookingDetails, confirmPickup, confirmDropoff } from '../services/bookingService';
+import { getBookingDetails, confirmPickup, confirmDropoff, getClientDisplayName } from '../services/bookingService';
+import { fetchCarImagesFromSupabase } from '../services/carService';
+import { fetchClientAvatarFromSupabase } from '../services/mediaService';
+import { getUserId } from '../utils/userStorage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -17,6 +20,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const [countdown, setCountdown] = useState(null);
   const [isConfirmingPickup, setIsConfirmingPickup] = useState(false);
   const [isConfirmingDropoff, setIsConfirmingDropoff] = useState(false);
+  const [clientAvatar, setClientAvatar] = useState(null);
   const bookingId = route?.params?.bookingId || route?.params?.booking_id;
 
   const formatDate = (dateString) => {
@@ -150,24 +154,62 @@ export default function ActiveBookingScreen({ navigation, route }) {
       if (result.success && result.booking) {
         const bookingData = result.booking;
         
-        // Map API response to UI format
+        // Fetch car images from Supabase if not provided by API
+        let vehicleImages = bookingData.car_image_urls || [];
+        console.log('🚗 [ActiveBooking] Initial vehicleImages from API:', vehicleImages.length);
+        console.log('🚗 [ActiveBooking] car_id:', bookingData.car_id);
+        
+        if (vehicleImages.length === 0 && bookingData.car_id) {
+          const userId = await getUserId();
+          console.log('🚗 [ActiveBooking] Fetching from Supabase, userId:', userId);
+          if (userId) {
+            const imageResult = await fetchCarImagesFromSupabase(bookingData.car_id, userId);
+            console.log('🚗 [ActiveBooking] Supabase image result:', imageResult.images?.length || 0);
+            if (imageResult.images && imageResult.images.length > 0) {
+              vehicleImages = imageResult.images;
+              console.log('🚗 [ActiveBooking] Using Supabase images:', vehicleImages.length);
+            }
+          }
+        }
+        
+        console.log('🚗 [ActiveBooking] Final vehicleImages:', vehicleImages.length, vehicleImages[0]);
+        
+        // Fetch client avatar from API response or Supabase
+        let clientAvatarUrl = bookingData.client_avatar_url 
+          || bookingData.client_avatar 
+          || bookingData.client?.avatar_url 
+          || bookingData.client?.profile_image_uri
+          || null;
+        
+        // If no avatar from API, fetch from Supabase
+        if (!clientAvatarUrl && bookingData.client_id) {
+          console.log('👤 [ActiveBooking] Fetching client avatar from Supabase for client_id:', bookingData.client_id);
+          clientAvatarUrl = await fetchClientAvatarFromSupabase(bookingData.client_id);
+          console.log('👤 [ActiveBooking] Client avatar result:', clientAvatarUrl ? 'Found' : 'Not found');
+        }
+        
+        setClientAvatar(clientAvatarUrl);
+        
+        // Map API response to UI format with all client details
         const mappedBooking = {
           id: bookingData.id,
           bookingId: bookingData.booking_id,
+          carId: bookingData.car_id,
           vehicleName: bookingData.car_name || 'Unknown Car',
           vehicleModel: bookingData.car_model || '',
           vehicleYear: bookingData.car_year,
           vehicleMake: bookingData.car_make || '',
-          vehicleImages: bookingData.car_image_urls || [],
-          plate: '', // Not in API response
+          vehicleImages: vehicleImages,
+          plate: bookingData.car_plate || bookingData.plate || '',
           clientId: bookingData.client_id,
           renter: {
-            name: bookingData.client_name || 'Client',
-            email: bookingData.client_email,
-            phone: bookingData.client_mobile_number,
-            avatar: null, // Not in API response
-            rating: null,
-            trips: null,
+            name: getClientDisplayName(bookingData),
+            email: bookingData.client_email || '',
+            phone: bookingData.client_mobile_number || bookingData.client_phone || '',
+            avatar: clientAvatarUrl,
+            bio: bookingData.client_bio || '',
+            rating: bookingData.client_rating || bookingData.client_avg_rating || null,
+            trips: bookingData.client_trips_count || bookingData.client_total_trips || null,
           },
           startDate: formatDate(bookingData.start_date),
           endDate: formatDate(bookingData.end_date),
@@ -319,20 +361,23 @@ export default function ActiveBookingScreen({ navigation, route }) {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <View style={[styles.carouselContainer, { height: 300 + insets.top }]}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.stickyBackButton, { top: insets.top + 10 }]}
             onPress={() => {
               lightHaptic();
               navigation.goBack();
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+            <View style={styles.backButtonCircle}>
+              <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+            </View>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Booking</Text>
-          <View style={styles.backButton} />
+          <View style={[styles.carouselImagePlaceholder, { height: 300 + insets.top }]}>
+            <ActivityIndicator size="large" color={COLORS.subtle} />
+          </View>
         </View>
         <View style={styles.emptyState}>
           <ActivityIndicator size="large" color={COLORS.text} />
@@ -344,23 +389,25 @@ export default function ActiveBookingScreen({ navigation, route }) {
   if (!booking) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <View style={[styles.carouselContainer, { height: 300 + insets.top }]}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.stickyBackButton, { top: insets.top + 10 }]}
             onPress={() => {
               lightHaptic();
               navigation.goBack();
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+            <View style={styles.backButtonCircle}>
+              <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+            </View>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Booking</Text>
-          <View style={styles.backButton} />
+          <View style={[styles.carouselImagePlaceholder, { height: 300 + insets.top }]}>
+            <Ionicons name="calendar-outline" size={48} color={COLORS.subtle} />
+          </View>
         </View>
         <View style={styles.emptyState}>
-          <Ionicons name="calendar-outline" size={64} color={COLORS.subtle} />
           <Text style={styles.emptyTitle}>No booking found</Text>
           <Text style={styles.emptySubtitle}>Booking details will appear here</Text>
         </View>
@@ -370,36 +417,36 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
-      {/* Header with Back Button */}
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => {
-            lightHaptic();
-            navigation.goBack();
-          }}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Booking</Text>
-        <View style={styles.backButton} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Car Cover Image */}
-        <View style={styles.carouselContainer}>
+      <ScrollView 
+        contentContainerStyle={styles.content} 
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* Car Cover Image - Full Screen Top */}
+        <View style={[styles.carouselContainer, { height: 300 + insets.top }]}>
+          {/* Sticky Back Button Overlay */}
+          <TouchableOpacity
+            style={[styles.stickyBackButton, { top: insets.top + 10 }]}
+            onPress={() => {
+              lightHaptic();
+              navigation.goBack();
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.backButtonCircle}>
+              <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+            </View>
+          </TouchableOpacity>
           {booking?.vehicleImages && booking.vehicleImages.length > 0 ? (
             <Image 
               source={{ uri: booking.vehicleImages[0] }} 
-              style={styles.carouselImage} 
+              style={[styles.carouselImage, { height: 300 + insets.top }]} 
               resizeMode="cover"
-              defaultSource={require('../assets/images/logo.png')}
             />
           ) : (
-            <View style={styles.carouselImagePlaceholder}>
+            <View style={[styles.carouselImagePlaceholder, { height: 300 + insets.top }]}>
               <Ionicons name="car-outline" size={48} color={COLORS.subtle} />
             </View>
           )}
@@ -430,65 +477,6 @@ export default function ActiveBookingScreen({ navigation, route }) {
                 </View>
               )}
             </View>
-          </View>
-        )}
-
-        {/* Confirm Pickup/Dropoff Actions */}
-        {shouldShowConfirmPickup() && (
-          <View style={styles.confirmActionCard}>
-            <TouchableOpacity
-              style={[styles.confirmButton, styles.confirmPickupButton]}
-              onPress={handleConfirmPickup}
-              disabled={isConfirmingPickup}
-              activeOpacity={0.8}
-            >
-              {isConfirmingPickup ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Ionicons name="checkmark-circle-outline" size={24} color="#FFFFFF" />
-                  <Text style={styles.confirmButtonText}>Confirm Pickup</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {shouldShowConfirmDropoff() && (
-          <View style={styles.confirmActionCard}>
-            <TouchableOpacity
-              style={[
-                styles.confirmButton, 
-                styles.confirmDropoffButton,
-                !canConfirmDropoff() && styles.confirmButtonDisabled
-              ]}
-              onPress={handleConfirmDropoff}
-              disabled={isConfirmingDropoff || !canConfirmDropoff()}
-              activeOpacity={canConfirmDropoff() ? 0.8 : 1}
-            >
-              {isConfirmingDropoff ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Ionicons 
-                    name="checkmark-circle-outline" 
-                    size={24} 
-                    color={canConfirmDropoff() ? "#FFFFFF" : "rgba(255, 255, 255, 0.5)"} 
-                  />
-                  <Text style={[
-                    styles.confirmButtonText,
-                    !canConfirmDropoff() && styles.confirmButtonTextDisabled
-                  ]}>
-                    Confirm Dropoff
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-            {!canConfirmDropoff() && (
-              <Text style={styles.disabledHint}>
-                Dropoff can only be confirmed after the scheduled dropoff time
-              </Text>
-            )}
           </View>
         )}
 
@@ -537,14 +525,14 @@ export default function ActiveBookingScreen({ navigation, route }) {
           )}
         </View>
 
-        {/* Pickup Details */}
+        {/* Pickup — details + Confirm Pickup in one card */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Pickup</Text>
           {booking?.pickupLocation && booking.pickupLocation.length > 0 && (
             <View style={styles.locationContent}>
               <Text style={styles.locationText}>
-                {Array.isArray(booking.pickupLocation) 
-                  ? booking.pickupLocation.join(', ') 
+                {Array.isArray(booking.pickupLocation)
+                  ? booking.pickupLocation.join(', ')
                   : booking.pickupLocation}
               </Text>
             </View>
@@ -554,7 +542,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
             <Text style={styles.detailLabel}>Date</Text>
             <Text style={styles.detailValue}>{booking?.startDate || ''}</Text>
           </View>
-          {booking?.pickupTime && (
+          {booking?.pickupTime ? (
             <>
               <View style={styles.divider} />
               <View style={styles.detailRow}>
@@ -562,10 +550,30 @@ export default function ActiveBookingScreen({ navigation, route }) {
                 <Text style={styles.detailValue}>{booking.pickupTime}</Text>
               </View>
             </>
+          ) : null}
+          {shouldShowConfirmPickup() && (
+            <>
+              <View style={styles.divider} />
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.confirmPickupButton]}
+                onPress={handleConfirmPickup}
+                disabled={isConfirmingPickup}
+                activeOpacity={0.8}
+              >
+                {isConfirmingPickup ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark-circle-outline" size={22} color="#FFFFFF" />
+                    <Text style={styles.confirmButtonText}>Confirm Pickup</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
           )}
         </View>
 
-        {/* Dropoff Details */}
+        {/* Dropoff — details + Confirm Dropoff in one card */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Dropoff</Text>
           {booking?.dropoffSameAsPickup ? (
@@ -573,8 +581,8 @@ export default function ActiveBookingScreen({ navigation, route }) {
           ) : booking?.returnLocation && booking.returnLocation.length > 0 ? (
             <View style={styles.locationContent}>
               <Text style={styles.locationText}>
-                {Array.isArray(booking.returnLocation) 
-                  ? booking.returnLocation.join(', ') 
+                {Array.isArray(booking.returnLocation)
+                  ? booking.returnLocation.join(', ')
                   : booking.returnLocation}
               </Text>
             </View>
@@ -584,7 +592,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
             <Text style={styles.detailLabel}>Date</Text>
             <Text style={styles.detailValue}>{booking?.endDate || ''}</Text>
           </View>
-          {booking?.returnTime && (
+          {booking?.returnTime ? (
             <>
               <View style={styles.divider} />
               <View style={styles.detailRow}>
@@ -592,62 +600,129 @@ export default function ActiveBookingScreen({ navigation, route }) {
                 <Text style={styles.detailValue}>{booking.returnTime}</Text>
               </View>
             </>
+          ) : null}
+          {shouldShowConfirmDropoff() && (
+            <>
+              <View style={styles.divider} />
+              <TouchableOpacity
+                style={[
+                  styles.confirmButton,
+                  styles.confirmDropoffButton,
+                  !canConfirmDropoff() && styles.confirmButtonDisabled,
+                ]}
+                onPress={handleConfirmDropoff}
+                disabled={isConfirmingDropoff || !canConfirmDropoff()}
+                activeOpacity={canConfirmDropoff() ? 0.8 : 1}
+              >
+                {isConfirmingDropoff ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={22}
+                      color={canConfirmDropoff() ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)'}
+                    />
+                    <Text style={[
+                      styles.confirmButtonText,
+                      !canConfirmDropoff() && styles.confirmButtonTextDisabled,
+                    ]}>
+                      Confirm Dropoff
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              {!canConfirmDropoff() && (
+                <Text style={styles.disabledHint}>
+                  Dropoff can only be confirmed after the scheduled dropoff time
+                </Text>
+              )}
+            </>
           )}
         </View>
 
-        {/* Renter profile */}
+        {/* Renter profile - styled like host profile */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Renter</Text>
-          <View style={styles.renterRow}>
-            {booking?.renter?.avatar ? (
-              <Image source={{ uri: booking.renter.avatar }} style={styles.avatar} />
+          <Text style={styles.sectionTitle}>Meet Your Client</Text>
+          
+          {/* Profile Picture and Statistics Row */}
+          <View style={styles.clientProfileRow}>
+            {/* Profile Picture */}
+            {clientAvatar || booking?.renter?.avatar ? (
+              <Image 
+                source={{ uri: clientAvatar || booking?.renter?.avatar }} 
+                style={styles.clientAvatar} 
+              />
             ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={28} color={COLORS.subtle} />
+              <View style={styles.clientAvatarPlaceholder}>
+                <Text style={styles.clientAvatarInitials}>
+                  {booking?.renter?.name 
+                    ? booking.renter.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                    : '?'}
+                </Text>
               </View>
             )}
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.renterName}>{booking?.renter?.name || 'Client'}</Text>
-              {booking?.renter?.email ? (
-                <Text style={styles.renterEmail}>{booking.renter.email}</Text>
-              ) : null}
-              {booking?.renter?.phone && (
-                <Text style={styles.renterPhone}>{booking.renter.phone}</Text>
+            
+            {/* Statistics */}
+            <View style={styles.clientStats}>
+              {booking?.renter?.rating !== null && booking?.renter?.rating !== undefined ? (
+                <View style={styles.clientStatItem}>
+                  <Text style={styles.clientStatValue}>{booking.renter.rating}</Text>
+                  <Text style={styles.clientStatLabel}>⭐ Rating</Text>
+                </View>
+              ) : (
+                <View style={styles.clientStatItem}>
+                  <Text style={styles.clientStatValue}>0</Text>
+                  <Text style={styles.clientStatLabel}>⭐ Rating</Text>
+                </View>
               )}
-              {booking?.renter?.rating && (
-                <View style={styles.renterRating}>
-                  <Text style={styles.ratingText}>⭐</Text>
-                  <Text style={styles.ratingValue}>{booking.renter.rating}</Text>
-                  {booking?.renter?.trips && (
-                    <Text style={styles.tripsText}>• {booking.renter.trips} trips</Text>
-                  )}
+              {booking?.renter?.trips !== null && booking?.renter?.trips !== undefined ? (
+                <View style={[styles.clientStatItem, styles.clientStatDivider]}>
+                  <Text style={styles.clientStatValue}>{booking.renter.trips}</Text>
+                  <Text style={styles.clientStatLabel}>Trips</Text>
+                </View>
+              ) : (
+                <View style={[styles.clientStatItem, styles.clientStatDivider]}>
+                  <Text style={styles.clientStatValue}>0</Text>
+                  <Text style={styles.clientStatLabel}>Trips</Text>
                 </View>
               )}
             </View>
-            <TouchableOpacity 
-              style={styles.iconButton}
-              onPress={() => {
-                lightHaptic();
-                navigation.navigate('Chat', {
-                  clientId: booking.clientId,
-                  clientName: booking.renter?.name || 'Client',
-                });
-              }}
-            >
-              <Ionicons name="chatbubble-ellipses-outline" size={20} color={COLORS.text} />
-            </TouchableOpacity>
-            {booking?.renter?.phone && (
-              <TouchableOpacity 
-                style={styles.iconButton}
-                onPress={() => {
-                  lightHaptic();
-                  // TODO: Implement phone call
-                }}
-              >
-                <Ionicons name="call-outline" size={20} color={COLORS.text} />
-              </TouchableOpacity>
-            )}
           </View>
+          
+          {/* Client Name */}
+          <Text style={styles.clientName}>{booking?.renter?.name || 'Client'}</Text>
+          
+          {/* Client Details */}
+          {(booking?.renter?.email || booking?.renter?.phone || booking?.renter?.bio) && (
+            <>
+              <Text style={styles.clientDetailsTitle}>Client details</Text>
+              {booking?.renter?.email && (
+                <Text style={styles.clientDetailText}>{booking.renter.email}</Text>
+              )}
+              {booking?.renter?.phone && (
+                <Text style={styles.clientDetailText}>{booking.renter.phone}</Text>
+              )}
+              {booking?.renter?.bio && (
+                <Text style={styles.clientDetailText}>{booking.renter.bio}</Text>
+              )}
+            </>
+          )}
+          
+          {/* Message Client Button */}
+          <TouchableOpacity
+            style={styles.messageClientButton}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('Chat', {
+                clientId: booking.clientId,
+                clientName: booking.renter?.name || 'Client',
+              });
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.messageClientButtonText}>Message Client</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Additional Details */}
@@ -825,28 +900,36 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: 0,
     paddingBottom: 110,
+    flexGrow: 1,
+  },
+  stickyBackButton: {
+    position: 'absolute',
+    left: SPACING.l,
+    zIndex: 10,
   },
   carouselContainer: {
     width: SCREEN_WIDTH,
-    height: 280,
     position: 'relative',
     overflow: 'hidden',
     marginBottom: 16,
+    marginTop: 0,
   },
   carouselImage: {
     width: '100%',
-    height: '100%',
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
   },
   carouselImagePlaceholder: {
     width: '100%',
-    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
   },
   countdownCard: {
     backgroundColor: COLORS.text,
@@ -952,6 +1035,13 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: 4,
   },
+  renterBio: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    marginBottom: 6,
+    lineHeight: 18,
+  },
   renterEmail: {
     ...TYPE.body,
     fontSize: 13,
@@ -987,6 +1077,96 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Client Profile Styles (matching host profile style)
+  clientProfileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  clientAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.surface,
+  },
+  clientAvatarPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clientAvatarInitials: {
+    ...TYPE.title,
+    fontSize: 24,
+    color: COLORS.text,
+    fontFamily: 'Nunito-Bold',
+  },
+  clientStats: {
+    flexDirection: 'row',
+    flex: 1,
+    justifyContent: 'space-around',
+    marginLeft: 20,
+  },
+  clientStatItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  clientStatDivider: {
+    borderLeftWidth: 1,
+    borderLeftColor: COLORS.borderStrong,
+  },
+  clientStatValue: {
+    ...TYPE.largeTitle,
+    fontSize: 24,
+    color: COLORS.text,
+    fontFamily: 'Nunito-Bold',
+    marginBottom: 4,
+  },
+  clientStatLabel: {
+    ...TYPE.body,
+    fontSize: 12,
+    color: COLORS.subtle,
+    fontFamily: 'Nunito-Regular',
+  },
+  clientName: {
+    ...TYPE.title,
+    fontSize: 20,
+    color: COLORS.text,
+    fontFamily: 'Nunito-Bold',
+    marginBottom: 12,
+  },
+  clientDetailsTitle: {
+    ...TYPE.title,
+    fontSize: 14,
+    color: COLORS.text,
+    fontFamily: 'Nunito-SemiBold',
+    marginBottom: 8,
+  },
+  clientDetailText: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    fontFamily: 'Nunito-Regular',
+    marginBottom: 4,
+  },
+  messageClientButton: {
+    backgroundColor: COLORS.text,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: SPACING.l,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  messageClientButtonText: {
+    ...TYPE.bodyStrong,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontFamily: 'Nunito-SemiBold',
   },
   detailRow: {
     flexDirection: 'row',
@@ -1185,18 +1365,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  confirmActionCard: {
-    marginHorizontal: SPACING.l,
-    marginBottom: 16,
-  },
   confirmButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: SPACING.l,
-    borderRadius: 12,
-    gap: 10,
+    borderRadius: 10,
+    gap: 8,
+    marginTop: 4,
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,

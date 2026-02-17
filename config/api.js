@@ -11,7 +11,7 @@
 // Default to localhost for development
 // Change this to your computer's IP address when testing on physical devices
 export const API_BASE_URL = __DEV__ 
-  ? 'http://192.168.0.102:8001'  // Local development server (your computer's IP)
+  ? 'http://192.168.88.249:8001'  // Local development server (your computer's IP)
   : 'https://api.ardena.xyz';
 
 export const API_ENDPOINTS = {
@@ -66,7 +66,14 @@ export const API_ENDPOINTS = {
   HOST_BOOKING_DETAIL: (bookingId) => `/api/v1/host/bookings/${bookingId}`,
   HOST_CONFIRM_PICKUP: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-pickup`,
   HOST_CONFIRM_DROPOFF: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-dropoff`,
-  
+
+  // Earnings
+  HOST_EARNINGS_SUMMARY: '/api/v1/host/earnings/summary',
+  HOST_EARNINGS_TRANSACTIONS: '/api/v1/host/earnings/transactions',
+
+  // Withdrawals
+  HOST_WITHDRAWALS: '/api/v1/host/withdrawals',
+
   // Car Date Blocking
   HOST_BLOCK_DATES: (carId) => `/api/v1/host/cars/${carId}/block-dates`,
   HOST_GET_BLOCKED_DATES: (carId) => `/api/v1/host/cars/${carId}/blocked-dates`,

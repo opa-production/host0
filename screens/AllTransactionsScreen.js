@@ -1,13 +1,47 @@
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getHostEarningsTransactions } from '../services/earningsService';
+import { getHostWithdrawals, withdrawalToTransactionItem } from '../services/withdrawalService';
 
 export default function AllTransactionsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
-  const transactions = route?.params?.transactions ?? [];
+  const [transactions, setTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadTransactions = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [txResult, wdResult] = await Promise.all([
+        getHostEarningsTransactions(),
+        getHostWithdrawals(),
+      ]);
+      const txList = (txResult.success && txResult.transactions) ? txResult.transactions : [];
+      const withdrawals = (wdResult.success && wdResult.withdrawals) ? wdResult.withdrawals : [];
+      const withdrawalItems = withdrawals.map(withdrawalToTransactionItem);
+      const merged = [...txList, ...withdrawalItems].sort((a, b) => (b.sortDate || 0) - (a.sortDate || 0));
+      setTransactions(merged);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+      setTransactions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTransactions();
+    }, [loadTransactions])
+  );
   
   const formatCurrency = (amount) => {
     const numericAmount = Number(amount) || 0;
@@ -47,7 +81,12 @@ export default function AllTransactionsScreen({ navigation, route }) {
       >
 
         <View style={styles.card}>
-          {transactions.length === 0 ? (
+          {isLoading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator size="large" color={COLORS.subtle} />
+              <Text style={styles.emptySub}>Loading transactions…</Text>
+            </View>
+          ) : transactions.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No transactions yet</Text>
               <Text style={styles.emptySub}>Your payouts, withdrawals, and fees will show here.</Text>

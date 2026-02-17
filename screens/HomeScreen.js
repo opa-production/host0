@@ -5,6 +5,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { useHost } from '../utils/HostContext';
 import { getHostBookings } from '../services/bookingService';
+import { getHostEarningsSummary } from '../services/earningsService';
 
 const { width } = Dimensions.get('window');
 
@@ -21,12 +22,14 @@ export default function HomeScreen({ navigation }) {
     pendingRequests: 0,
   });
 
-  // Financial data - to be fetched from API
+  // Financial data from GET /api/v1/host/earnings/summary
   const [financialData, setFinancialData] = useState({
-    currentEarnings: 0,
-    previousEarnings: 0,
-    utilization: 0,
-    nextPayout: { amount: 0, date: '' }
+    total_gross: 0,
+    commission_rate: 0.15,
+    commission_amount: 0,
+    net_earnings: 0,
+    withdrawable: 0,
+    paid_bookings_count: 0,
   });
 
   // Get user name from host profile
@@ -121,14 +124,30 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const loadEarningsSummary = async () => {
+    try {
+      const result = await getHostEarningsSummary();
+      if (result.success && result.summary) {
+        setFinancialData({
+          total_gross: result.summary.total_gross,
+          commission_rate: result.summary.commission_rate,
+          commission_amount: result.summary.commission_amount,
+          net_earnings: result.summary.net_earnings,
+          withdrawable: result.summary.withdrawable,
+          paid_bookings_count: result.summary.paid_bookings_count,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading earnings summary:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      // TODO: Fetch financial dashboard data from API
-      await loadTodayActions();
+      await Promise.all([loadTodayActions(), loadEarningsSummary()]);
       setIsLoading(false);
     };
-    
     fetchData();
   }, []);
 
@@ -288,7 +307,7 @@ export default function HomeScreen({ navigation }) {
             onPress={(e) => {
               e.stopPropagation();
               lightHaptic();
-              navigation.navigate('Withdraw', { withdrawable: financialData.nextPayout.amount });
+              navigation.navigate('Withdraw', { withdrawable: financialData.withdrawable });
             }}
             activeOpacity={0.8}
           >

@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostBookings } from '../services/bookingService';
+import { getHostBookings, getClientDisplayName } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
 
@@ -95,7 +95,7 @@ export default function PastBookingsScreen({ navigation }) {
               duration: booking.rental_days ? `${booking.rental_days} ${booking.rental_days === 1 ? 'day' : 'days'}` : '',
               plate: booking.car_plate || '',
               renter: {
-                name: booking.client_name || 'Client',
+                name: getClientDisplayName(booking),
                 bio: '',
                 rating: 0,
                 trips: 0,

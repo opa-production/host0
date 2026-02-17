@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,14 +7,16 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getPaymentMethods } from '../services/paymentService';
 import { formatPhoneNumber } from '../utils/phoneUtils';
+import { createWithdrawal } from '../services/withdrawalService';
 
 export default function WithdrawScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
-  const withdrawable = route?.params?.withdrawable ?? 95000;
+  const withdrawable = route?.params?.withdrawable ?? 0;
   const [amount, setAmount] = useState('');
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [isLoadingMethods, setIsLoadingMethods] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const scrollViewRef = useRef(null);
   const amountInputRef = useRef(null);
 
@@ -43,31 +45,37 @@ export default function WithdrawScreen({ navigation, route }) {
         
         console.log('WithdrawScreen - Extracted methods:', JSON.stringify(methods, null, 2));
         
-        // Transform methods for display (need icon and details)
+        // Transform methods for display and for withdrawal API (payment_method_type, mpesa_number or bank)
         const transformedMethods = methods.map((method) => {
-          const methodType = method.method_type?.toLowerCase();
+          const methodType = (method.method_type || method.method_type_name || '').toLowerCase();
           
           if (methodType === 'mpesa' || method.mpesa_number) {
+            const mpesaNumber = (method.mpesa_number || '').replace(/\D/g, '');
             return {
               id: method.id?.toString(),
               name: method.name || '',
               details: method.mpesa_number ? formatPhoneNumber(method.mpesa_number) : 'M-Pesa',
               icon: require('../assets/images/mpesa.png'),
               isDefault: method.is_default || false,
+              paymentMethodType: 'mpesa',
+              mpesaNumber: mpesaNumber || undefined,
             };
-          } else if (methodType === 'visa' || methodType === 'mastercard' || method.card_type) {
-            const cardType = method.card_type?.toLowerCase() || methodType || 'visa';
+          } else if (methodType === 'visa' || methodType === 'mastercard' || method.card_type || method.card_last_four) {
+            const cardType = (method.card_type || methodType || 'visa').toLowerCase();
             const lastFour = method.card_last_four || '****';
             const expiry = method.expiry_date || '';
-            
+            const bankName = method.name || (cardType === 'visa' ? 'Visa' : 'Mastercard');
             return {
               id: method.id?.toString(),
               name: method.name || '',
               details: `•••• •••• •••• ${lastFour}${expiry ? ` | Expires ${expiry}` : ''}`,
-              icon: cardType === 'visa' 
+              icon: cardType === 'visa'
                 ? require('../assets/images/visa.png')
                 : require('../assets/images/mastercard.png'),
               isDefault: method.is_default || false,
+              paymentMethodType: 'bank',
+              bankName,
+              accountNumber: lastFour !== '****' ? lastFour : (method.id?.toString() || ''),
             };
           }
           
@@ -174,7 +182,7 @@ export default function WithdrawScreen({ navigation, route }) {
                       style={styles.methodItem}
                       onPress={() => {
                         lightHaptic();
-                        setSelectedMethod(method.id);
+                        setSelectedMethod(method);
                       }}
                       activeOpacity={0.7}
                     >
@@ -185,7 +193,7 @@ export default function WithdrawScreen({ navigation, route }) {
                         </Text>
                         <Text style={styles.methodDetails}>{method.details}</Text>
                       </View>
-                      {selectedMethod === method.id && (
+                      {(selectedMethod?.id === method.id || selectedMethod === method) && (
                         <View style={styles.checkmark}>
                           <Ionicons name="checkmark-circle" size={20} color="#000000" />
                         </View>
@@ -346,10 +354,6 @@ const styles = StyleSheet.create({
   checkmark: {
     position: 'absolute',
     right: SPACING.m,
-  },
-  amountSection: {
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.l,
   },
   amountSection: {
     marginTop: SPACING.xl,

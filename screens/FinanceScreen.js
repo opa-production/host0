@@ -1,23 +1,89 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getHostEarningsSummary, getHostEarningsTransactions } from '../services/earningsService';
+import { getHostWithdrawals, withdrawalToTransactionItem } from '../services/withdrawalService';
 
 export default function FinanceScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
-  
-  // Financial data - to be fetched from API
+  const [isLoadingEarnings, setIsLoadingEarnings] = useState(true);
+
+  // Financial data from GET /api/v1/host/earnings/summary
   const [financialData, setFinancialData] = useState({
     netEarnings: 0,
     commission: 0,
     withdrawable: 0,
+    total_gross: 0,
+    paid_bookings_count: 0,
   });
 
-  // Transactions - to be fetched from API
+  // Transactions from GET /api/v1/host/earnings/transactions
   const [recentTransactions, setRecentTransactions] = useState([]);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+
+  const loadEarningsSummary = useCallback(async () => {
+    setIsLoadingEarnings(true);
+    try {
+      const result = await getHostEarningsSummary();
+      if (result.success && result.summary) {
+        setFinancialData({
+          netEarnings: result.summary.net_earnings ?? 0,
+          commission: result.summary.commission_amount ?? 0,
+          withdrawable: result.summary.withdrawable ?? 0,
+          total_gross: result.summary.total_gross ?? 0,
+          paid_bookings_count: result.summary.paid_bookings_count ?? 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading earnings summary:', error);
+    } finally {
+      setIsLoadingEarnings(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadEarningsSummary();
+  }, [loadEarningsSummary]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadEarningsSummary();
+    }, [loadEarningsSummary])
+  );
+
+  const loadTransactions = useCallback(async () => {
+    setIsLoadingTransactions(true);
+    try {
+      const [txResult, wdResult] = await Promise.all([
+        getHostEarningsTransactions({ limit: 50 }),
+        getHostWithdrawals({ limit: 50 }),
+      ]);
+      const txList = (txResult.success && txResult.transactions) ? txResult.transactions : [];
+      const withdrawals = (wdResult.success && wdResult.withdrawals) ? wdResult.withdrawals : [];
+      const withdrawalItems = withdrawals.map(withdrawalToTransactionItem);
+      const merged = [...txList, ...withdrawalItems].sort((a, b) => (b.sortDate || 0) - (a.sortDate || 0));
+      setRecentTransactions(merged);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTransactions();
+    }, [loadTransactions])
+  );
 
   const { netEarnings, commission, withdrawable } = financialData;
 
@@ -33,7 +99,7 @@ export default function FinanceScreen({ navigation }) {
 
   const handleViewMoreTransactions = () => {
     lightHaptic();
-    navigation.navigate('AllTransactions', { transactions: recentTransactions });
+    navigation.navigate('AllTransactions');
   };
 
   return (
@@ -84,33 +150,43 @@ export default function FinanceScreen({ navigation }) {
           </View>
 
           <View style={styles.balanceContainer}>
-            <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>Net earnings</Text>
-              <Text style={styles.balanceLabelValue}>
-                {isBalanceVisible ? `KSh ${formatCurrency(netEarnings)}` : '••••'}
-              </Text>
-            </View>
-            <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>Commission</Text>
-              <Text style={[styles.balanceLabelValue, styles.commissionText]}>
-                {isBalanceVisible ? `- KSh ${formatCurrency(commission)}` : '••••'}
-              </Text>
-            </View>
-            <View style={styles.withdrawableContainer}>
-              <Text style={styles.withdrawableLabel}>Withdrawable</Text>
-              <Text style={styles.withdrawableValue}>
-                {isBalanceVisible ? `KSh ${formatCurrency(withdrawable)}` : '••••••'}
-              </Text>
-            </View>
+            {isLoadingEarnings ? (
+              <View style={styles.balanceLoading}>
+                <ActivityIndicator size="small" color="rgba(255,255,255,0.8)" />
+                <Text style={styles.balanceLoadingText}>Loading…</Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.balanceRow}>
+                  <Text style={styles.balanceLabel}>Net earnings</Text>
+                  <Text style={styles.balanceLabelValue}>
+                    {isBalanceVisible ? `KSh ${formatCurrency(netEarnings)}` : '••••'}
+                  </Text>
+                </View>
+                <View style={styles.balanceRow}>
+                  <Text style={styles.balanceLabel}>Commission</Text>
+                  <Text style={[styles.balanceLabelValue, styles.commissionText]}>
+                    {isBalanceVisible ? `- KSh ${formatCurrency(commission)}` : '••••'}
+                  </Text>
+                </View>
+                <View style={styles.withdrawableContainer}>
+                  <Text style={styles.withdrawableLabel}>Withdrawable</Text>
+                  <Text style={styles.withdrawableValue}>
+                    {isBalanceVisible ? `KSh ${formatCurrency(withdrawable)}` : '••••••'}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
 
           <TouchableOpacity 
-            style={styles.withdrawButton}
+            style={[styles.withdrawButton, isLoadingEarnings && styles.withdrawButtonDisabled]}
             onPress={(e) => {
               e.stopPropagation();
-              handleWithdraw();
+              if (!isLoadingEarnings) handleWithdraw();
             }}
             activeOpacity={0.8}
+            disabled={isLoadingEarnings}
           >
             <Text style={styles.withdrawButtonText}>Withdraw</Text>
           </TouchableOpacity>
@@ -121,23 +197,28 @@ export default function FinanceScreen({ navigation }) {
             <Text style={styles.transactionsTitle}>Recent transactions</Text>
           </View>
 
-          {recentTransactions.length > 0 ? (
+          {isLoadingTransactions ? (
+            <View style={styles.transactionsLoading}>
+              <ActivityIndicator size="small" color={COLORS.subtle} />
+              <Text style={styles.transactionsLoadingText}>Loading transactions…</Text>
+            </View>
+          ) : recentTransactions.length > 0 ? (
             <>
               <View style={styles.transactionsList}>
                 {recentTransactions.slice(0, 4).map((t, idx) => {
                   const isNegative = t.amount < 0;
                   const amountText = `${isNegative ? '-' : ''}KSh ${formatCurrency(Math.abs(t.amount))}`;
                   const amountStyle =
-                    t.title === 'Commission'
+                    (t.title && t.title.toLowerCase().includes('commission'))
                       ? styles.transactionAmountCommission
-                      : t.title === 'Withdrawal'
+                      : (t.title && t.title.toLowerCase().includes('withdrawal'))
                         ? styles.transactionAmountWithdrawal
                         : t.amount > 0
                           ? styles.transactionAmountIncoming
                           : styles.transactionAmount;
 
                   return (
-                    <View key={t.id}>
+                    <View key={t.id ?? `tx-${idx}`}>
                       <View style={styles.transactionRow}>
                         <View style={styles.transactionLeft}>
                           <Text style={styles.transactionTitle}>{t.title}</Text>
@@ -270,6 +351,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: SPACING.m,
   },
+  withdrawButtonDisabled: {
+    opacity: 0.6,
+  },
+  balanceLoading: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    gap: 8,
+  },
+  balanceLoadingText: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
   withdrawButtonText: {
     ...TYPE.bodyStrong,
     fontSize: 15,
@@ -373,5 +467,15 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     textAlign: 'center',
     maxWidth: 280,
+  },
+  transactionsLoading: {
+    padding: SPACING.l,
+    alignItems: 'center',
+    gap: 8,
+  },
+  transactionsLoadingText: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
   },
 });

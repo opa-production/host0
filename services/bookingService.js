@@ -6,6 +6,26 @@ import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken } from '../utils/userStorage';
 
 /**
+ * Get client/renter display name from API booking object (list or detail).
+ * Tries all known API keys so we show the real name when the backend sends it.
+ * @param {Object} booking - Raw booking from API (list or detail response)
+ * @returns {string} Display name or 'Client' as fallback
+ */
+export const getClientDisplayName = (booking) => {
+  if (!booking || typeof booking !== 'object') return 'Client';
+  const name =
+    booking.client_name ||
+    booking.client_full_name ||
+    booking.renter_name ||
+    booking.booker_name ||
+    (booking.client && (booking.client.name || booking.client.full_name || booking.client.display_name)) ||
+    (booking.renter && (booking.renter.name || booking.renter.full_name)) ||
+    '';
+  const trimmed = typeof name === 'string' ? name.trim() : '';
+  return trimmed || 'Client';
+};
+
+/**
  * Get all bookings for the host
  * @returns {Promise<Object>} Result with success status and bookings array or error
  */
@@ -94,6 +114,13 @@ export const getHostBookings = async () => {
       total: data.total || bookingsArray.length,
       totalTime: `${totalTime}ms`,
     });
+    // Log first booking keys so we can verify client name field name from API
+    if (bookingsArray.length > 0) {
+      const first = bookingsArray[0];
+      const clientKeys = Object.keys(first).filter(k => /client|renter|booker|name/i.test(k));
+      console.log('📅 [GET HOST BOOKINGS API] First booking client-related keys:', clientKeys);
+      console.log('📅 [GET HOST BOOKINGS API] Client name value:', getClientDisplayName(first));
+    }
 
     return {
       success: true,
@@ -214,6 +241,11 @@ export const getBookingDetails = async (bookingId) => {
       bookingId: bookingData?.id || bookingData?.booking_id,
       totalTime: `${totalTime}ms`,
     });
+    if (bookingData) {
+      const clientKeys = Object.keys(bookingData).filter(k => /client|renter|booker|name/i.test(k));
+      console.log('📅 [GET BOOKING DETAILS API] Client-related keys:', clientKeys);
+      console.log('📅 [GET BOOKING DETAILS API] Client name value:', getClientDisplayName(bookingData));
+    }
 
     return {
       success: true,

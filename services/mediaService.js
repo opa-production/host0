@@ -813,6 +813,73 @@ export const fetchHostAvatarFromSupabase = async (userId) => {
 };
 
 /**
+ * Fetch client avatar from Supabase Storage
+ * @param {number|string} clientId - Client ID
+ * @returns {Promise<string|null>} Avatar URL or null if not found
+ */
+export const fetchClientAvatarFromSupabase = async (clientId) => {
+  try {
+    if (!clientId) {
+      console.log('👤 [Fetch Client Avatar] Client ID not provided');
+      return null;
+    }
+
+    const folderPath = clientId.toString();
+    console.log('👤 [Fetch Client Avatar] Fetching avatar from Supabase:', folderPath);
+
+    // List all files in the client's folder
+    const { data: files, error } = await supabase.storage
+      .from(STORAGE_BUCKETS.CLIENT_PROFILE_MEDIA)
+      .list(folderPath, {
+        limit: 100,
+        sortBy: { column: 'created_at', order: 'desc' },
+      });
+
+    if (error) {
+      console.log('👤 [Fetch Client Avatar] Error listing files:', error.message);
+      return null;
+    }
+
+    if (!files || files.length === 0) {
+      console.log('👤 [Fetch Client Avatar] No files found for client:', clientId);
+      return null;
+    }
+
+    // Find the most recent avatar file (matching pattern: client_{id}_avatar_*.jpg)
+    const avatarPattern = new RegExp(`^client_${clientId}_avatar_.*\\.(jpg|jpeg|png|webp)$`, 'i');
+    const avatarFile = files.find(file => avatarPattern.test(file.name));
+
+    if (!avatarFile) {
+      console.log('👤 [Fetch Client Avatar] No avatar file found matching pattern');
+      return null;
+    }
+
+    // Construct the file path
+    const filePath = `${folderPath}/${avatarFile.name}`;
+    console.log('👤 [Fetch Client Avatar] Found avatar file:', filePath);
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from(STORAGE_BUCKETS.CLIENT_PROFILE_MEDIA)
+      .getPublicUrl(filePath);
+
+    const avatarUrl = urlData?.publicUrl;
+    
+    if (!avatarUrl || typeof avatarUrl !== 'string' || avatarUrl.trim() === '') {
+      console.log('👤 [Fetch Client Avatar] Invalid or empty public URL generated');
+      return null;
+    }
+    
+    console.log('👤 [Fetch Client Avatar] ✅ Avatar found:', avatarUrl);
+    
+    return avatarUrl;
+  } catch (error) {
+    console.error('👤 [Fetch Client Avatar] ❌ Error:', error);
+    return null;
+  }
+};
+
+/**
  * Get host profile with media URLs
  * @returns {Promise<Object>} Host profile data
  */

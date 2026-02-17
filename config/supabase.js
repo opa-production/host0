@@ -31,6 +31,7 @@ export const STORAGE_BUCKETS = {
   CAR_VIDEOS: 'carvideos',
   HOST_DOCUMENTS: 'host-documents',
   HOST_PROFILE: 'host-profile-images',
+  CLIENT_PROFILE_MEDIA: 'client-profile-media',
 };
 
 export const LEGAL_DOCS_BUCKET = STORAGE_BUCKETS.LEGAL_DOCS;

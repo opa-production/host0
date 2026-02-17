@@ -7,6 +7,7 @@ import { lightHaptic } from '../ui/haptics';
 import { getHostNotifications } from '../services/notificationService';
 import { getSupportConversation } from '../services/supportService';
 import { getHostConversations } from '../services/messageService';
+import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 
 export default function MessagesScreen({ navigation }) {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -64,7 +65,7 @@ export default function MessagesScreen({ navigation }) {
       const result = await getHostConversations();
       if (result.success && result.conversations) {
         // Map API response to UI format
-        const mappedConversations = result.conversations.map((conv) => {
+        const mapped = result.conversations.map((conv) => {
           const lastMessage = conv.messages && conv.messages.length > 0 
             ? conv.messages[conv.messages.length - 1] 
             : null;
@@ -82,6 +83,16 @@ export default function MessagesScreen({ navigation }) {
             unreadCount: conv.messages?.filter(m => !m.is_read && m.sender_type === 'client').length || 0,
           };
         });
+        
+        // Fetch client avatars from Supabase when not provided by API
+        const mappedConversations = await Promise.all(
+          mapped.map(async (conv) => {
+            if (conv.clientAvatarUrl) return conv;
+            if (!conv.clientId) return conv;
+            const avatarUrl = await fetchClientAvatarFromSupabase(conv.clientId);
+            return { ...conv, clientAvatarUrl: avatarUrl || null };
+          })
+        );
         
         // Sort by last message time (most recent first)
         mappedConversations.sort((a, b) => {

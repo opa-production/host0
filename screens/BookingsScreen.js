@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostBookings } from '../services/bookingService';
+import { getHostBookings, getClientDisplayName } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
 
@@ -92,7 +92,7 @@ export default function BookingsScreen({ navigation }) {
               carYear: booking.car_year,
               carMake: booking.car_make || '',
               carImageUrls: carImageUrls,
-              clientName: booking.client_name || 'Client',
+              clientName: getClientDisplayName(booking),
               clientEmail: booking.client_email,
               clientMobile: booking.client_mobile_number,
               startDate: booking.start_date,
