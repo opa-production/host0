@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -15,8 +15,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, RADIUS } from '../ui/tokens';
-import { registerHost, loginHost } from '../services/authService';
+import { registerHost, loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+
+// Make sure WebBrowser is warmed up for better performance
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpScreen({ navigation }) {
   const { login } = useHost();
@@ -27,7 +32,83 @@ export default function SignUpScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+
+  // Configure Google Sign-In
+  const discovery = {
+    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenEndpoint: 'https://oauth2.googleapis.com/token',
+    revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
+  };
+
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: 'YOUR_GOOGLE_WEB_CLIENT_ID', // Replace with your actual client ID
+      scopes: ['openid', 'profile', 'email'],
+      responseType: AuthSession.ResponseType.IdToken,
+      redirectUri: AuthSession.makeRedirectUri({
+        useProxy: true,
+      }),
+    },
+    discovery
+  );
+
+  const handleGoogleAuth = useCallback(async (idToken) => {
+    setIsGoogleLoading(true);
+    console.log('🔐 [SignUpScreen] Starting Google auth with id_token...');
+
+    try {
+      const result = await googleAuthHost(idToken);
+      console.log('🔐 [SignUpScreen] Google auth result:', result.success ? 'SUCCESS' : 'FAILED', result.error || '');
+
+      if (result.success) {
+        console.log('🔐 [SignUpScreen] Google auth successful, storing profile and navigating...');
+        await login(result.host);
+        navigation.replace('MainTabs');
+      } else {
+        console.error('🔐 [SignUpScreen] Google auth failed:', result.error);
+        Alert.alert(
+          'Google Sign-Up Failed',
+          result.error || 'Unable to sign up with Google. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('🔐 [SignUpScreen] Google auth error:', error);
+      Alert.alert(
+        'Error',
+        error?.message || 'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }, [login, navigation]);
+
+  // Handle Google auth response
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const idToken = response.params?.id_token || response.authentication?.idToken;
+      if (idToken) {
+        handleGoogleAuth(idToken);
+      } else {
+        setIsGoogleLoading(false);
+        Alert.alert(
+          'Google Sign-Up Failed',
+          'Unable to get authentication token. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } else if (response?.type === 'error') {
+      setIsGoogleLoading(false);
+      Alert.alert(
+        'Google Sign-Up Failed',
+        'Unable to sign up with Google. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [response, handleGoogleAuth]);
 
   const validateName = (name) => {
     if (!name) return 'Full name is required';
@@ -123,9 +204,22 @@ export default function SignUpScreen({ navigation }) {
     }
   };
 
-  const handleGoogleSignUp = () => {
-    // TODO: Implement Google signup
-    console.log('Google signup');
+  const handleGoogleSignUp = async () => {
+    if (isGoogleLoading) return;
+    
+    try {
+      setIsGoogleLoading(true);
+      await promptAsync();
+      // Response will be handled in useEffect above
+    } catch (error) {
+      console.error('🔐 [SignUpScreen] Error prompting Google sign-in:', error);
+      setIsGoogleLoading(false);
+      Alert.alert(
+        'Error',
+        'Unable to open Google sign-in. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const handleAppleSignUp = () => {
@@ -262,13 +356,24 @@ export default function SignUpScreen({ navigation }) {
           </View>
 
           <View style={styles.socialButtonsContainer}>
-            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleSignUp} activeOpacity={1}>
-              <Image 
-                source={require('../assets/images/google.png')} 
-                style={styles.socialIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.socialButtonText}>Google</Text>
+            <TouchableOpacity 
+              style={[styles.socialButton, isGoogleLoading && styles.socialButtonDisabled]} 
+              onPress={handleGoogleSignUp} 
+              activeOpacity={1}
+              disabled={isGoogleLoading}
+            >
+              {isGoogleLoading ? (
+                <ActivityIndicator color={COLORS.text} size="small" />
+              ) : (
+                <>
+                  <Image 
+                    source={require('../assets/images/google.png')} 
+                    style={styles.socialIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.socialButtonText}>Google</Text>
+                </>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.socialButton} onPress={handleAppleSignUp} activeOpacity={1}>
@@ -415,6 +520,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
+  },
+  socialButtonDisabled: {
+    opacity: 0.6,
   },
   socialIcon: {
     width: 20,

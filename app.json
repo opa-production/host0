@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "scheme": "ardenahost",
     "icon": "./assets/images/logo.png",
     "splash": {
       "image": "./assets/images/logo.png",
@@ -45,7 +46,8 @@
           "photosPermission": "The app needs access to your photos to upload documents.",
           "cameraPermission": "The app needs access to your camera to take photos."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

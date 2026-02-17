@@ -144,6 +144,54 @@ export const loginHost = async (email, password) => {
 };
 
 /**
+ * Authenticate host with Google (id_token from Google Sign-In).
+ * Backend creates or links account and returns access_token, refresh_token, host.
+ */
+export const googleAuthHost = async (idToken) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_GOOGLE_AUTH);
+  console.log('🔐 [googleAuthHost] Sending Google id_token to:', url);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id_token: idToken }),
+    });
+
+    if (!response.ok) {
+      const errorMessage = await getApiErrorMessage(response, 'Google sign-in failed');
+      const formattedError = formatErrorMessage(errorMessage, 'login');
+      throw new Error(formattedError);
+    }
+
+    const data = await response.json();
+
+    if (!data.access_token || !data.host) {
+      throw new Error('Invalid response from server');
+    }
+
+    await setUserToken(data.access_token);
+    await setUserId(data.host.id.toString());
+    console.log('🔐 [googleAuthHost] Stored token and host');
+
+    return {
+      success: true,
+      token: data.access_token,
+      host: data.host,
+    };
+  } catch (error) {
+    console.error('🔐 [googleAuthHost] Error:', error.message);
+    return {
+      success: false,
+      error: formatErrorMessage(error, 'login'),
+    };
+  }
+};
+
+/**
  * Logout host and clear credentials
  * 
  * Note: JWT tokens are stateless. The API endpoint is called for consistency,

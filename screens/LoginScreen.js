@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -19,8 +19,13 @@ import { COLORS, TYPE, RADIUS } from '../ui/tokens';
 import { isBiometricEnabled, authenticateWithBiometric } from '../utils/biometric';
 import { useFocusEffect } from '@react-navigation/native';
 import { setUserId, setUserToken, getUserProfile } from '../utils/userStorage';
-import { loginHost } from '../services/authService';
+import { loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+
+// Make sure WebBrowser is warmed up for better performance
+WebBrowser.maybeCompleteAuthSession();
 
 const { width } = Dimensions.get('window');
 
@@ -31,7 +36,87 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [checkingBiometric, setCheckingBiometric] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
+
+  // Configure Google Sign-In
+  // Note: You'll need to set up Google OAuth credentials in Google Cloud Console
+  // For Expo Go: Use clientId (Web client ID)
+  // For standalone builds: Configure androidClientId and iosClientId in app.json
+  const discovery = {
+    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenEndpoint: 'https://oauth2.googleapis.com/token',
+    revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
+  };
+
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: 'YOUR_GOOGLE_WEB_CLIENT_ID', // Replace with your actual client ID
+      scopes: ['openid', 'profile', 'email'],
+      responseType: AuthSession.ResponseType.IdToken,
+      redirectUri: AuthSession.makeRedirectUri({
+        useProxy: true,
+      }),
+    },
+    discovery
+  );
+
+  const handleGoogleAuth = useCallback(async (idToken) => {
+    setIsGoogleLoading(true);
+    console.log('🔐 [LoginScreen] Starting Google auth with id_token...');
+
+    try {
+      const result = await googleAuthHost(idToken);
+      console.log('🔐 [LoginScreen] Google auth result:', result.success ? 'SUCCESS' : 'FAILED', result.error || '');
+
+      if (result.success) {
+        console.log('🔐 [LoginScreen] Google auth successful, storing profile and navigating...');
+        await login(result.host);
+        navigation.replace('MainTabs');
+      } else {
+        console.error('🔐 [LoginScreen] Google auth failed:', result.error);
+        Alert.alert(
+          'Google Sign-In Failed',
+          result.error || 'Unable to sign in with Google. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('🔐 [LoginScreen] Google auth error:', error);
+      Alert.alert(
+        'Error',
+        error?.message || 'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }, [login, navigation]);
+
+  // Handle Google auth response
+  useEffect(() => {
+    if (response?.type === 'success') {
+      // Extract id_token from params
+      const idToken = response.params?.id_token || response.authentication?.idToken;
+      if (idToken) {
+        handleGoogleAuth(idToken);
+      } else {
+        setIsGoogleLoading(false);
+        Alert.alert(
+          'Google Sign-In Failed',
+          'Unable to get authentication token. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } else if (response?.type === 'error') {
+      setIsGoogleLoading(false);
+      Alert.alert(
+        'Google Sign-In Failed',
+        'Unable to sign in with Google. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [response, handleGoogleAuth]);
 
   // Check for biometric authentication when screen is focused
   useFocusEffect(
@@ -148,9 +233,22 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // TODO: Implement Google login
-    console.log('Google login');
+  const handleGoogleLogin = async () => {
+    if (isGoogleLoading) return;
+    
+    try {
+      setIsGoogleLoading(true);
+      await promptAsync();
+      // Response will be handled in useEffect above
+    } catch (error) {
+      console.error('🔐 [LoginScreen] Error prompting Google sign-in:', error);
+      setIsGoogleLoading(false);
+      Alert.alert(
+        'Error',
+        'Unable to open Google sign-in. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const handleAppleLogin = () => {
@@ -250,13 +348,24 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <View style={styles.socialButtonsContainer}>
-            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin} activeOpacity={1}>
-              <Image 
-                source={require('../assets/images/google.png')} 
-                style={styles.socialIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.socialButtonText}>Google</Text>
+            <TouchableOpacity 
+              style={[styles.socialButton, isGoogleLoading && styles.socialButtonDisabled]} 
+              onPress={handleGoogleLogin} 
+              activeOpacity={1}
+              disabled={isGoogleLoading}
+            >
+              {isGoogleLoading ? (
+                <ActivityIndicator color={COLORS.text} size="small" />
+              ) : (
+                <>
+                  <Image 
+                    source={require('../assets/images/google.png')} 
+                    style={styles.socialIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.socialButtonText}>Google</Text>
+                </>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.socialButton} onPress={handleAppleLogin} activeOpacity={1}>
@@ -413,6 +522,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
+  },
+  socialButtonDisabled: {
+    opacity: 0.6,
   },
   socialIcon: {
     width: 20,
