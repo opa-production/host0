@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
@@ -15,6 +15,7 @@ export default function MessagesScreen({ navigation }) {
   const [isLoadingSupport, setIsLoadingSupport] = useState(true);
   const [clientConversations, setClientConversations] = useState([]);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const checkUnreadNotifications = async () => {
     try {
@@ -169,10 +170,30 @@ export default function MessagesScreen({ navigation }) {
     }, [])
   );
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        checkUnreadNotifications(),
+        loadSupportConversation(),
+        loadClientConversations(),
+      ]);
+    } catch (error) {
+      console.error('Error refreshing messages:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Messages</Text>
           <TouchableOpacity
