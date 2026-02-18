@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, RADIUS } from '../ui/tokens';
 import { isBiometricEnabled, authenticateWithBiometric } from '../utils/biometric';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setUserId, setUserToken, getUserProfile } from '../utils/userStorage';
 import { loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
@@ -31,6 +32,7 @@ const { width } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
   const { login } = useHost();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -270,7 +272,7 @@ export default function LoginScreen({ navigation }) {
         </View>
       ) : (
         <ScrollView 
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 40) + 20 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >

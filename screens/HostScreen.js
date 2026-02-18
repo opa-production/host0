@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert, ActivityIndicator, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +11,7 @@ import { useHost } from '../utils/HostContext';
 
 export default function HostScreen({ navigation }) {
   const { logout } = useHost();
+  const insets = useSafeAreaInsets();
   const [cars, setCars] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // Start with true for initial load
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -455,7 +457,7 @@ export default function HostScreen({ navigation }) {
           renderItem={renderCarCard}
           keyExtractor={(item) => item.id?.toString() || `car-${item.carId || Date.now()}`}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
           refreshing={isRefreshing}
           onRefresh={() => loadCars(true)}
         />

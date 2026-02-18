@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Alert, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,6 +12,7 @@ import { logoutHost } from '../services/authService';
 
 export default function ProfileScreen({ navigation }) {
   const { host, logout, refreshProfile, updateHost } = useHost();
+  const insets = useSafeAreaInsets();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Skeleton component for loading state with shimmer effect
@@ -159,7 +161,7 @@ export default function ProfileScreen({ navigation }) {
       {/* Floating Settings Button */}
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Card with Image and Details */}

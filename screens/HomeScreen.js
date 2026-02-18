@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
@@ -11,6 +12,7 @@ const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
   const { host } = useHost();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(true);
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   
@@ -177,7 +179,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
         <ScrollView 
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingBottom: 100 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
         >
           <View style={{ marginTop: 20 }}>

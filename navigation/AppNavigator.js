@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { lightHaptic } from '../ui/haptics';
@@ -66,6 +67,8 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -100,9 +103,9 @@ function MainTabs() {
           left: 0,
           right: 0,
           bottom: 0,
-          height: 68,
+          height: 68 + insets.bottom,
           paddingTop: 8,
-          paddingBottom: 12,
+          paddingBottom: Math.max(insets.bottom, 12),
         },
         tabBarLabelStyle: {
           fontSize: 12,

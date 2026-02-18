@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, RADIUS } from '../ui/tokens';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { registerHost, loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
 import * as AuthSession from 'expo-auth-session';
@@ -25,6 +26,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpScreen({ navigation }) {
   const { login } = useHost();
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -235,7 +237,7 @@ export default function SignUpScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 40) + 20 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

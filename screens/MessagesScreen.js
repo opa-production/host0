@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, Image, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
@@ -10,6 +11,7 @@ import { getHostConversations } from '../services/messageService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 
 export default function MessagesScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [unreadCount, setUnreadCount] = useState(0);
   const [supportConversation, setSupportConversation] = useState(null);
   const [isLoadingSupport, setIsLoadingSupport] = useState(true);
@@ -189,7 +191,7 @@ export default function MessagesScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 100 + insets.bottom }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
