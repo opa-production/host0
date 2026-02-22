@@ -222,6 +222,18 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.linkText}>Account Information</Text>
             <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.linkItem}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('KycIntro');
+            }}
+          >
+            <Ionicons name="scan-outline" size={22} color="#666666" style={styles.linkIcon} />
+            <Text style={styles.linkText}>KYC Verification</Text>
+            <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
+          </TouchableOpacity>
         </View>
 
         {/* All Links Section */}

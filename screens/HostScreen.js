@@ -469,10 +469,10 @@ export default function HostScreen({ navigation }) {
         </View>
       )}
 
-      {/* Floating Add Button */}
+      {/* Floating Add Button - positioned above tab bar (68 + safe area) */}
       {cars.length < 2 && (
         <TouchableOpacity
-          style={styles.floatingButton}
+          style={[styles.floatingButton, { bottom: 68 + insets.bottom + 16 }]}
           onPress={handleAddVehicle}
           activeOpacity={0.9}
         >
@@ -622,7 +622,6 @@ const styles = StyleSheet.create({
   },
   floatingButton: {
     position: 'absolute',
-    bottom: 90,
     right: 20,
     width: 60,
     height: 60,

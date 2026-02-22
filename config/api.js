@@ -14,6 +14,13 @@ export const API_BASE_URL = __DEV__
   ? 'http://192.168.88.249:8001'  // Local development server (your computer's IP)
   : 'https://api.ardena.xyz';
 
+/**
+ * Veriff hosted verification page (Hosted plan).
+ * Set to your Veriff hosted verification URL, or leave empty to use a backend endpoint
+ * that returns the session URL (e.g. GET /api/v1/host/verification-url).
+ */
+export const VERIFF_VERIFICATION_URL = '';
+
 export const API_ENDPOINTS = {
   // Host Authentication
   HOST_REGISTER: '/api/v1/host/auth/register',

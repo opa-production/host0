@@ -62,6 +62,7 @@ import ReportIssueScreen from '../screens/ReportIssueScreen';
 import ExtendBookingScreen from '../screens/ExtendBookingScreen';
 import ChatScreen from '../screens/ChatScreen';
 import CalendarSyncScreen from '../screens/CalendarSyncScreen';
+import KycIntroScreen from '../screens/Kyc/KycIntroScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -309,6 +310,9 @@ export default function AppNavigator() {
           name="UpdateProfile" 
           component={UpdateProfileScreen}
         />
+
+        {/* KYC onboarding – redirects to Veriff hosted verification */}
+        <Stack.Screen name="KycIntro" component={KycIntroScreen} />
         
         {/* Upload Docs Screen */}
         <Stack.Screen 
