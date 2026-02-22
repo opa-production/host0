@@ -86,6 +86,10 @@ export const API_ENDPOINTS = {
   HOST_BLOCK_DATES: (carId) => `/api/v1/host/cars/${carId}/block-dates`,
   HOST_GET_BLOCKED_DATES: (carId) => `/api/v1/host/cars/${carId}/blocked-dates`,
   HOST_UNBLOCK_DATE: (carId, blockedDateId) => `/api/v1/host/cars/${carId}/blocked-dates/${blockedDateId}`,
+
+  // KYC (Veriff)
+  HOST_KYC_SESSION: '/api/v1/host/kyc/session',
+  HOST_KYC_STATUS: '/api/v1/host/kyc/status',
 };
 
 /**

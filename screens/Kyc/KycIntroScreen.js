@@ -1,25 +1,35 @@
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Linking, Alert } from 'react-native';
+import React, { useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  Linking,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../../ui/tokens';
 import { lightHaptic } from '../../ui/haptics';
-import { VERIFF_VERIFICATION_URL } from '../../config/api';
+import { createKycSession } from '../../services/kycService';
 
 export default function KycIntroScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [startingSession, setStartingSession] = useState(false);
 
   const handleStartVerification = async () => {
     lightHaptic();
-    const url = VERIFF_VERIFICATION_URL;
-    if (!url) {
-      Alert.alert(
-        'Verification',
-        'Verification link is not configured yet. Please contact support or try again later.'
-      );
-      return;
-    }
+    setStartingSession(true);
     try {
+      const result = await createKycSession();
+      if (!result.success) {
+        Alert.alert('Verification', result.error || 'Could not start verification. Please try again.');
+        return;
+      }
+      const url = result.verification_url;
       const canOpen = await Linking.canOpenURL(url);
       if (canOpen) {
         await Linking.openURL(url);
@@ -28,6 +38,8 @@ export default function KycIntroScreen({ navigation }) {
       }
     } catch (e) {
       Alert.alert('Error', 'Could not open verification page. Please try again.');
+    } finally {
+      setStartingSession(false);
     }
   };
 
@@ -78,9 +90,16 @@ export default function KycIntroScreen({ navigation }) {
             style={styles.primaryButton}
             onPress={handleStartVerification}
             activeOpacity={0.85}
+            disabled={startingSession}
           >
-            <Text style={styles.primaryButtonText}>Continue to verification</Text>
-            <Ionicons name="open-outline" size={18} color="#FFF" style={styles.buttonIcon} />
+            {startingSession ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <>
+                <Text style={styles.primaryButtonText}>Continue to verification</Text>
+                <Ionicons name="open-outline" size={18} color="#FFF" style={styles.buttonIcon} />
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
