@@ -13,6 +13,7 @@ export const createKycSession = async () => {
   }
 
   const url = getApiUrl(API_ENDPOINTS.HOST_KYC_SESSION);
+  const callbackUrl = 'ardenahost://kyc/result';
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -20,6 +21,7 @@ export const createKycSession = async () => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ callback_url: callbackUrl }),
     });
 
     const data = await response.json().catch(() => ({}));

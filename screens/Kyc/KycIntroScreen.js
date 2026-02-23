@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -14,11 +14,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../../ui/tokens';
 import { lightHaptic } from '../../ui/haptics';
-import { createKycSession } from '../../services/kycService';
+import { createKycSession, getKycStatus } from '../../services/kycService';
 
 export default function KycIntroScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [startingSession, setStartingSession] = useState(false);
+  const [kycStatus, setKycStatus] = useState(null);
+  const [statusLoading, setStatusLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const result = await getKycStatus();
+      if (cancelled) return;
+      setStatusLoading(false);
+      if (result.success && result.status != null) setKycStatus(result.status);
+      else setKycStatus(null);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const statusLower = (kycStatus?.status || '').toLowerCase();
+  const isAlreadyVerified = statusLower === 'approved' || statusLower === 'verified';
 
   const handleStartVerification = async () => {
     lightHaptic();
@@ -63,44 +81,71 @@ export default function KycIntroScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
-          <View style={styles.iconWrap}>
-            <Ionicons name="scan" size={40} color={COLORS.brand} />
-          </View>
-          <Text style={styles.title}>Verify your identity</Text>
+          {statusLoading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator size="large" color={COLORS.brand} />
+              <Text style={styles.loadingText}>Checking verification status…</Text>
+            </View>
+          ) : isAlreadyVerified ? (
+            <>
+              <View style={styles.iconWrap}>
+                <Ionicons name="checkmark-circle" size={48} color="#34C759" />
+              </View>
+              <Text style={[styles.title, { color: '#34C759' }]}>You're verified</Text>
+              <Text style={styles.body}>
+                Your identity has been verified. You don't need to verify again.
+              </Text>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => { lightHaptic(); navigation.navigate('KycResult'); }}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.primaryButtonText}>View verification details</Text>
+                <Ionicons name="chevron-forward" size={18} color="#FFF" style={styles.buttonIcon} />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View style={styles.iconWrap}>
+                <Ionicons name="scan" size={40} color={COLORS.brand} />
+              </View>
+              <Text style={styles.title}>Verify your identity</Text>
           <Text style={styles.body}>
             We use our partner Veriff for fast, secure verification. You’ll complete a short flow in your browser: ID check and a quick selfie to confirm it’s you.
-          </Text>
+              </Text>
 
-          <View style={styles.bulletList}>
-            <View style={styles.bulletRow}>
-              <Ionicons name="checkmark-circle" size={20} color={COLORS.brand} />
-              <Text style={styles.bulletText}>Automated identity verification</Text>
-            </View>
-            <View style={styles.bulletRow}>
-              <Ionicons name="checkmark-circle" size={20} color={COLORS.brand} />
-              <Text style={styles.bulletText}>ID document + liveness check</Text>
-            </View>
-            <View style={styles.bulletRow}>
-              <Ionicons name="checkmark-circle" size={20} color={COLORS.brand} />
-              <Text style={styles.bulletText}>Usually takes under 2 minutes</Text>
-            </View>
-          </View>
+              <View style={styles.bulletList}>
+                <View style={styles.bulletRow}>
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.brand} />
+                  <Text style={styles.bulletText}>Automated identity verification</Text>
+                </View>
+                <View style={styles.bulletRow}>
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.brand} />
+                  <Text style={styles.bulletText}>ID document + liveness check</Text>
+                </View>
+                <View style={styles.bulletRow}>
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.brand} />
+                  <Text style={styles.bulletText}>Usually takes under 2 minutes</Text>
+                </View>
+              </View>
 
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={handleStartVerification}
-            activeOpacity={0.85}
-            disabled={startingSession}
-          >
-            {startingSession ? (
-              <ActivityIndicator size="small" color="#FFF" />
-            ) : (
-              <>
-                <Text style={styles.primaryButtonText}>Continue to verification</Text>
-                <Ionicons name="open-outline" size={18} color="#FFF" style={styles.buttonIcon} />
-              </>
-            )}
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleStartVerification}
+                activeOpacity={0.85}
+                disabled={startingSession}
+              >
+                {startingSession ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <>
+                    <Text style={styles.primaryButtonText}>Continue to verification</Text>
+                    <Ionicons name="open-outline" size={18} color="#FFF" style={styles.buttonIcon} />
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -147,4 +192,6 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: { ...TYPE.bodyStrong, color: '#FFF', fontSize: 16 },
   buttonIcon: { marginLeft: 6 },
+  loadingWrap: { alignItems: 'center', paddingVertical: SPACING.l },
+  loadingText: { ...TYPE.body, marginTop: SPACING.m, color: COLORS.muted },
 });

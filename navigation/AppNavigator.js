@@ -63,6 +63,16 @@ import ExtendBookingScreen from '../screens/ExtendBookingScreen';
 import ChatScreen from '../screens/ChatScreen';
 import CalendarSyncScreen from '../screens/CalendarSyncScreen';
 import KycIntroScreen from '../screens/Kyc/KycIntroScreen';
+import KycResultScreen from '../screens/Kyc/KycResultScreen';
+
+const linking = {
+  prefixes: ['ardenahost://'],
+  config: {
+    screens: {
+      KycResult: 'kyc/result',
+    },
+  },
+};
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -156,7 +166,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -313,6 +323,8 @@ export default function AppNavigator() {
 
         {/* KYC onboarding – redirects to Veriff hosted verification */}
         <Stack.Screen name="KycIntro" component={KycIntroScreen} />
+        {/* KYC result – opened when user returns from Veriff via ardenahost://kyc/result */}
+        <Stack.Screen name="KycResult" component={KycResultScreen} />
         
         {/* Upload Docs Screen */}
         <Stack.Screen 

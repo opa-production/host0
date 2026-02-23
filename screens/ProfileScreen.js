@@ -9,11 +9,13 @@ import { lightHaptic } from '../ui/haptics';
 import { uploadHostProfilePicture } from '../services/mediaService';
 import { useHost } from '../utils/HostContext';
 import { logoutHost } from '../services/authService';
+import { getKycStatus } from '../services/kycService';
 
 export default function ProfileScreen({ navigation }) {
   const { host, logout, refreshProfile, updateHost } = useHost();
   const insets = useSafeAreaInsets();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [kycStatus, setKycStatus] = useState(null);
 
   // Skeleton component for loading state with shimmer effect
   const SkeletonBox = ({ width, height, style }) => {
@@ -62,12 +64,18 @@ export default function ProfileScreen({ navigation }) {
     console.log('📸 [ProfileScreen] host.avatar_url changed:', host?.avatar_url);
   }, [host?.avatar_url]);
 
-  // Refresh profile when screen comes into focus
+  // Refresh profile and KYC status when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       const loadProfile = async () => {
         setIsRefreshing(true);
         await refreshProfile();
+        const kycResult = await getKycStatus();
+        if (kycResult.success && kycResult.status != null) {
+          setKycStatus(kycResult.status);
+        } else {
+          setKycStatus(null);
+        }
         setIsRefreshing(false);
       };
       loadProfile();
@@ -227,11 +235,19 @@ export default function ProfileScreen({ navigation }) {
             style={styles.linkItem}
             onPress={() => {
               lightHaptic();
-              navigation.navigate('KycIntro');
+              const statusLower = (kycStatus?.status || '').toLowerCase();
+              const isVerified = statusLower === 'approved' || statusLower === 'verified';
+              navigation.navigate(isVerified ? 'KycResult' : 'KycIntro');
             }}
           >
             <Ionicons name="scan-outline" size={22} color="#666666" style={styles.linkIcon} />
             <Text style={styles.linkText}>KYC Verification</Text>
+            {(kycStatus?.status || '').toLowerCase() === 'approved' || (kycStatus?.status || '').toLowerCase() === 'verified' ? (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="checkmark-circle" size={18} color="#34C759" />
+                <Text style={styles.verifiedBadgeText}>Verified</Text>
+              </View>
+            ) : null}
             <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
           </TouchableOpacity>
         </View>
@@ -453,6 +469,17 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#1C1C1E',
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 4,
+    gap: 4,
+  },
+  verifiedBadgeText: {
+    ...TYPE.subhead,
+    fontSize: 12,
+    color: '#34C759',
   },
   sectionDivider: {
     height: StyleSheet.hairlineWidth,
