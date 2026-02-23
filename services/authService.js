@@ -297,6 +297,50 @@ export const forgotPassword = async (email) => {
 };
 
 /**
+ * Reset password using token from email link (no auth header).
+ * POST /api/v1/host/auth/reset-password
+ * @param {string} token - JWT from reset link
+ * @param {string} newPassword - New password
+ * @param {string} newPasswordConfirmation - Must match newPassword
+ * @returns {Promise<Object>} Result with success status and message or error
+ */
+export const resetPasswordWithToken = async (token, newPassword, newPasswordConfirmation) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_RESET_PASSWORD);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token: token || '',
+        new_password: newPassword,
+        new_password_confirmation: newPasswordConfirmation,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorMessage = await getApiErrorMessage(response, 'Failed to reset password');
+      const formattedError = formatErrorMessage(errorMessage, 'password reset');
+      return { success: false, error: formattedError };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      message: data.message || 'Your password has been reset. You can now sign in.',
+    };
+  } catch (error) {
+    logError(error, 'ResetPasswordWithToken');
+    return {
+      success: false,
+      error: formatErrorMessage(error, 'password reset'),
+    };
+  }
+};
+
+/**
  * Change password for authenticated host
  * @param {string} currentPassword - Current password (required for verification)
  * @param {string} newPassword - New password (minimum 8 characters)

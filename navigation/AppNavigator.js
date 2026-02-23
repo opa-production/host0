@@ -49,6 +49,7 @@ import HostStatsScreen from '../screens/HostStatsScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
 import ArdenaClientDownloadScreen from '../screens/ArdenaClientDownloadScreen';
 import SupaHostScreen from '../screens/SupaHostScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
 import UploadDocsScreen from '../screens/UploadDocsScreen';
@@ -70,6 +71,7 @@ const linking = {
   config: {
     screens: {
       KycResult: 'kyc/result',
+      ResetPassword: 'reset-password',
     },
   },
 };
@@ -178,6 +180,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         
         {/* Main App */}
         <Stack.Screen name="MainTabs" component={MainTabs} />

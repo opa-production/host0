@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
   HOST_LOGOUT: '/api/v1/host/auth/logout',
   HOST_CHANGE_PASSWORD: '/api/v1/host/change-password',
   HOST_FORGOT_PASSWORD: '/api/v1/host/auth/forgot-password',
+  HOST_RESET_PASSWORD: '/api/v1/host/auth/reset-password',
   HOST_DELETE_ACCOUNT: '/api/v1/host/account',
   HOST_ME: '/api/v1/host/me',
   HOST_UPDATE_PROFILE: '/api/v1/host/profile',
