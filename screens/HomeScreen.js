@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
@@ -153,6 +154,13 @@ export default function HomeScreen({ navigation }) {
     fetchData();
   }, []);
 
+  // Refresh wallet/earnings when Home tab is focused (e.g. returning from Finance)
+  useFocusEffect(
+    useCallback(() => {
+      loadEarningsSummary();
+    }, [])
+  );
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning 👋';
@@ -236,10 +244,10 @@ export default function HomeScreen({ navigation }) {
     return numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
-  // Calculate financial breakdown
-  const withdrawable = financialData.nextPayout?.amount || 0;
-  const netEarnings = financialData.currentEarnings || 0;
-  const commission = (financialData.currentEarnings || 0) - (financialData.nextPayout?.amount || 0);
+  // Use same keys as loadEarningsSummary sets (from API: net_earnings, withdrawable, commission_amount)
+  const withdrawable = financialData.withdrawable ?? 0;
+  const netEarnings = financialData.net_earnings ?? 0;
+  const commission = financialData.commission_amount ?? 0;
 
   return (
     <View style={styles.container}>
