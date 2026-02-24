@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostBookings, getClientDisplayName } from '../services/bookingService';
+import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
 
@@ -16,11 +16,10 @@ export default function PastBookingsScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const getStatusColor = (status) => {
-    switch (status) {
+    if (isBookingCompleted(status)) return '#34C759'; // Completed (car dropped off)
+    switch ((status || '').toLowerCase()) {
       case 'active':
         return '#007AFF';
-      case 'completed':
-        return '#34C759';
       case 'upcoming':
         return '#FF9500';
       default:
@@ -28,18 +27,7 @@ export default function PastBookingsScreen({ navigation }) {
     }
   };
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'active':
-        return 'Active';
-      case 'completed':
-        return 'Completed';
-      case 'upcoming':
-        return 'Upcoming';
-      default:
-        return status;
-    }
-  };
+  const getStatusText = (status) => getBookingStatusDisplayText(status);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -56,10 +44,8 @@ export default function PastBookingsScreen({ navigation }) {
     try {
       const result = await getHostBookings();
       if (result.success && result.bookings) {
-        // Filter for completed bookings
-        const completedBookings = result.bookings.filter(
-          booking => booking.status?.toLowerCase() === 'completed'
-        );
+        // Filter for completed/dropped-off bookings only
+        const completedBookings = result.bookings.filter(isBookingCompleted);
 
         // Fetch car images for each booking
         const userId = await getUserId();

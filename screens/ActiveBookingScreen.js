@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getBookingDetails, confirmPickup, confirmDropoff, getClientDisplayName } from '../services/bookingService';
+import { getBookingDetails, confirmPickup, confirmDropoff, getClientDisplayName, getBookingStatusDisplayText } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getUserId } from '../utils/userStorage';
@@ -41,12 +41,11 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
   const getStatusColor = (status) => {
     const statusLower = status?.toLowerCase() || '';
+    if (statusLower === 'completed' || statusLower === 'dropped_off') return '#34C759'; // Completed (car dropped off)
     switch (statusLower) {
       case 'confirmed':
       case 'active':
         return '#007AFF';
-      case 'completed':
-        return '#34C759';
       case 'pending':
       case 'upcoming':
         return '#FF9500';
@@ -57,10 +56,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
     }
   };
 
-  const getStatusText = (status) => {
-    if (!status) return 'Unknown';
-    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  };
+  const getStatusText = (status) => getBookingStatusDisplayText(status);
 
   const calculateCountdown = (startDate, endDate, status) => {
     if (!startDate || !endDate) return null;

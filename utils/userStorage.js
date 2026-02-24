@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const USER_ID_KEY = '@user_id';
 const USER_TOKEN_KEY = '@user_token';
 const USER_PROFILE_KEY = '@user_profile';
+const ONBOARDING_COMPLETED_KEY = '@onboarding_completed';
 
 /**
  * Get the current user ID from storage
@@ -81,6 +82,28 @@ export const setUserProfile = async (profile) => {
     await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
   } catch (error) {
     console.error('Error setting user profile:', error);
+  }
+};
+
+/**
+ * Whether the user has completed onboarding (shown only once per install).
+ * Not cleared on logout so returning users don't see onboarding again.
+ */
+export const getOnboardingCompleted = async () => {
+  try {
+    const value = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+    return value === 'true';
+  } catch (error) {
+    console.error('Error getting onboarding completed:', error);
+    return false;
+  }
+};
+
+export const setOnboardingCompleted = async (completed = true) => {
+  try {
+    await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, completed ? 'true' : 'false');
+  } catch (error) {
+    console.error('Error setting onboarding completed:', error);
   }
 };
 

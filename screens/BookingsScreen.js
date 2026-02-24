@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostBookings, getClientDisplayName } from '../services/bookingService';
+import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
 
@@ -44,12 +44,11 @@ export default function BookingsScreen({ navigation }) {
 
   const getStatusColor = (status) => {
     const statusLower = status?.toLowerCase() || '';
+    if (isBookingCompleted(statusLower)) return '#34C759'; // Completed (car dropped off)
     switch (statusLower) {
       case 'confirmed':
       case 'active':
         return '#007AFF';
-      case 'completed':
-        return '#34C759';
       case 'pending':
       case 'upcoming':
         return '#FF9500';
@@ -60,20 +59,20 @@ export default function BookingsScreen({ navigation }) {
     }
   };
 
-  const getStatusText = (status) => {
-    if (!status) return 'Unknown';
-    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  };
+  const getStatusText = (status) => getBookingStatusDisplayText(status);
 
   const loadBookings = async () => {
     setIsLoading(true);
     try {
       const result = await getHostBookings();
       if (result.success && result.bookings) {
+        // Only show active/upcoming bookings here; completed/dropped-off go to Past Bookings only
+        const activeBookings = result.bookings.filter((b) => !isBookingCompleted(b));
+
         // Fetch car images for each booking
         const userId = await getUserId();
         const mappedBookings = await Promise.all(
-          result.bookings.map(async (booking) => {
+          activeBookings.map(async (booking) => {
             let carImageUrls = booking.car_image_urls || [];
             
             // If no images from API, fetch from Supabase (same as my cars page)
@@ -152,8 +151,8 @@ export default function BookingsScreen({ navigation }) {
 
   const handleBookingPress = async (booking) => {
     lightHaptic();
-    // Route completed bookings to past booking detail screen
-    if (booking.status?.toLowerCase() === 'completed') {
+    // Route completed/dropped-off bookings to past booking detail screen
+    if (isBookingCompleted(booking)) {
       // Format booking data for past booking detail screen
       const pastBookingData = {
         id: booking.id,

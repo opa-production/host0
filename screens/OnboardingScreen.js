@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { setOnboardingCompleted } from '../utils/userStorage';
 import SavingsSvg from '../assets/icons/savings.svg';
 import ControlSvg from '../assets/icons/control.svg';
 import SafetySvg from '../assets/icons/safety.svg';
@@ -50,9 +51,10 @@ export default function OnboardingScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [current, setCurrent] = useState(0);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     lightHaptic();
     if (current === slides.length - 1) {
+      await setOnboardingCompleted(true);
       navigation.replace('Landing');
     } else {
       setCurrent((prev) => prev + 1);
@@ -66,8 +68,9 @@ export default function OnboardingScreen({ navigation }) {
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
     lightHaptic();
+    await setOnboardingCompleted(true);
     navigation.replace('Landing');
   };
 

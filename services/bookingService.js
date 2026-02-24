@@ -25,6 +25,39 @@ export const getClientDisplayName = (booking) => {
   return trimmed || 'Client';
 };
 
+/** Statuses that mean the booking is done (car dropped off). Shown in Past Bookings only; "completed" is the canonical status. */
+const COMPLETED_STATUSES = ['completed', 'dropped_off', 'dropped off'];
+
+/**
+ * Returns true if the booking is completed (car has been dropped off).
+ * Used to exclude these from the main Bookings list and include them only in Past Bookings.
+ * @param {Object} booking - Booking object with status (or string status)
+ * @returns {boolean}
+ */
+export const isBookingCompleted = (booking) => {
+  const status = typeof booking === 'string' ? booking : (booking?.status ?? '');
+  const normalized = (status || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  return COMPLETED_STATUSES.some(s => normalized === s || normalized === s.replace(/_/g, ' '));
+};
+
+/**
+ * Display label for booking status. "Completed" is shown for any done/dropped-off booking.
+ * @param {string} status - Raw status from API
+ * @returns {string} User-facing label (e.g. "Completed", "Active", "Pending")
+ */
+export const getBookingStatusDisplayText = (status) => {
+  const s = (status || '').toLowerCase().trim();
+  if (isBookingCompleted(s)) return 'Completed';
+  switch (s) {
+    case 'confirmed':
+    case 'active': return s.charAt(0).toUpperCase() + s.slice(1);
+    case 'pending':
+    case 'upcoming': return s === 'upcoming' ? 'Upcoming' : 'Pending';
+    case 'cancelled': return 'Cancelled';
+    default: return status ? (status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()) : 'Unknown';
+  }
+};
+
 /**
  * Get all bookings for the host
  * @returns {Promise<Object>} Result with success status and bookings array or error

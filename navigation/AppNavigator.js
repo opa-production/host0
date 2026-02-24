@@ -9,6 +9,7 @@ import { BlurView } from 'expo-blur';
 import { lightHaptic } from '../ui/haptics';
 import { COLORS } from '../ui/tokens';
 import { useHost } from '../utils/HostContext';
+import { getOnboardingCompleted } from '../utils/userStorage';
 
 // Main Screens
 import LandingScreen from '../screens/LandingScreen';
@@ -157,9 +158,20 @@ function MainTabs() {
 
 export default function AppNavigator() {
   const { isAuthenticated, isLoading } = useHost();
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(null);
 
-  // Show loading screen while checking auth
-  if (isLoading) {
+  // Read onboarding flag once so we can choose initial route (onboarding only once for new users)
+  React.useEffect(() => {
+    let mounted = true;
+    getOnboardingCompleted().then((completed) => {
+      if (mounted) setHasCompletedOnboarding(completed);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  // Show loading until auth check and onboarding flag are ready
+  const ready = !isLoading && hasCompletedOnboarding !== null;
+  if (!ready) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg }}>
         <ActivityIndicator size="large" color={COLORS.text} />
@@ -167,13 +179,16 @@ export default function AppNavigator() {
     );
   }
 
+  const initialRoute =
+    isAuthenticated ? 'MainTabs' : (hasCompletedOnboarding ? 'Landing' : 'Onboarding');
+
   return (
     <NavigationContainer linking={linking}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
         }}
-        initialRouteName={isAuthenticated ? 'MainTabs' : 'Onboarding'}
+        initialRouteName={initialRoute}
       >
         {/* Onboarding + Auth Flow */}
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
