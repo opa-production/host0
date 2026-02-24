@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostCars, toggleCarVisibility } from '../services/carService';
+import { getHostCars, toggleCarVisibility, deleteHostCar } from '../services/carService';
 import { useHost } from '../utils/HostContext';
 
 export default function HostScreen({ navigation }) {
@@ -213,8 +213,13 @@ export default function HostScreen({ navigation }) {
     }
   };
 
-  const handleDeleteCar = (carId, carName) => {
+  const handleDeleteCar = (item, carName) => {
     lightHaptic();
+    const carId = item.carId ?? item.id;
+    if (!carId) {
+      Alert.alert('Error', 'Car ID not found.');
+      return;
+    }
     Alert.alert(
       'Delete Car',
       `Are you sure you want to delete ${carName}? This action cannot be undone.`,
@@ -228,15 +233,25 @@ export default function HostScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              const HOST_CARS_KEY = '@host_cars';
-              const storedCars = await AsyncStorage.getItem(HOST_CARS_KEY);
-              const cars = storedCars ? JSON.parse(storedCars) : [];
-              const updatedCars = cars.filter(car => car.id !== carId);
-              await AsyncStorage.setItem(HOST_CARS_KEY, JSON.stringify(updatedCars));
-              setCars(updatedCars);
-              lightHaptic();
+              const result = await deleteHostCar(carId);
+              if (result.success) {
+                setCars((prev) => prev.filter((c) => (c.carId ?? c.id) !== carId));
+                lightHaptic();
+              } else {
+                if (result.error && (result.error.includes('Session expired') || result.error.includes('Please login again'))) {
+                  await logout();
+                  navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+                  return;
+                }
+                Alert.alert('Error', result.error || 'Failed to delete car. Please try again.');
+              }
             } catch (error) {
               console.error('Error deleting car:', error);
+              if (error.message && (error.message.includes('Session expired') || error.message.includes('Please login again'))) {
+                await logout();
+                navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+                return;
+              }
               Alert.alert('Error', 'Failed to delete car. Please try again.');
             }
           },
@@ -419,7 +434,7 @@ export default function HostScreen({ navigation }) {
         {/* Delete Button */}
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => handleDeleteCar(item.id, item.name)}
+          onPress={() => handleDeleteCar(item, item.name)}
           activeOpacity={0.7}
         >
           <Ionicons name="close-circle" size={24} color="#FF3B30" />

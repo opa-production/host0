@@ -3,6 +3,7 @@
  */
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken, getUserId, clearUserData } from '../utils/userStorage';
+import { handleTokenExpiration } from '../utils/logoutHandler';
 import { supabase, STORAGE_BUCKETS } from '../config/supabase';
 
 /**
@@ -1220,6 +1221,74 @@ export const getHostCars = async () => {
       success: false,
       error: errorMessage,
       cars: [],
+    };
+  }
+};
+
+/**
+ * Delete a host's car
+ * DELETE /api/v1/host/cars/{car_id}
+ * @param {number|string} carId - Car ID
+ * @returns {Promise<Object>} Result with success status or error
+ */
+export const deleteHostCar = async (carId) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_DELETE_CAR(carId));
+  const startTime = Date.now();
+  console.log('🚗 [DELETE HOST CAR API] Deleting car:', carId);
+  console.log('🚗 [DELETE HOST CAR API] Endpoint URL:', url);
+
+  try {
+    const token = await getUserToken();
+    if (!token) {
+      console.error('🚗 [DELETE HOST CAR API] ERROR: No authentication token found');
+      return { success: false, error: 'No authentication token found' };
+    }
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log('🚗 [DELETE HOST CAR API] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      responseTime: `${responseTime}ms`,
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to delete car';
+      try {
+        const errorData = await response.json();
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map((err) => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+
+      if (response.status === 401) {
+        await handleTokenExpiration();
+        throw new Error('Session expired. Please login again.');
+      }
+
+      return { success: false, error: errorMessage };
+    }
+
+    console.log('🚗 [DELETE HOST CAR API] ✅ SUCCESS! Car deleted:', { carId, totalTime: Date.now() - startTime });
+    return { success: true };
+  } catch (error) {
+    console.error('🚗 [DELETE HOST CAR API] ❌ ERROR:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to delete car. Please try again.',
     };
   }
 };
