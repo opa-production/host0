@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setUserId, setUserToken, getUserProfile } from '../utils/userStorage';
 import { loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
+import { GOOGLE_WEB_CLIENT_ID, GOOGLE_REDIRECT_URI } from '../config/api';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -53,12 +54,10 @@ export default function LoginScreen({ navigation }) {
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      clientId: 'YOUR_GOOGLE_WEB_CLIENT_ID', // Replace with your actual client ID
+      clientId: GOOGLE_WEB_CLIENT_ID,
       scopes: ['openid', 'profile', 'email'],
       responseType: AuthSession.ResponseType.IdToken,
-      redirectUri: AuthSession.makeRedirectUri({
-        useProxy: true,
-      }),
+      redirectUri: GOOGLE_REDIRECT_URI,
     },
     discovery
   );
@@ -237,7 +236,14 @@ export default function LoginScreen({ navigation }) {
 
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
-    
+    if (!GOOGLE_WEB_CLIENT_ID || GOOGLE_WEB_CLIENT_ID === 'YOUR_GOOGLE_WEB_CLIENT_ID') {
+      Alert.alert(
+        'Google Sign-In Not Configured',
+        'Add your Google Web Client ID in config/api.js (GOOGLE_WEB_CLIENT_ID). In Google Console, set Authorized redirect URI to: ' + GOOGLE_REDIRECT_URI,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
     try {
       setIsGoogleLoading(true);
       await promptAsync();
@@ -245,9 +251,12 @@ export default function LoginScreen({ navigation }) {
     } catch (error) {
       console.error('🔐 [LoginScreen] Error prompting Google sign-in:', error);
       setIsGoogleLoading(false);
+      const msg = error?.message || '';
       Alert.alert(
-        'Error',
-        'Unable to open Google sign-in. Please try again.',
+        'Google Sign-In Error',
+        msg.includes('400') || msg.includes('redirect_uri')
+          ? 'OAuth config error. Ensure config/api.js has the correct GOOGLE_WEB_CLIENT_ID and Google Console has redirect URI: ' + GOOGLE_REDIRECT_URI
+          : 'Unable to open Google sign-in. Please try again.',
         [{ text: 'OK' }]
       );
     }

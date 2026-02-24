@@ -21,6 +21,15 @@ export const API_BASE_URL = __DEV__
  */
 export const VERIFF_VERIFICATION_URL = '';
 
+/**
+ * Google OAuth for Host Login/Sign-up (Continue with Google).
+ * - Get the Web client ID from Google Cloud Console → APIs & Services → Credentials → Create OAuth 2.0 Client ID → Web application.
+ * - Add this exact redirect URI in that client's "Authorized redirect URIs":
+ *   https://auth.expo.io/@kevdev254/ardenahost
+ */
+export const GOOGLE_WEB_CLIENT_ID = '263550297699-p8s0vnr6ogsgo0u7r4qf65ce71dlcirs.apps.googleusercontent.com';
+export const GOOGLE_REDIRECT_URI = 'https://auth.expo.io/@kevdev254/ardenahost';
+
 export const API_ENDPOINTS = {
   // Host Authentication
   HOST_REGISTER: '/api/v1/host/auth/register',
