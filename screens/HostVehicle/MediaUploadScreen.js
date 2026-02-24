@@ -16,9 +16,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SPACING } from '../../ui/tokens';
 import { uploadVehicleImages, uploadVehicleVideo } from '../../services/mediaService';
 
-export default function MediaUploadScreen({ formData, updateFormData, onNext, onBack, onSubmit }) {
+export default function MediaUploadScreen({ formData, updateFormData, onNext, onBack, onSubmit, isSubmitting }) {
   const insets = useSafeAreaInsets();
   const [uploading, setUploading] = useState(false);
+  const isUploading = isSubmitting || uploading;
 
   const pickCoverPhoto = async () => {
     try {
@@ -235,19 +236,27 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
         <TouchableOpacity
           style={styles.backButton}
           onPress={onBack}
+          disabled={isUploading}
           activeOpacity={0.9}
         >
-          <Ionicons name="arrow-back" size={20} color={COLORS.text} />
-          <Text style={styles.backButtonText}>Back</Text>
+          <Ionicons name="arrow-back" size={20} color={isUploading ? COLORS.subtle : COLORS.text} />
+          <Text style={[styles.backButtonText, isUploading && styles.buttonDisabledText]}>Back</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
+          style={[styles.nextButton, (!canProceed() || isUploading) && styles.nextButtonDisabled]}
           onPress={onSubmit || onNext}
-          disabled={!canProceed()}
+          disabled={!canProceed() || isUploading}
           activeOpacity={0.9}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          {isUploading ? (
+            <>
+              <ActivityIndicator size="small" color="#ffffff" style={styles.nextSpinner} />
+              <Text style={styles.nextButtonText}>Uploading…</Text>
+            </>
+          ) : (
+            <Text style={styles.nextButtonText}>Next</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -437,19 +446,27 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     flex: 2,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#000000',
     borderRadius: 16,
     padding: 18,
+    gap: 8,
   },
   nextButtonDisabled: {
     backgroundColor: '#cccccc',
+  },
+  nextSpinner: {
+    marginRight: 4,
   },
   nextButtonText: {
     fontSize: 16,
     fontFamily: 'Nunito-Bold',
     color: '#ffffff',
+  },
+  buttonDisabledText: {
+    color: COLORS.subtle,
   },
 });
 

@@ -428,6 +428,7 @@ export default function HostVehicleScreen({ navigation, route }) {
             updateFormData={updateFormData}
             onNext={nextStep}
             onBack={prevStep}
+            isSubmitting={isSubmitting}
           />
         );
       case 5:
