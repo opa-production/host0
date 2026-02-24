@@ -51,6 +51,7 @@ export default function SignUpScreen({ navigation }) {
       scopes: ['openid', 'profile', 'email'],
       responseType: AuthSession.ResponseType.IdToken,
       redirectUri: GOOGLE_REDIRECT_URI,
+      usePKCE: false,
     },
     discovery
   );
