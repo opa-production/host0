@@ -477,8 +477,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   verifiedBadgeText: {
-    ...TYPE.subhead,
     fontSize: 12,
+    lineHeight: 16,
+    fontFamily: 'Nunito-SemiBold',
     color: '#34C759',
   },
   sectionDivider: {
