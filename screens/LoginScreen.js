@@ -22,12 +22,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setUserId, setUserToken, getUserProfile } from '../utils/userStorage';
 import { loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
-import { GOOGLE_WEB_CLIENT_ID, GOOGLE_REDIRECT_URI } from '../config/api';
-import * as AuthSession from 'expo-auth-session';
+import { GOOGLE_WEB_CLIENT_ID, GOOGLE_REDIRECT_URI, GOOGLE_ANDROID_CLIENT_ID } from '../config/api';
+import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import Constants from 'expo-constants';
 
 // Make sure WebBrowser is warmed up for better performance
 WebBrowser.maybeCompleteAuthSession();
+
+const useAndroidClient = Platform.OS === 'android' && Constants.appOwnership === 'standalone' && !!GOOGLE_ANDROID_CLIENT_ID;
 
 const { width } = Dimensions.get('window');
 
@@ -42,35 +45,17 @@ export default function LoginScreen({ navigation }) {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
 
-  // Configure Google Sign-In
-  // Note: You'll need to set up Google OAuth credentials in Google Cloud Console
-  // For Expo Go: Use clientId (Web client ID)
-  // For standalone builds: Configure androidClientId and iosClientId in app.json
-  const discovery = {
-    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenEndpoint: 'https://oauth2.googleapis.com/token',
-    revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
-  };
-
-  // Google requires a nonce when using response_type=id_token
-  const nonce = useMemo(
-    () =>
-      Math.random().toString(36).slice(2) +
-      Date.now().toString(36) +
-      Math.random().toString(36).slice(2),
-    []
-  );
-
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+  // Google Sign-In: Web client (Expo Go / web), Android client (standalone preview/production)
+  const [request, googleResponse, promptAsync] = Google.useAuthRequest(
     {
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+      ...(useAndroidClient ? { androidClientId: GOOGLE_ANDROID_CLIENT_ID } : {}),
       clientId: GOOGLE_WEB_CLIENT_ID,
       scopes: ['openid', 'profile', 'email'],
-      responseType: AuthSession.ResponseType.IdToken,
-      redirectUri: GOOGLE_REDIRECT_URI,
-      usePKCE: false,
-      extraParams: { nonce },
+      // Use Expo redirect for Web/Expo Go; native redirect for Android standalone
+      ...(useAndroidClient ? {} : { redirectUri: GOOGLE_REDIRECT_URI }),
     },
-    discovery
+    {}
   );
 
   const handleGoogleAuth = useCallback(async (idToken) => {
@@ -105,11 +90,10 @@ export default function LoginScreen({ navigation }) {
     }
   }, [login, navigation]);
 
-  // Handle Google auth response
+  // Handle Google auth response (id_token from params or from code exchange)
   useEffect(() => {
-    if (response?.type === 'success') {
-      // Extract id_token from params
-      const idToken = response.params?.id_token || response.authentication?.idToken;
+    if (googleResponse?.type === 'success') {
+      const idToken = googleResponse.params?.id_token ?? googleResponse.authentication?.idToken;
       if (idToken) {
         handleGoogleAuth(idToken);
       } else {
@@ -120,7 +104,7 @@ export default function LoginScreen({ navigation }) {
           [{ text: 'OK' }]
         );
       }
-    } else if (response?.type === 'error') {
+    } else if (googleResponse?.type === 'error') {
       setIsGoogleLoading(false);
       Alert.alert(
         'Google Sign-In Failed',
@@ -128,7 +112,7 @@ export default function LoginScreen({ navigation }) {
         [{ text: 'OK' }]
       );
     }
-  }, [response, handleGoogleAuth]);
+  }, [googleResponse, handleGoogleAuth]);
 
   // Check for biometric authentication when screen is focused
   useFocusEffect(
@@ -247,10 +231,19 @@ export default function LoginScreen({ navigation }) {
 
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
-    if (!GOOGLE_WEB_CLIENT_ID || GOOGLE_WEB_CLIENT_ID === 'YOUR_GOOGLE_WEB_CLIENT_ID') {
+    const needsWeb = !useAndroidClient;
+    if (needsWeb && (!GOOGLE_WEB_CLIENT_ID || GOOGLE_WEB_CLIENT_ID === 'YOUR_GOOGLE_WEB_CLIENT_ID')) {
       Alert.alert(
         'Google Sign-In Not Configured',
-        'Add your Google Web Client ID in config/api.js (GOOGLE_WEB_CLIENT_ID). In Google Console, set Authorized redirect URI to: ' + GOOGLE_REDIRECT_URI,
+        'Add GOOGLE_WEB_CLIENT_ID in config/api.js and set redirect URI: ' + GOOGLE_REDIRECT_URI,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    if (useAndroidClient && !GOOGLE_ANDROID_CLIENT_ID) {
+      Alert.alert(
+        'Google Sign-In Not Configured',
+        'Add GOOGLE_ANDROID_CLIENT_ID in config/api.js for standalone Android.',
         [{ text: 'OK' }]
       );
       return;
@@ -258,7 +251,6 @@ export default function LoginScreen({ navigation }) {
     try {
       setIsGoogleLoading(true);
       await promptAsync();
-      // Response will be handled in useEffect above
     } catch (error) {
       console.error('🔐 [LoginScreen] Error prompting Google sign-in:', error);
       setIsGoogleLoading(false);
@@ -266,7 +258,7 @@ export default function LoginScreen({ navigation }) {
       Alert.alert(
         'Google Sign-In Error',
         msg.includes('400') || msg.includes('redirect_uri')
-          ? 'OAuth config error. Ensure config/api.js has the correct GOOGLE_WEB_CLIENT_ID and Google Console has redirect URI: ' + GOOGLE_REDIRECT_URI
+          ? 'OAuth config error. Check Google Console and config/api.js (client IDs and redirect URI).'
           : 'Unable to open Google sign-in. Please try again.',
         [{ text: 'OK' }]
       );

@@ -23,11 +23,13 @@ export const VERIFF_VERIFICATION_URL = '';
 
 /**
  * Google OAuth for Host Login/Sign-up (Continue with Google).
- * - Get the Web client ID from Google Cloud Console → APIs & Services → Credentials → Create OAuth 2.0 Client ID → Web application.
- * - Add this exact redirect URI in that client's "Authorized redirect URIs":
- *   https://auth.expo.io/@kevdev254/ardenahost
+ * - Web client ID from Google Cloud Console (Web application type).
+ * - Google only allows redirect URIs that start with https (no custom schemes like ardenahost://).
+ * - Add this exact https URI in Google Console → Credentials → your Web client → Authorized redirect URIs:
  */
 export const GOOGLE_WEB_CLIENT_ID = '263550297699-p8s0vnr6ogsgo0u7r4qf65ce71dlcirs.apps.googleusercontent.com';
+/** Android OAuth client ID (for preview/standalone builds). Create in Google Console as Android type with package com.ardenahost.app and your SHA-1. */
+export const GOOGLE_ANDROID_CLIENT_ID = ''; // e.g. '123456789-xxxx.apps.googleusercontent.com'
 export const GOOGLE_REDIRECT_URI = 'https://auth.expo.io/@kevdev254/ardenahost';
 
 export const API_ENDPOINTS = {

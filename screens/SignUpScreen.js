@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -18,12 +18,15 @@ import { COLORS, TYPE, RADIUS } from '../ui/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { registerHost, loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
-import { GOOGLE_WEB_CLIENT_ID, GOOGLE_REDIRECT_URI } from '../config/api';
-import * as AuthSession from 'expo-auth-session';
+import { GOOGLE_WEB_CLIENT_ID, GOOGLE_REDIRECT_URI, GOOGLE_ANDROID_CLIENT_ID } from '../config/api';
+import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import Constants from 'expo-constants';
 
 // Make sure WebBrowser is warmed up for better performance
 WebBrowser.maybeCompleteAuthSession();
+
+const useAndroidClient = Platform.OS === 'android' && Constants.appOwnership === 'standalone' && !!GOOGLE_ANDROID_CLIENT_ID;
 
 export default function SignUpScreen({ navigation }) {
   const { login } = useHost();
@@ -38,32 +41,16 @@ export default function SignUpScreen({ navigation }) {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({ name: '', email: '', password: '', confirmPassword: '' });
 
-  // Configure Google Sign-In
-  const discovery = {
-    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenEndpoint: 'https://oauth2.googleapis.com/token',
-    revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
-  };
-
-  // Google requires a nonce when using response_type=id_token
-  const nonce = useMemo(
-    () =>
-      Math.random().toString(36).slice(2) +
-      Date.now().toString(36) +
-      Math.random().toString(36).slice(2),
-    []
-  );
-
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+  // Google Sign-In: Web client (Expo Go / web), Android client (standalone preview/production)
+  const [request, googleResponse, promptAsync] = Google.useAuthRequest(
     {
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+      ...(useAndroidClient ? { androidClientId: GOOGLE_ANDROID_CLIENT_ID } : {}),
       clientId: GOOGLE_WEB_CLIENT_ID,
       scopes: ['openid', 'profile', 'email'],
-      responseType: AuthSession.ResponseType.IdToken,
-      redirectUri: GOOGLE_REDIRECT_URI,
-      usePKCE: false,
-      extraParams: { nonce },
+      ...(useAndroidClient ? {} : { redirectUri: GOOGLE_REDIRECT_URI }),
     },
-    discovery
+    {}
   );
 
   const handleGoogleAuth = useCallback(async (idToken) => {
@@ -98,10 +85,10 @@ export default function SignUpScreen({ navigation }) {
     }
   }, [login, navigation]);
 
-  // Handle Google auth response
+  // Handle Google auth response (id_token from params or from code exchange)
   useEffect(() => {
-    if (response?.type === 'success') {
-      const idToken = response.params?.id_token || response.authentication?.idToken;
+    if (googleResponse?.type === 'success') {
+      const idToken = googleResponse.params?.id_token ?? googleResponse.authentication?.idToken;
       if (idToken) {
         handleGoogleAuth(idToken);
       } else {
@@ -112,7 +99,7 @@ export default function SignUpScreen({ navigation }) {
           [{ text: 'OK' }]
         );
       }
-    } else if (response?.type === 'error') {
+    } else if (googleResponse?.type === 'error') {
       setIsGoogleLoading(false);
       Alert.alert(
         'Google Sign-Up Failed',
@@ -120,7 +107,7 @@ export default function SignUpScreen({ navigation }) {
         [{ text: 'OK' }]
       );
     }
-  }, [response, handleGoogleAuth]);
+  }, [googleResponse, handleGoogleAuth]);
 
   const validateName = (name) => {
     if (!name) return 'Full name is required';
@@ -218,10 +205,19 @@ export default function SignUpScreen({ navigation }) {
 
   const handleGoogleSignUp = async () => {
     if (isGoogleLoading) return;
-    if (!GOOGLE_WEB_CLIENT_ID || GOOGLE_WEB_CLIENT_ID === 'YOUR_GOOGLE_WEB_CLIENT_ID') {
+    const needsWeb = !useAndroidClient;
+    if (needsWeb && (!GOOGLE_WEB_CLIENT_ID || GOOGLE_WEB_CLIENT_ID === 'YOUR_GOOGLE_WEB_CLIENT_ID')) {
       Alert.alert(
         'Google Sign-Up Not Configured',
-        'Add your Google Web Client ID in config/api.js (GOOGLE_WEB_CLIENT_ID). In Google Console, set Authorized redirect URI to: ' + GOOGLE_REDIRECT_URI,
+        'Add GOOGLE_WEB_CLIENT_ID in config/api.js and set redirect URI: ' + GOOGLE_REDIRECT_URI,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    if (useAndroidClient && !GOOGLE_ANDROID_CLIENT_ID) {
+      Alert.alert(
+        'Google Sign-Up Not Configured',
+        'Add GOOGLE_ANDROID_CLIENT_ID in config/api.js for standalone Android.',
         [{ text: 'OK' }]
       );
       return;
@@ -229,14 +225,13 @@ export default function SignUpScreen({ navigation }) {
     try {
       setIsGoogleLoading(true);
       await promptAsync();
-      // Response will be handled in useEffect above
     } catch (error) {
       console.error('🔐 [SignUpScreen] Error prompting Google sign-in:', error);
       setIsGoogleLoading(false);
       Alert.alert(
         'Google Sign-Up Error',
         ((error?.message || '').includes('400') || (error?.message || '').includes('redirect_uri')
-          ? 'OAuth config error. Ensure config/api.js has the correct GOOGLE_WEB_CLIENT_ID and Google Console has redirect URI: ' + GOOGLE_REDIRECT_URI
+          ? 'OAuth config error. Check Google Console and config/api.js (client IDs and redirect URI).'
           : 'Unable to open Google sign-in. Please try again.'),
         [{ text: 'OK' }]
       );
