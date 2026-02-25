@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -52,6 +52,15 @@ export default function LoginScreen({ navigation }) {
     revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
   };
 
+  // Google requires a nonce when using response_type=id_token
+  const nonce = useMemo(
+    () =>
+      Math.random().toString(36).slice(2) +
+      Date.now().toString(36) +
+      Math.random().toString(36).slice(2),
+    []
+  );
+
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: GOOGLE_WEB_CLIENT_ID,
@@ -59,6 +68,7 @@ export default function LoginScreen({ navigation }) {
       responseType: AuthSession.ResponseType.IdToken,
       redirectUri: GOOGLE_REDIRECT_URI,
       usePKCE: false,
+      extraParams: { nonce },
     },
     discovery
   );
