@@ -47,7 +47,8 @@
           "cameraPermission": "The app needs access to your camera to take photos."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {

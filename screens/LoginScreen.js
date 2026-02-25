@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -23,10 +23,12 @@ import { setUserId, setUserToken, getUserProfile } from '../utils/userStorage';
 import { loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
 import { GOOGLE_CLIENT_ID } from '../config/api';
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
-WebBrowser.maybeCompleteAuthSession();
+GoogleSignin.configure({
+  webClientId: GOOGLE_CLIENT_ID,
+  offlineAccess: false,
+});
 
 const { width } = Dimensions.get('window');
 
@@ -40,69 +42,6 @@ export default function LoginScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
-
-  // Google Sign-In: Android OAuth client only (matches backend GOOGLE_CLIENT_ID)
-  const [request, googleResponse, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_CLIENT_ID,
-    ...(Platform.OS === 'android' ? { androidClientId: GOOGLE_CLIENT_ID } : {}),
-    scopes: ['openid', 'profile', 'email'],
-  });
-
-  const handleGoogleAuth = useCallback(async (idToken) => {
-    setIsGoogleLoading(true);
-    console.log('🔐 [LoginScreen] Starting Google auth with id_token...');
-
-    try {
-      const result = await googleAuthHost(idToken);
-      console.log('🔐 [LoginScreen] Google auth result:', result.success ? 'SUCCESS' : 'FAILED', result.error || '');
-
-      if (result.success) {
-        console.log('🔐 [LoginScreen] Google auth successful, storing profile and navigating...');
-        await login(result.host);
-        navigation.replace('MainTabs');
-      } else {
-        console.error('🔐 [LoginScreen] Google auth failed:', result.error);
-        Alert.alert(
-          'Google Sign-In Failed',
-          result.error || 'Unable to sign in with Google. Please try again.',
-          [{ text: 'OK' }]
-        );
-      }
-    } catch (error) {
-      console.error('🔐 [LoginScreen] Google auth error:', error);
-      Alert.alert(
-        'Error',
-        error?.message || 'An unexpected error occurred. Please try again.',
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  }, [login, navigation]);
-
-  // Handle Google auth response (id_token from params or from code exchange)
-  useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      const idToken = googleResponse.params?.id_token ?? googleResponse.authentication?.idToken;
-      if (idToken) {
-        handleGoogleAuth(idToken);
-      } else {
-        setIsGoogleLoading(false);
-        Alert.alert(
-          'Google Sign-In Failed',
-          'Unable to get authentication token. Please try again.',
-          [{ text: 'OK' }]
-        );
-      }
-    } else if (googleResponse?.type === 'error') {
-      setIsGoogleLoading(false);
-      Alert.alert(
-        'Google Sign-In Failed',
-        'Unable to sign in with Google. Please try again.',
-        [{ text: 'OK' }]
-      );
-    }
-  }, [googleResponse, handleGoogleAuth]);
 
   // Check for biometric authentication when screen is focused
   useFocusEffect(
@@ -221,25 +160,35 @@ export default function LoginScreen({ navigation }) {
 
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
-    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
-      Alert.alert(
-        'Google Sign-In Not Configured',
-        'Add GOOGLE_CLIENT_ID in config/api.js (same as backend Android OAuth client).',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
+    setIsGoogleLoading(true);
     try {
-      setIsGoogleLoading(true);
-      await promptAsync();
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo?.data?.idToken ?? userInfo?.idToken;
+      if (!idToken) {
+        Alert.alert('Google Sign-In Failed', 'Unable to get authentication token. Please try again.');
+        return;
+      }
+      const result = await googleAuthHost(idToken);
+      if (result.success) {
+        await login(result.host);
+        navigation.replace('MainTabs');
+      } else {
+        Alert.alert('Google Sign-In Failed', result.error || 'Unable to sign in with Google. Please try again.');
+      }
     } catch (error) {
-      console.error('🔐 [LoginScreen] Error prompting Google sign-in:', error);
+      if (error?.code === statusCodes.SIGN_IN_CANCELLED) {
+        // user cancelled
+      } else if (error?.code === statusCodes.IN_PROGRESS) {
+        // already in progress
+      } else if (error?.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Google Play Services is not available on this device.');
+      } else {
+        console.error('🔐 [LoginScreen] Google sign-in error:', error);
+        Alert.alert('Google Sign-In Error', error?.message || 'An unexpected error occurred.');
+      }
+    } finally {
       setIsGoogleLoading(false);
-      Alert.alert(
-        'Google Sign-In Error',
-        error?.message || 'Unable to open Google sign-in. Please try again.',
-        [{ text: 'OK' }]
-      );
     }
   };
 
