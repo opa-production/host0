@@ -26,7 +26,7 @@ export const VERIFF_VERIFICATION_URL = '';
  * Android OAuth client only (same as backend GOOGLE_CLIENT_ID).
  * In Google Console: Android client with package com.ardenahost.app and your SHA-1.
  */
-export const GOOGLE_CLIENT_ID = '263550297699-jfjbh2l5msgaau0g52g0jgqjuglmq8iv.apps.googleusercontent.com'; // same as backend GOOGLE_CLIENT_ID (Android client)
+export const GOOGLE_CLIENT_ID = '263550297699-sntddeuh7ldlet9lhqv66lj8o706h2r4.apps.googleusercontent.com';
 
 export const API_ENDPOINTS = {
   // Host Authentication
