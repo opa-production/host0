@@ -194,7 +194,7 @@ export default function ChatScreen({ navigation, route }) {
           }}
           activeOpacity={0.8}
         >
-          <Ionicons name="chevron-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -291,12 +291,8 @@ const styles = StyleSheet.create({
   headerIcon: {
     width: 36,
     height: 36,
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   headerCenter: {
     flex: 1,
@@ -373,19 +369,23 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 10,
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.button,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 22,
+    paddingLeft: 16,
+    paddingRight: 6,
+    paddingVertical: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
   },
   input: {
     flex: 1,
-    ...TYPE.body,
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nunito-Regular',
     color: COLORS.text,
-    padding: 0,
-    margin: 0,
+    lineHeight: 20,
+    paddingTop: 8,
+    paddingBottom: 8,
+    minHeight: 36,
+    textAlignVertical: 'center',
   },
   sendButton: {
     width: 36,
