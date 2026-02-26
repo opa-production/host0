@@ -84,6 +84,12 @@ export const API_ENDPOINTS = {
   HOST_CONFIRM_PICKUP: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-pickup`,
   HOST_CONFIRM_DROPOFF: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-dropoff`,
 
+  // Host client ratings (host submits rating for a client/renter)
+  HOST_CLIENT_RATINGS: '/api/v1/host/client-ratings',
+  HOST_CLIENT_RATING_DETAIL: (ratingId) => `/api/v1/host/client-ratings/${ratingId}`,
+  // Client's ratings (e.g. to show client rating summary)
+  CLIENT_RATINGS: (clientId) => `/api/v1/clients/${clientId}/ratings`,
+
   // Earnings
   HOST_EARNINGS_SUMMARY: '/api/v1/host/earnings/summary',
   HOST_EARNINGS_TRANSACTIONS: '/api/v1/host/earnings/transactions',

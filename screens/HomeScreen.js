@@ -341,7 +341,10 @@ export default function HomeScreen({ navigation }) {
               <View style={[styles.actionDot, styles.actionDotBlue]} />
               <Text style={styles.opsLabel}>Today's Pickups</Text>
             </View>
-            <Text style={styles.opsValue}>{operationsData.pickups}</Text>
+            <View style={styles.opsRight}>
+              <Text style={styles.opsValue}>{operationsData.pickups}</Text>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.subtle} />
+            </View>
           </TouchableOpacity>
 
           <View style={styles.opsDivider} />
@@ -358,7 +361,10 @@ export default function HomeScreen({ navigation }) {
               <View style={[styles.actionDot, styles.actionDotGreen]} />
               <Text style={styles.opsLabel}>Car Returns</Text>
             </View>
-            <Text style={styles.opsValue}>{operationsData.returns}</Text>
+            <View style={styles.opsRight}>
+              <Text style={styles.opsValue}>{operationsData.returns}</Text>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.subtle} />
+            </View>
           </TouchableOpacity>
 
           <View style={styles.opsDivider} />
@@ -375,7 +381,10 @@ export default function HomeScreen({ navigation }) {
               <View style={[styles.actionDot, styles.actionDotOrange]} />
               <Text style={styles.opsLabel}>Active Rentals</Text>
             </View>
-            <Text style={styles.opsValue}>{operationsData.activeRentals}</Text>
+            <View style={styles.opsRight}>
+              <Text style={styles.opsValue}>{operationsData.activeRentals}</Text>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.subtle} />
+            </View>
           </TouchableOpacity>
 
           <View style={styles.opsDivider} />
@@ -392,7 +401,10 @@ export default function HomeScreen({ navigation }) {
               <View style={[styles.actionDot, styles.actionDotRed]} />
               <Text style={styles.opsLabel}>Pending Requests</Text>
             </View>
-            <Text style={styles.opsValue}>{operationsData.pendingRequests}</Text>
+            <View style={styles.opsRight}>
+              <Text style={styles.opsValue}>{operationsData.pendingRequests}</Text>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.subtle} />
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -511,6 +523,11 @@ const styles = StyleSheet.create({
   opsLabel: {
     ...TYPE.bodyStrong,
     fontSize: 13,
+  },
+  opsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   opsValue: {
     ...TYPE.bodyStrong,

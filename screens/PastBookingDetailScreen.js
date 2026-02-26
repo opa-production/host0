@@ -7,6 +7,7 @@ import { lightHaptic } from '../ui/haptics';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getBookingDetails, getClientDisplayName } from '../services/bookingService';
+import { getClientRatings, submitHostClientRating } from '../services/ratingService';
 import { getUserId } from '../utils/userStorage';
 
 export default function PastBookingDetailScreen({ navigation, route }) {
@@ -17,8 +18,12 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   const [vehicleImage, setVehicleImage] = useState(null);
   const [clientAvatar, setClientAvatar] = useState(null);
   const [detailBooking, setDetailBooking] = useState(null);
+  const [clientRatingSummary, setClientRatingSummary] = useState(null);
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   const routeBooking = route?.params?.booking || {};
+  const clientId = detailBooking?.client_id ?? routeBooking?.clientId ?? routeBooking?.client_id ?? null;
+  const bookingId = routeBooking?.bookingId ?? routeBooking?.id ?? null;
 
   // Fetch full booking details (same source as ActiveBookingScreen) to enrich past-booking UI.
   useEffect(() => {
@@ -68,7 +73,28 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
     loadBookingEnhancements();
   }, [routeBooking.vehicleImage, routeBooking.carId, routeBooking.bookingId, routeBooking.id]);
-  
+
+  // Fetch client rating summary when we have a client id
+  useEffect(() => {
+    const clientIdToUse = detailBooking?.client_id ?? routeBooking?.clientId ?? routeBooking?.client_id ?? null;
+    if (!clientIdToUse) return;
+
+    let cancelled = false;
+    (async () => {
+      const result = await getClientRatings(clientIdToUse);
+      if (cancelled) return;
+      if (result.success) {
+        setClientRatingSummary({
+          average: result.average ?? 0,
+          count: result.count ?? 0,
+        });
+      } else {
+        setClientRatingSummary(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [detailBooking?.client_id, routeBooking?.clientId, routeBooking?.client_id]);
+
   // Convert payout to number if it's a string
   let payout = 0;
   if (routeBooking.payout !== undefined) {
@@ -134,17 +160,44 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     return 'Poor';
   }, [rating]);
 
-  const submitRating = () => {
+  const submitRating = async () => {
     if (!rating) {
       Alert.alert('Select a rating', 'Please tap a star to rate your renter.');
       return;
     }
+    if (!clientId || !bookingId) {
+      Alert.alert('Error', 'Booking or client info is missing. Cannot submit rating.');
+      return;
+    }
 
     lightHaptic();
-    Alert.alert('Thanks!', `You rated ${booking?.renter?.name || 'the renter'} ${rating}★.`);
-    setRateOpen(false);
-    setRating(0);
-    setNote('');
+    setSubmittingRating(true);
+    try {
+      const result = await submitHostClientRating({
+        client_id: clientId,
+        booking_id: String(bookingId),
+        rating: Number(rating),
+        note: note.trim() || undefined,
+      });
+      if (result.success) {
+        setRateOpen(false);
+        setRating(0);
+        setNote('');
+        if (clientId) {
+          const refetch = await getClientRatings(clientId);
+          if (refetch.success) {
+            setClientRatingSummary({ average: refetch.average ?? 0, count: refetch.count ?? 0 });
+          }
+        }
+        Alert.alert('Thanks!', `You rated ${booking?.renter?.name || 'the renter'} ${rating}★.`);
+      } else {
+        Alert.alert('Rating failed', result.error || 'Could not submit rating. Try again.');
+      }
+    } catch (e) {
+      Alert.alert('Error', e?.message || 'Could not submit rating.');
+    } finally {
+      setSubmittingRating(false);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -284,7 +337,9 @@ export default function PastBookingDetailScreen({ navigation, route }) {
             <View style={styles.statPill}>
               <Ionicons name="star" size={14} color="#FFCC00" />
               <Text style={styles.statPillText}>
-                {booking?.renter?.rating ? `${booking.renter.rating} rating` : 'No ratings yet'}
+                {(clientRatingSummary?.average ?? booking?.renter?.rating)
+                  ? `${clientRatingSummary?.average ?? booking?.renter?.rating} rating${(clientRatingSummary?.count ?? 0) > 0 ? ` (${clientRatingSummary.count} reviews)` : ''}`
+                  : 'No ratings yet'}
               </Text>
             </View>
             <View style={styles.statPill}>
@@ -426,11 +481,12 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalPrimary]}
+                  style={[styles.modalButton, styles.modalPrimary, submittingRating && { opacity: 0.7 }]}
                   onPress={submitRating}
                   activeOpacity={0.9}
+                  disabled={submittingRating}
                 >
-                  <Text style={styles.modalPrimaryText}>Submit</Text>
+                  <Text style={styles.modalPrimaryText}>{submittingRating ? 'Submitting…' : 'Submit'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
