@@ -89,6 +89,8 @@ export const API_ENDPOINTS = {
   HOST_CLIENT_RATING_DETAIL: (ratingId) => `/api/v1/host/client-ratings/${ratingId}`,
   // Client's ratings (e.g. to show client rating summary)
   CLIENT_RATINGS: (clientId) => `/api/v1/clients/${clientId}/ratings`,
+  // Host view of client profile (trips_count, average_rating, full_name, avatar_url, email)
+  HOST_CLIENT_PROFILE: (clientId) => `/api/v1/host/clients/${clientId}/profile`,
 
   // Earnings
   HOST_EARNINGS_SUMMARY: '/api/v1/host/earnings/summary',

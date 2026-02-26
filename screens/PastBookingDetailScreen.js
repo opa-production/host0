@@ -7,6 +7,7 @@ import { lightHaptic } from '../ui/haptics';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getBookingDetails, getClientDisplayName } from '../services/bookingService';
+import { getHostClientProfile } from '../services/clientProfileService';
 import { getClientRatings, submitHostClientRating } from '../services/ratingService';
 import { getUserId } from '../utils/userStorage';
 
@@ -20,6 +21,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   const [detailBooking, setDetailBooking] = useState(null);
   const [clientRatingSummary, setClientRatingSummary] = useState(null);
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [clientProfile, setClientProfile] = useState(null);
 
   const routeBooking = route?.params?.booking || {};
   const clientId = detailBooking?.client_id ?? routeBooking?.clientId ?? routeBooking?.client_id ?? null;
@@ -95,6 +97,27 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     return () => { cancelled = true; };
   }, [detailBooking?.client_id, routeBooking?.clientId, routeBooking?.client_id]);
 
+  // Fetch client profile (trips_count, average_rating, full_name, avatar_url, email) from API
+  useEffect(() => {
+    const clientIdToUse = detailBooking?.client_id ?? routeBooking?.clientId ?? routeBooking?.client_id ?? null;
+    if (!clientIdToUse) return;
+
+    let cancelled = false;
+    (async () => {
+      const result = await getHostClientProfile(clientIdToUse);
+      if (cancelled) return;
+      if (result.success && result.profile) {
+        setClientProfile(result.profile);
+        if (result.profile.avatar_url) {
+          setClientAvatar(result.profile.avatar_url);
+        }
+      } else {
+        setClientProfile(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [detailBooking?.client_id, routeBooking?.clientId, routeBooking?.client_id]);
+
   // Convert payout to number if it's a string
   let payout = 0;
   if (routeBooking.payout !== undefined) {
@@ -140,12 +163,12 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     commission: routeBooking.commission || 0,
     dailyRate: routeBooking.dailyRate || 0,
     renter: {
-      name: routeBooking.renter?.name || getClientDisplayName(detailBooking) || 'Client',
+      name: clientProfile?.full_name || routeBooking.renter?.name || getClientDisplayName(detailBooking) || 'Client',
       bio: routeBooking.renter?.bio || detailBooking?.client_bio || '',
-      rating: routeBooking.renter?.rating || detailBooking?.client_rating || detailBooking?.client_avg_rating || 0,
-      trips: routeBooking.renter?.trips || detailBooking?.client_trips_count || detailBooking?.client_total_trips || 0,
+      rating: clientProfile?.average_rating ?? clientRatingSummary?.average ?? routeBooking.renter?.rating ?? detailBooking?.client_rating ?? detailBooking?.client_avg_rating ?? 0,
+      trips: clientProfile?.trips_count ?? routeBooking.renter?.trips ?? detailBooking?.client_trips_count ?? detailBooking?.client_total_trips ?? 0,
       avatar: clientAvatar || null,
-      email: routeBooking.renter?.email || detailBooking?.client_email || routeBooking.client_email || routeBooking.renter_email || '',
+      email: clientProfile?.email || routeBooking.renter?.email || detailBooking?.client_email || routeBooking.client_email || routeBooking.renter_email || '',
       phone: routeBooking.renter?.phone || detailBooking?.client_mobile_number || detailBooking?.client_phone || routeBooking.client_phone || routeBooking.renter_phone || '',
       idNumber: routeBooking.renter?.idNumber || detailBooking?.client_id_number || routeBooking.client_id_number || routeBooking.renter_id_number || '',
     },

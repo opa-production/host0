@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getBookingDetails, confirmPickup, confirmDropoff, getClientDisplayName, getBookingStatusDisplayText } from '../services/bookingService';
+import { getHostClientProfile } from '../services/clientProfileService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getUserId } from '../utils/userStorage';
@@ -183,9 +184,36 @@ export default function ActiveBookingScreen({ navigation, route }) {
           clientAvatarUrl = await fetchClientAvatarFromSupabase(bookingData.client_id);
           console.log('👤 [ActiveBooking] Client avatar result:', clientAvatarUrl ? 'Found' : 'Not found');
         }
-        
+
+        // Fetch client profile (trips_count, average_rating, full_name, avatar_url, email) from API
+        let clientProfile = null;
+        if (bookingData.client_id) {
+          const profileResult = await getHostClientProfile(bookingData.client_id);
+          if (profileResult.success && profileResult.profile) {
+            clientProfile = profileResult.profile;
+            if (clientProfile.avatar_url) clientAvatarUrl = clientProfile.avatar_url;
+          }
+        }
+
         setClientAvatar(clientAvatarUrl);
-        
+
+        const baseRenter = {
+          name: getClientDisplayName(bookingData),
+          email: bookingData.client_email || '',
+          phone: bookingData.client_mobile_number || bookingData.client_phone || '',
+          avatar: clientAvatarUrl,
+          bio: bookingData.client_bio || '',
+          rating: bookingData.client_rating || bookingData.client_avg_rating || null,
+          trips: bookingData.client_trips_count || bookingData.client_total_trips || null,
+        };
+        if (clientProfile) {
+          baseRenter.name = clientProfile.full_name || baseRenter.name;
+          baseRenter.email = clientProfile.email || baseRenter.email;
+          baseRenter.avatar = clientProfile.avatar_url || baseRenter.avatar;
+          baseRenter.trips = clientProfile.trips_count ?? baseRenter.trips;
+          baseRenter.rating = clientProfile.average_rating ?? baseRenter.rating;
+        }
+
         // Map API response to UI format with all client details
         const mappedBooking = {
           id: bookingData.id,
@@ -198,15 +226,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
           vehicleImages: vehicleImages,
           plate: bookingData.car_plate || bookingData.plate || '',
           clientId: bookingData.client_id,
-          renter: {
-            name: getClientDisplayName(bookingData),
-            email: bookingData.client_email || '',
-            phone: bookingData.client_mobile_number || bookingData.client_phone || '',
-            avatar: clientAvatarUrl,
-            bio: bookingData.client_bio || '',
-            rating: bookingData.client_rating || bookingData.client_avg_rating || null,
-            trips: bookingData.client_trips_count || bookingData.client_total_trips || null,
-          },
+          renter: baseRenter,
           startDate: formatDate(bookingData.start_date),
           endDate: formatDate(bookingData.end_date),
           startDateRaw: bookingData.start_date,
