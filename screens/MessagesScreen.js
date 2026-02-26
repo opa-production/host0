@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, Image, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, RefreshControl, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,82 @@ import { getHostNotifications } from '../services/notificationService';
 import { getSupportConversation } from '../services/supportService';
 import { getHostConversations } from '../services/messageService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
+
+function SkeletonPulse({ style }) {
+  const opacity = useRef(new Animated.Value(0.35)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.8, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.35, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return <Animated.View style={[skeletonStyles.bone, style, { opacity }]} />;
+}
+
+function SkeletonThreadRow() {
+  return (
+    <View style={skeletonStyles.row}>
+      <SkeletonPulse style={skeletonStyles.avatar} />
+      <View style={skeletonStyles.lines}>
+        <View style={skeletonStyles.topLine}>
+          <SkeletonPulse style={skeletonStyles.name} />
+          <SkeletonPulse style={skeletonStyles.time} />
+        </View>
+        <SkeletonPulse style={skeletonStyles.message} />
+      </View>
+    </View>
+  );
+}
+
+const skeletonStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.m,
+    gap: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
+  },
+  bone: {
+    backgroundColor: '#E0E0E0',
+    borderRadius: 6,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+  lines: {
+    flex: 1,
+    gap: 10,
+  },
+  topLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  name: {
+    width: '50%',
+    height: 14,
+    borderRadius: 7,
+  },
+  time: {
+    width: 40,
+    height: 10,
+    borderRadius: 5,
+  },
+  message: {
+    width: '75%',
+    height: 12,
+    borderRadius: 6,
+  },
+});
 
 export default function MessagesScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -220,9 +296,7 @@ export default function MessagesScreen({ navigation }) {
 
         {/* Support Conversation Thread */}
         {isLoadingSupport ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={COLORS.text} />
-          </View>
+          <SkeletonThreadRow />
         ) : supportConversation ? (
           <TouchableOpacity
             style={styles.threadCard}
@@ -261,9 +335,11 @@ export default function MessagesScreen({ navigation }) {
 
         {/* Client Conversations */}
         {isLoadingConversations ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={COLORS.text} />
-          </View>
+          <>
+            <SkeletonThreadRow />
+            <SkeletonThreadRow />
+            <SkeletonThreadRow />
+          </>
         ) : clientConversations.length > 0 ? (
           clientConversations.map((conv) => (
             <TouchableOpacity
@@ -487,9 +563,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.subtle,
     textAlign: 'center',
-  },
-  loadingContainer: {
-    paddingVertical: SPACING.m,
-    alignItems: 'center',
   },
 });
