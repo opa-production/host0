@@ -303,14 +303,7 @@ export default function ProfileScreen({ navigation }) {
               <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.linkItem}
-              onPress={() => { lightHaptic(); navigation.navigate('CustomerSupport'); }}
-            >
-              <Ionicons name="headset-outline" size={22} color="#666666" style={styles.linkIcon} />
-              <Text style={styles.linkText}>Customer Support</Text>
-              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-            </TouchableOpacity>
+
           </View>
         </View>
 

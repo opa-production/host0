@@ -24,6 +24,14 @@ export default function UpdateProfileScreen({ navigation, route }) {
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [savedSuccessfully, setSavedSuccessfully] = useState(false);
+
+  const initiallyComplete =
+    !!(initialData.bio && initialData.bio.trim()) &&
+    !!(initialData.mobile_number && initialData.mobile_number.trim()) &&
+    !!(initialData.id_number && initialData.id_number.trim());
+
+  const showSaveButton = !initiallyComplete && !savedSuccessfully;
 
   // Validate form (all fields are optional but validate format if provided)
   const validateForm = () => {
@@ -34,14 +42,22 @@ export default function UpdateProfileScreen({ navigation, route }) {
       newErrors.bio = 'Bio must not exceed 200 characters';
     }
 
-    // Mobile number validation: max 14 characters (per API requirement)
-    if (formData.mobile_number && formData.mobile_number.length > 14) {
-      newErrors.mobile_number = 'Mobile number must not exceed 14 characters';
+    if (formData.mobile_number) {
+      const num = formData.mobile_number.trim();
+      if (num.length !== 10) {
+        newErrors.mobile_number = 'Mobile number must be 10 digits';
+      } else if (!/^0[17]/.test(num)) {
+        newErrors.mobile_number = 'Mobile number must start with 01 or 07';
+      }
     }
 
-    // ID number validation (no specific max length in API, but validate format)
-    if (formData.id_number && formData.id_number.trim().length === 0) {
-      newErrors.id_number = 'ID number cannot be empty';
+    if (formData.id_number) {
+      const stripped = formData.id_number.trim();
+      if (!/^\d+$/.test(stripped)) {
+        newErrors.id_number = 'ID number must contain only digits';
+      } else if (stripped.length < 7 || stripped.length > 8) {
+        newErrors.id_number = 'ID number must be 7 or 8 digits';
+      }
     }
 
     setErrors(newErrors);
@@ -81,9 +97,9 @@ export default function UpdateProfileScreen({ navigation, route }) {
       const result = await updateHostProfile(updateData);
 
       if (result.success) {
-        // Update context with new profile data
         await updateHost(result.host);
-        
+        setSavedSuccessfully(true);
+
         Alert.alert(
           'Success',
           'Profile updated successfully!',
@@ -157,24 +173,30 @@ export default function UpdateProfileScreen({ navigation, route }) {
           {/* Bio Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Bio</Text>
-            <TextInput
-              style={[styles.textArea, errors.bio && styles.inputError]}
-              placeholder="Tell others about yourself..."
-              placeholderTextColor="#999999"
-              value={formData.bio}
-              onChangeText={(text) => {
-                setFormData({ ...formData, bio: text });
-                if (errors.bio) {
-                  setErrors({ ...errors, bio: '' });
-                }
-              }}
-              multiline
-              numberOfLines={4}
-              maxLength={200}
-            />
-            <Text style={styles.characterCount}>{formData.bio.length}/200 characters</Text>
-            {errors.bio && (
-              <Text style={styles.errorText}>{errors.bio}</Text>
+            {!showSaveButton ? (
+              <Text style={styles.readOnlyText}>{formData.bio || 'Not set'}</Text>
+            ) : (
+              <>
+                <TextInput
+                  style={[styles.textArea, errors.bio && styles.inputError]}
+                  placeholder="Tell others about yourself..."
+                  placeholderTextColor="#999999"
+                  value={formData.bio}
+                  onChangeText={(text) => {
+                    setFormData({ ...formData, bio: text });
+                    if (errors.bio) {
+                      setErrors({ ...errors, bio: '' });
+                    }
+                  }}
+                  multiline
+                  numberOfLines={4}
+                  maxLength={200}
+                />
+                <Text style={styles.characterCount}>{formData.bio.length}/200 characters</Text>
+                {errors.bio && (
+                  <Text style={styles.errorText}>{errors.bio}</Text>
+                )}
+              </>
             )}
           </View>
 
@@ -183,21 +205,29 @@ export default function UpdateProfileScreen({ navigation, route }) {
           {/* Phone Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Mobile Number</Text>
-            <TextInput
-              style={[styles.input, errors.mobile_number && styles.inputError]}
-              placeholder="Enter your mobile number"
-              placeholderTextColor="#999999"
-              value={formData.mobile_number}
-              onChangeText={(text) => {
-                setFormData({ ...formData, mobile_number: text });
-                if (errors.mobile_number) {
-                  setErrors({ ...errors, mobile_number: '' });
-                }
-              }}
-              keyboardType="phone-pad"
-            />
-            {errors.mobile_number && (
-              <Text style={styles.errorText}>{errors.mobile_number}</Text>
+            {!showSaveButton ? (
+              <Text style={styles.readOnlyText}>{formData.mobile_number || 'Not set'}</Text>
+            ) : (
+              <>
+                <TextInput
+                  style={[styles.input, errors.mobile_number && styles.inputError]}
+                  placeholder="07XXXXXXXX"
+                  placeholderTextColor="#999999"
+                  value={formData.mobile_number}
+                  onChangeText={(text) => {
+                    const digits = text.replace(/[^0-9]/g, '').slice(0, 10);
+                    setFormData({ ...formData, mobile_number: digits });
+                    if (errors.mobile_number) {
+                      setErrors({ ...errors, mobile_number: '' });
+                    }
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={10}
+                />
+                {errors.mobile_number && (
+                  <Text style={styles.errorText}>{errors.mobile_number}</Text>
+                )}
+              </>
             )}
           </View>
 
@@ -206,38 +236,47 @@ export default function UpdateProfileScreen({ navigation, route }) {
           {/* ID Number Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>ID Number</Text>
-            <TextInput
-              style={[styles.input, errors.id_number && styles.inputError]}
-              placeholder="Enter your ID number"
-              placeholderTextColor="#999999"
-              value={formData.id_number}
-              onChangeText={(text) => {
-                setFormData({ ...formData, id_number: text });
-                if (errors.id_number) {
-                  setErrors({ ...errors, id_number: '' });
-                }
-              }}
-              keyboardType="default"
-            />
-            {errors.id_number && (
-              <Text style={styles.errorText}>{errors.id_number}</Text>
+            {!showSaveButton ? (
+              <Text style={styles.readOnlyText}>{formData.id_number || 'Not set'}</Text>
+            ) : (
+              <>
+                <TextInput
+                  style={[styles.input, errors.id_number && styles.inputError]}
+                  placeholder="Enter your ID number"
+                  placeholderTextColor="#999999"
+                  value={formData.id_number}
+                  onChangeText={(text) => {
+                    const digits = text.replace(/[^0-9]/g, '').slice(0, 8);
+                    setFormData({ ...formData, id_number: digits });
+                    if (errors.id_number) {
+                      setErrors({ ...errors, id_number: '' });
+                    }
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={8}
+                />
+                {errors.id_number ? (
+                  <Text style={styles.errorText}>{errors.id_number}</Text>
+                ) : null}
+              </>
             )}
           </View>
         </View>
 
-        {/* Save Button */}
-        <TouchableOpacity
-          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          activeOpacity={0.8}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={styles.saveButtonText}>Save Changes</Text>
-          )}
-        </TouchableOpacity>
+        {showSaveButton && (
+          <TouchableOpacity
+            style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+            onPress={handleSave}
+            activeOpacity={0.8}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+            )}
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
