@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { fetchCarImagesFromSupabase } from '../services/carService';
+import { fetchClientAvatarFromSupabase } from '../services/mediaService';
+import { getBookingDetails, getClientDisplayName } from '../services/bookingService';
 import { getUserId } from '../utils/userStorage';
 
 export default function PastBookingDetailScreen({ navigation, route }) {
@@ -13,32 +15,59 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   const [rating, setRating] = useState(0);
   const [note, setNote] = useState('');
   const [vehicleImage, setVehicleImage] = useState(null);
+  const [clientAvatar, setClientAvatar] = useState(null);
+  const [detailBooking, setDetailBooking] = useState(null);
 
   const routeBooking = route?.params?.booking || {};
 
-  // Fetch car image if not provided
+  // Fetch full booking details (same source as ActiveBookingScreen) to enrich past-booking UI.
   useEffect(() => {
-    const loadCarImage = async () => {
-      // If vehicleImage is already provided and is a URL string, use it
-      if (routeBooking.vehicleImage && typeof routeBooking.vehicleImage === 'string') {
-        setVehicleImage(routeBooking.vehicleImage);
-        return;
+    const loadBookingEnhancements = async () => {
+      let resolvedVehicleImage =
+        typeof routeBooking.vehicleImage === 'string' ? routeBooking.vehicleImage : null;
+      let resolvedClientAvatar = routeBooking.renter?.avatar || null;
+
+      const bookingId = routeBooking.bookingId || routeBooking.id;
+      if (bookingId) {
+        const detailResult = await getBookingDetails(bookingId);
+        if (detailResult.success && detailResult.booking) {
+          const b = detailResult.booking;
+          setDetailBooking(b);
+
+          if (!resolvedVehicleImage && Array.isArray(b.car_image_urls) && b.car_image_urls.length > 0) {
+            resolvedVehicleImage = b.car_image_urls[0];
+          }
+
+          let avatarFromApi =
+            b.client_avatar_url ||
+            b.client_avatar ||
+            b.client?.avatar_url ||
+            b.client?.profile_image_uri ||
+            null;
+          if (!avatarFromApi && b.client_id) {
+            avatarFromApi = await fetchClientAvatarFromSupabase(b.client_id);
+          }
+          resolvedClientAvatar = avatarFromApi || resolvedClientAvatar;
+        }
       }
 
-      // Otherwise, try to fetch from Supabase
-      if (routeBooking.carId) {
+      if (!resolvedVehicleImage && routeBooking.carId) {
         const userId = await getUserId();
-        if (userId) {
-          const imageResult = await fetchCarImagesFromSupabase(routeBooking.carId, userId);
+        const carId = routeBooking.carId;
+        if (userId && carId) {
+          const imageResult = await fetchCarImagesFromSupabase(carId, userId);
           if (imageResult.coverPhoto) {
-            setVehicleImage(imageResult.coverPhoto);
+            resolvedVehicleImage = imageResult.coverPhoto;
           }
         }
       }
+
+      setVehicleImage(resolvedVehicleImage);
+      setClientAvatar(resolvedClientAvatar);
     };
 
-    loadCarImage();
-  }, [routeBooking.vehicleImage, routeBooking.carId]);
+    loadBookingEnhancements();
+  }, [routeBooking.vehicleImage, routeBooking.carId, routeBooking.bookingId, routeBooking.id]);
   
   // Convert payout to number if it's a string
   let payout = 0;
@@ -62,10 +91,17 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     }
   }
   
+  const mergedVehicleName = [
+    routeBooking.vehicleName || detailBooking?.car_name || '',
+    routeBooking.carModel || detailBooking?.car_model || '',
+  ]
+    .filter(Boolean)
+    .join(' • ');
+
   const booking = {
-    vehicleName: routeBooking.vehicleName || '',
+    vehicleName: mergedVehicleName || 'Unknown Car',
     vehicleImage: vehicleImage || routeBooking.vehicleImage || null,
-    plate: routeBooking.plate || '',
+    plate: routeBooking.plate || detailBooking?.car_plate || '',
     location: routeBooking.location || '',
     startDate: routeBooking.startDate || '',
     endDate: routeBooking.endDate || '',
@@ -78,11 +114,14 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     commission: routeBooking.commission || 0,
     dailyRate: routeBooking.dailyRate || 0,
     renter: {
-      name: routeBooking.renter?.name || '',
-      bio: routeBooking.renter?.bio || '',
-      rating: routeBooking.renter?.rating || 0,
-      trips: routeBooking.renter?.trips || 0,
-      avatar: routeBooking.renter?.avatar || null,
+      name: routeBooking.renter?.name || getClientDisplayName(detailBooking) || 'Client',
+      bio: routeBooking.renter?.bio || detailBooking?.client_bio || '',
+      rating: routeBooking.renter?.rating || detailBooking?.client_rating || detailBooking?.client_avg_rating || 0,
+      trips: routeBooking.renter?.trips || detailBooking?.client_trips_count || detailBooking?.client_total_trips || 0,
+      avatar: clientAvatar || null,
+      email: routeBooking.renter?.email || detailBooking?.client_email || routeBooking.client_email || routeBooking.renter_email || '',
+      phone: routeBooking.renter?.phone || detailBooking?.client_mobile_number || detailBooking?.client_phone || routeBooking.client_phone || routeBooking.renter_phone || '',
+      idNumber: routeBooking.renter?.idNumber || detailBooking?.client_id_number || routeBooking.client_id_number || routeBooking.renter_id_number || '',
     },
   };
 
@@ -168,7 +207,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                 </View>
               )}
               <View style={{ flex: 1 }}>
-                <Text style={styles.heroTitle} numberOfLines={1}>{booking.vehicleName}</Text>
+                <Text style={styles.heroTitle}>{booking.vehicleName}</Text>
                 {booking.location && <Text style={styles.heroSub}>{booking.location}</Text>}
                 {booking.plate && (
                   <View style={styles.plateRow}>
@@ -223,7 +262,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.renterRow}>
+          <View style={styles.renterTopRow}>
             {booking?.renter?.avatar ? (
               <Image source={{ uri: booking.renter.avatar }} style={styles.renterAvatar} />
             ) : (
@@ -231,18 +270,49 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                 <Ionicons name="person" size={22} color={COLORS.subtle} />
               </View>
             )}
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.renterName} numberOfLines={1}>{booking?.renter?.name || 'Renter'}</Text>
-              {booking?.renter?.bio && (
+            <View style={styles.renterTopDetails}>
+              <Text style={styles.renterName}>{booking?.renter?.name || 'Renter'}</Text>
+              {booking?.renter?.bio ? (
                 <Text style={styles.renterBio} numberOfLines={2}>{booking.renter.bio}</Text>
+              ) : (
+                <Text style={styles.renterBioMuted}>No profile bio added yet.</Text>
               )}
-              <View style={styles.renterMetaRow}>
-                {booking?.renter?.rating ? (
-                  <Text style={styles.renterMeta}>{booking.renter.rating}★</Text>
-                ) : null}
-                <Text style={styles.renterMeta}> · {booking?.renter?.trips ?? 0} trips</Text>
-              </View>
+            </View>
+          </View>
+
+          <View style={styles.renterStatsRow}>
+            <View style={styles.statPill}>
+              <Ionicons name="star" size={14} color="#FFCC00" />
+              <Text style={styles.statPillText}>
+                {booking?.renter?.rating ? `${booking.renter.rating} rating` : 'No ratings yet'}
+              </Text>
+            </View>
+            <View style={styles.statPill}>
+              <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
+              <Text style={styles.statPillText}>{booking?.renter?.trips ?? 0} trips</Text>
+            </View>
+          </View>
+
+          <View style={styles.renterDetailsWrap}>
+            <View style={styles.renterDetailRow}>
+              <Text style={styles.renterDetailLabel}>Email</Text>
+              <Text style={styles.renterDetailValue} numberOfLines={1}>
+                {booking?.renter?.email || 'Not provided'}
+              </Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.renterDetailRow}>
+              <Text style={styles.renterDetailLabel}>Phone</Text>
+              <Text style={styles.renterDetailValue} numberOfLines={1}>
+                {booking?.renter?.phone || 'Not provided'}
+              </Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.renterDetailRow}>
+              <Text style={styles.renterDetailLabel}>ID Number</Text>
+              <Text style={styles.renterDetailValue} numberOfLines={1}>
+                {booking?.renter?.idNumber || 'Not provided'}
+              </Text>
             </View>
           </View>
         </View>
@@ -416,6 +486,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     ...TYPE.title,
+    flexShrink: 1,
   },
   heroSub: {
     ...TYPE.caption,
@@ -488,9 +559,9 @@ const styles = StyleSheet.create({
     ...TYPE.caption,
     color: '#ffffff',
   },
-  renterRow: {
+  renterTopRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
   },
   renterAvatar: {
@@ -512,6 +583,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.text,
   },
+  renterTopDetails: {
+    flex: 1,
+  },
   renterBio: {
     ...TYPE.body,
     fontSize: 13,
@@ -519,14 +593,62 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 18,
   },
-  renterMetaRow: {
+  renterBioMuted: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    marginTop: 4,
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
+  renterStatsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    gap: 6,
+    backgroundColor: COLORS.bg,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  renterMeta: {
+  statPillText: {
+    ...TYPE.caption,
+    color: COLORS.text,
+  },
+  renterDetailsWrap: {
+    marginTop: 12,
+    borderRadius: RADIUS.card,
+    backgroundColor: COLORS.bg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  renterDetailRow: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  renterDetailLabel: {
     ...TYPE.caption,
     color: COLORS.subtle,
+    fontSize: 12,
+  },
+  renterDetailValue: {
+    ...TYPE.bodyStrong,
+    color: COLORS.text,
+    fontSize: 13,
+    flex: 1,
+    textAlign: 'right',
   },
   amountRow: {
     flexDirection: 'row',

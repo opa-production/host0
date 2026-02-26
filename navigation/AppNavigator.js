@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Linking } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -67,8 +67,33 @@ import CalendarSyncScreen from '../screens/CalendarSyncScreen';
 import KycIntroScreen from '../screens/Kyc/KycIntroScreen';
 import KycResultScreen from '../screens/Kyc/KycResultScreen';
 
+const normalizeDeepLink = (url) => {
+  if (!url || !url.startsWith('ardenahost://')) {
+    return url;
+  }
+
+  // Handle links where "reset-password" is interpreted as host:
+  // ardenahost://reset-password?token=... -> ardenahost:///reset-password?token=...
+  if (url.startsWith('ardenahost://reset-password')) {
+    return url.replace('ardenahost://reset-password', 'ardenahost:///reset-password');
+  }
+
+  return url;
+};
+
 const linking = {
-  prefixes: ['ardenahost://'],
+  prefixes: ['ardenahost://', 'ardenahost:///'],
+  async getInitialURL() {
+    const url = await Linking.getInitialURL();
+    return normalizeDeepLink(url);
+  },
+  subscribe(listener) {
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      listener(normalizeDeepLink(url));
+    });
+
+    return () => subscription.remove();
+  },
   config: {
     screens: {
       KycResult: 'kyc/result',
