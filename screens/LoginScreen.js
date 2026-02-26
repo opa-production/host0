@@ -22,13 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setUserId, setUserToken, getUserProfile } from '../utils/userStorage';
 import { loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
-import { GOOGLE_CLIENT_ID } from '../config/api';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-
-GoogleSignin.configure({
-  webClientId: GOOGLE_CLIENT_ID,
-  offlineAccess: false,
-});
+import { GoogleSignin, statusCodes } from '../utils/googleSignIn';
 
 const { width } = Dimensions.get('window');
 
@@ -160,6 +154,10 @@ export default function LoginScreen({ navigation }) {
 
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
+    if (!GoogleSignin) {
+      Alert.alert('Not Available', 'Google Sign-In is only available in standalone builds.');
+      return;
+    }
     setIsGoogleLoading(true);
     try {
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });

@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ImageBackground, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ImageBackground, Image, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
 export default function LandingScreen({ navigation }) {
   const [imageError, setImageError] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const handleContinue = (screen) => {
+    if (!termsAccepted) {
+      return;
+    }
+    navigation.navigate(screen);
+  };
 
   return (
     <View style={styles.container}>
@@ -37,11 +46,38 @@ export default function LandingScreen({ navigation }) {
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <View style={styles.ctaSection}>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('SignUp')} activeOpacity={0.9}>
+        <TouchableOpacity style={styles.termsRow} onPress={() => setTermsAccepted(!termsAccepted)} activeOpacity={0.7}>
+          <Ionicons
+            name={termsAccepted ? 'checkbox' : 'square-outline'}
+            size={22}
+            color={termsAccepted ? '#FFFFFF' : 'rgba(255,255,255,0.7)'}
+          />
+          <Text style={styles.termsText}>
+            to proceed, you need to agree to the{' '}
+            <Text
+              style={styles.termsLink}
+              onPress={() => Linking.openURL('https://ardena.xyz/terms.html')}
+            >
+              Terms & Conditions
+            </Text>
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.primaryButton, !termsAccepted && styles.buttonDisabled]}
+          onPress={() => handleContinue('SignUp')}
+          activeOpacity={0.9}
+          disabled={!termsAccepted}
+        >
           <Text style={styles.primaryButtonText} numberOfLines={1}>Get Started</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Login')} activeOpacity={0.9}>
+        <TouchableOpacity
+          style={[styles.secondaryButton, !termsAccepted && styles.buttonDisabled]}
+          onPress={() => handleContinue('Login')}
+          activeOpacity={0.9}
+          disabled={!termsAccepted}
+        >
           <Text style={styles.secondaryButtonText} numberOfLines={1}>Login</Text>
         </TouchableOpacity>
       </View>
@@ -82,6 +118,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.l,
     paddingBottom: 40,
     gap: 12,
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: 10,
+    marginBottom: 4,
+    paddingHorizontal: 16,
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 18,
+  },
+  termsLink: {
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FFFFFF',
+    textDecorationLine: 'underline',
+  },
+  buttonDisabled: {
+    opacity: 0.45,
   },
   primaryButton: {
     backgroundColor: COLORS.brand,
