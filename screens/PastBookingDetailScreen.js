@@ -9,6 +9,7 @@ import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getBookingDetails, getClientDisplayName } from '../services/bookingService';
 import { getHostClientProfile } from '../services/clientProfileService';
 import { getClientRatings, submitHostClientRating } from '../services/ratingService';
+import { downloadBookingReceipt } from '../services/receiptService';
 import { getUserId } from '../utils/userStorage';
 
 export default function PastBookingDetailScreen({ navigation, route }) {
@@ -22,6 +23,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   const [clientRatingSummary, setClientRatingSummary] = useState(null);
   const [submittingRating, setSubmittingRating] = useState(false);
   const [clientProfile, setClientProfile] = useState(null);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
 
   const routeBooking = route?.params?.booking || {};
   const clientId = detailBooking?.client_id ?? routeBooking?.clientId ?? routeBooking?.client_id ?? null;
@@ -415,11 +417,20 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
           <TouchableOpacity
             style={styles.receiptLink}
-            onPress={() => Alert.alert('Coming soon', 'Receipts will be available in a future update.')}
+            onPress={async () => {
+              if (!bookingId || isDownloadingReceipt) return;
+              setIsDownloadingReceipt(true);
+              const result = await downloadBookingReceipt(bookingId);
+              setIsDownloadingReceipt(false);
+              if (!result.success) {
+                Alert.alert('Receipt', result.error || 'Could not download receipt.');
+              }
+            }}
             activeOpacity={0.7}
+            disabled={isDownloadingReceipt}
           >
             <Ionicons name="document-text-outline" size={18} color={COLORS.brand} />
-            <Text style={styles.receiptLinkText}>View receipt</Text>
+            <Text style={styles.receiptLinkText}>{isDownloadingReceipt ? 'Opening…' : 'View receipt'}</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
           </TouchableOpacity>
         </View>

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getBookingDetails, confirmPickup, confirmDropoff, getClientDisplayName, getBookingStatusDisplayText } from '../services/bookingService';
+import { downloadBookingReceipt } from '../services/receiptService';
 import { getHostClientProfile } from '../services/clientProfileService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
@@ -22,6 +23,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const [isConfirmingPickup, setIsConfirmingPickup] = useState(false);
   const [isConfirmingDropoff, setIsConfirmingDropoff] = useState(false);
   const [clientAvatar, setClientAvatar] = useState(null);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
   const bookingId = route?.params?.bookingId || route?.params?.booking_id;
 
   const formatDate = (dateString) => {
@@ -807,6 +809,31 @@ export default function ActiveBookingScreen({ navigation, route }) {
             <Text style={[styles.label, styles.bold]}>Your payout</Text>
             <Text style={[styles.value, styles.bold]}>{booking?.price?.payout || formatCurrency(0)}</Text>
           </View>
+          {(booking?.status?.toLowerCase() === 'confirmed' || booking?.status?.toLowerCase() === 'active' || booking?.status?.toLowerCase() === 'completed' || booking?.status?.toLowerCase() === 'dropped_off') && (
+            <>
+              <View style={styles.divider} />
+              <TouchableOpacity
+                style={styles.receiptRow}
+                onPress={async () => {
+                  if (!bookingId || isDownloadingReceipt) return;
+                  lightHaptic();
+                  setIsDownloadingReceipt(true);
+                  try {
+                    const result = await downloadBookingReceipt(bookingId);
+                    if (!result.success) Alert.alert('Receipt', result.error || 'Could not download receipt.');
+                  } finally {
+                    setIsDownloadingReceipt(false);
+                  }
+                }}
+                activeOpacity={0.7}
+                disabled={isDownloadingReceipt}
+              >
+                <Ionicons name="document-text-outline" size={18} color={COLORS.brand} />
+                <Text style={styles.receiptRowText}>{isDownloadingReceipt ? 'Opening…' : 'Download receipt'}</Text>
+                <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
         {/* Actions */}
@@ -1226,6 +1253,20 @@ const styles = StyleSheet.create({
   bold: {
     fontFamily: 'Nunito-Bold',
     fontSize: 16,
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 0,
+    gap: 8,
+  },
+  receiptRowText: {
+    flex: 1,
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: COLORS.brand,
   },
   actionsCard: {
     backgroundColor: COLORS.surface,

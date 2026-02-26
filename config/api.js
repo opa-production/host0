@@ -1,12 +1,4 @@
-/**
- * API Configuration
- * 
- * Update API_BASE_URL with your backend server address:
- * - Local development: http://10.0.2.2:8000 (Android Emulator)
- * - Local development: http://localhost:8000 (iOS Simulator)
- * - Local network: http://192.168.x.x:8000 (Your computer's IP)
- * - Production: https://your-domain.com
- */
+
 
 // Default to localhost for development
 // Change this to your computer's IP address when testing on physical devices
@@ -14,18 +6,10 @@ export const API_BASE_URL = __DEV__
   ? 'http://192.168.88.249:8001'  // Local development server (your computer's IP)
   : 'https://api.ardena.xyz';
 
-/**
- * Veriff hosted verification page (Hosted plan).
- * Set to your Veriff hosted verification URL, or leave empty to use a backend endpoint
- * that returns the session URL (e.g. GET /api/v1/host/verification-url).
- */
+
 export const VERIFF_VERIFICATION_URL = '';
 
-/**
- * Google OAuth for Host Login/Sign-up (Continue with Google).
- * Android OAuth client only (same as backend GOOGLE_CLIENT_ID).
- * In Google Console: Android client with package com.ardenahost.app and your SHA-1.
- */
+
 export const GOOGLE_CLIENT_ID = '263550297699-sntddeuh7ldlet9lhqv66lj8o706h2r4.apps.googleusercontent.com';
 
 export const API_ENDPOINTS = {
@@ -81,6 +65,7 @@ export const API_ENDPOINTS = {
   // Bookings
   HOST_BOOKINGS: '/api/v1/host/bookings',
   HOST_BOOKING_DETAIL: (bookingId) => `/api/v1/host/bookings/${bookingId}`,
+  HOST_BOOKING_RECEIPT: (bookingId) => `/api/v1/host/bookings/${bookingId}/receipt`,
   HOST_CONFIRM_PICKUP: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-pickup`,
   HOST_CONFIRM_DROPOFF: (bookingId) => `/api/v1/host/bookings/${bookingId}/confirm-dropoff`,
 

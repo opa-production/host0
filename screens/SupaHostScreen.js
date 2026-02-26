@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useLayoutEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Alert } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Alert, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
@@ -80,28 +81,31 @@ export default function SupaHostScreen({ navigation: nav }) {
       >
         <Text style={styles.subtitle}>For fleets, NGOs, and corporates: professional tools, lower commission, and a verified presence to win more business.</Text>
 
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity
-            style={[styles.toggleOption, billing === 'monthly' && styles.toggleOptionActive]}
-            onPress={() => {
-              lightHaptic();
-              setBilling('monthly');
-            }}
-            activeOpacity={0.9}
-          >
-            <Text style={[styles.toggleText, billing === 'monthly' && styles.toggleTextActive]}>Monthly</Text>
-          </TouchableOpacity>
+        <View style={styles.toggleWrapper}>
+          <BlurView intensity={72} tint="light" style={StyleSheet.absoluteFillObject} />
+          <View style={styles.toggleContainer} pointerEvents="box-none">
+            <TouchableOpacity
+              style={[styles.toggleOption, billing === 'monthly' && styles.toggleOptionActive]}
+              onPress={() => {
+                lightHaptic();
+                setBilling('monthly');
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.toggleText, billing === 'monthly' && styles.toggleTextActive]}>Monthly</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.toggleOption, billing === 'yearly' && styles.toggleOptionActive]}
-            onPress={() => {
-              lightHaptic();
-              setBilling('yearly');
-            }}
-            activeOpacity={0.9}
-          >
-            <Text style={[styles.toggleText, billing === 'yearly' && styles.toggleTextActive]}>Yearly</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleOption, billing === 'yearly' && styles.toggleOptionActive]}
+              onPress={() => {
+                lightHaptic();
+                setBilling('yearly');
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.toggleText, billing === 'yearly' && styles.toggleTextActive]}>Yearly</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.card}>
@@ -189,32 +193,63 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8E8E93',
   },
-  toggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.surface,
-    borderRadius: 999,
-    padding: 3,
+  toggleWrapper: {
     alignSelf: 'center',
     width: '68%',
+    borderRadius: RADIUS.pill,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.85)',
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    borderRadius: RADIUS.pill,
+    padding: 4,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.45)' : 'transparent',
+    minHeight: 44,
   },
   toggleOption: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.pill,
+    backgroundColor: 'transparent',
   },
   toggleOptionActive: {
-    backgroundColor: COLORS.text,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.9)',
   },
   toggleText: {
     ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#8E8E93',
+    fontSize: 14,
+    color: 'rgba(0,0,0,0.55)',
   },
   toggleTextActive: {
-    color: '#ffffff',
+    color: COLORS.text,
   },
   card: {
     backgroundColor: COLORS.surface,
