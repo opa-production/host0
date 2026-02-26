@@ -14,7 +14,7 @@ import {
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPE, RADIUS } from '../ui/tokens';
+import { COLORS, TYPE, RADIUS, SPACING } from '../ui/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { registerHost, loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
@@ -188,13 +188,13 @@ export default function SignUpScreen({ navigation }) {
         </View>
 
         <View style={styles.form}>
-          <View style={styles.inputGroup}>
+<View style={styles.inputCard}>
             <View style={[styles.inputContainer, errors.name && styles.inputError]}>
-              <Ionicons name="person-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
+              <Ionicons name="person-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Full Name"
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor="#B0B0B4"
                 value={name}
                 onChangeText={(text) => {
                   setName(text);
@@ -204,15 +204,13 @@ export default function SignUpScreen({ navigation }) {
               />
             </View>
             {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
-
             <View style={styles.separator} />
-
             <View style={[styles.inputContainer, errors.email && styles.inputError]}>
-              <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
+              <Ionicons name="mail-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor="#B0B0B4"
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -224,15 +222,13 @@ export default function SignUpScreen({ navigation }) {
               />
             </View>
             {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
-
             <View style={styles.separator} />
-
             <View style={[styles.inputContainer, errors.password && styles.inputError]}>
-              <Ionicons name="lock-closed-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
+              <Ionicons name="lock-closed-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor="#B0B0B4"
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
@@ -241,27 +237,18 @@ export default function SignUpScreen({ navigation }) {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />
-              <TouchableOpacity 
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons 
-                  name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                  size={20} 
-                  color="#8E8E93" 
-                />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={COLORS.subtle} />
               </TouchableOpacity>
             </View>
             {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
-
             <View style={styles.separator} />
-
             <View style={[styles.inputContainer, errors.confirmPassword && styles.inputError]}>
-              <Ionicons name="lock-closed-outline" size={20} color="#8E8E93" style={styles.inputIcon} />
+              <Ionicons name="lock-closed-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Confirm Password"
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor="#B0B0B4"
                 value={confirmPassword}
                 onChangeText={(text) => {
                   setConfirmPassword(text);
@@ -270,25 +257,18 @@ export default function SignUpScreen({ navigation }) {
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
               />
-              <TouchableOpacity 
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons 
-                  name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} 
-                  size={20} 
-                  color="#8E8E93" 
-                />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
+                <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={COLORS.subtle} />
               </TouchableOpacity>
             </View>
             {errors.confirmPassword ? <Text style={styles.errorText}>{errors.confirmPassword}</Text> : null}
           </View>
 
-          <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} activeOpacity={1} disabled={isLoading}>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp} activeOpacity={0.85} disabled={isLoading}>
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.signUpButtonText}>Create Account</Text>
+              <Text style={styles.primaryButtonText}>Create Account</Text>
             )}
           </TouchableOpacity>
 
@@ -299,33 +279,25 @@ export default function SignUpScreen({ navigation }) {
           </View>
 
           <View style={styles.socialButtonsContainer}>
-            <TouchableOpacity 
-              style={[styles.socialButton, isGoogleLoading && styles.socialButtonDisabled]} 
-              onPress={handleGoogleSignUp} 
-              activeOpacity={1}
+            <TouchableOpacity
+              style={styles.socialButton}
+              onPress={handleGoogleSignUp}
+              activeOpacity={0.85}
               disabled={isGoogleLoading}
             >
               {isGoogleLoading ? (
-                <ActivityIndicator color={COLORS.text} size="small" />
+                <ActivityIndicator color={COLORS.subtle} size="small" />
               ) : (
                 <>
-                  <Image 
-                    source={require('../assets/images/google.png')} 
-                    style={styles.socialIcon}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.socialButtonText}>Google</Text>
+                  <Image source={require('../assets/images/google.png')} style={styles.socialIcon} resizeMode="contain" />
+                  <Text style={styles.socialButtonText}>Continue with Google</Text>
                 </>
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.socialButton} onPress={handleAppleSignUp} activeOpacity={1}>
-              <Image 
-                source={require('../assets/images/apple.png')} 
-                style={styles.socialIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.socialButtonText}>Apple</Text>
+            <TouchableOpacity style={styles.socialButton} onPress={handleAppleSignUp} activeOpacity={0.85}>
+              <Image source={require('../assets/images/apple.png')} style={styles.socialIcon} resizeMode="contain" />
+              <Text style={styles.socialButtonText}>Continue with Apple</Text>
             </TouchableOpacity>
           </View>
 
@@ -344,21 +316,21 @@ export default function SignUpScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg, // iOS System Background
+    backgroundColor: COLORS.bg,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.l,
     paddingTop: 80,
     paddingBottom: 40,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: SPACING.xl,
     alignItems: 'center',
   },
   title: {
     ...TYPE.largeTitle,
-    marginBottom: 8,
+    marginBottom: SPACING.s,
     textAlign: 'center',
   },
   subtitle: {
@@ -368,35 +340,34 @@ const styles = StyleSheet.create({
   },
   form: {
     flex: 1,
+    gap: 20,
   },
-  inputGroup: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+  inputCard: {
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 14,
     overflow: 'hidden',
-    marginBottom: 8,
   },
   inputError: {
-    borderColor: '#FF3B30',
+    borderColor: COLORS.danger,
     borderWidth: 1,
   },
   errorText: {
     fontSize: 12,
-    color: '#FF3B30',
+    color: COLORS.danger,
     fontFamily: 'Nunito-Regular',
     marginTop: 4,
-    marginBottom: 12,
-    marginLeft: 4,
+    marginBottom: 8,
+    marginLeft: SPACING.m,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
+    height: 54,
+    paddingHorizontal: SPACING.m,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C6C6C8',
+    backgroundColor: 'rgba(0,0,0,0.06)',
     marginLeft: 52,
   },
   inputIcon: {
@@ -404,28 +375,22 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 17,
+    fontSize: 16,
     fontFamily: 'Nunito-Regular',
-    color: '#000000',
+    color: COLORS.text,
     height: '100%',
   },
   eyeIcon: {
     padding: 8,
   },
-  signUpButton: {
-    backgroundColor: '#000000',
+  primaryButton: {
+    backgroundColor: COLORS.text,
     borderRadius: RADIUS.button,
-    height: 56,
+    height: 54,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
   },
-  signUpButtonText: {
+  primaryButtonText: {
     fontSize: 15,
     fontFamily: 'Nunito-Bold',
     color: '#FFFFFF',
@@ -433,49 +398,38 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
   },
   dividerLine: {
     flex: 1,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C6C6C8',
+    backgroundColor: 'rgba(0,0,0,0.08)',
   },
   dividerText: {
-    marginHorizontal: 16,
+    marginHorizontal: SPACING.m,
     fontSize: 13,
-    color: '#8E8E93',
+    color: COLORS.subtle,
     fontFamily: 'Nunito-SemiBold',
   },
   socialButtonsContainer: {
-    flexDirection: 'column',
     gap: 12,
-    marginBottom: 32,
   },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderRadius: RADIUS.button,
-    height: 50,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  socialButtonDisabled: {
-    opacity: 0.6,
+    height: 52,
   },
   socialIcon: {
     width: 20,
     height: 20,
-    marginRight: 8,
+    marginRight: 10,
   },
   socialButtonText: {
     fontSize: 15,
     fontFamily: 'Nunito-SemiBold',
-    color: '#000000',
+    color: COLORS.text,
   },
   loginLink: {
     flexDirection: 'row',
@@ -484,12 +438,12 @@ const styles = StyleSheet.create({
   },
   loginText: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: COLORS.subtle,
     fontFamily: 'Nunito-Regular',
   },
   loginLinkText: {
     fontSize: 14,
     fontFamily: 'Nunito-Bold',
-    color: '#007AFF',
+    color: COLORS.brand,
   },
 });

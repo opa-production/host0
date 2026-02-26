@@ -103,41 +103,39 @@ export default function ForgotPasswordScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.card}>
-            <Text style={styles.subtitle}>Enter your email and we'll send you a reset link.</Text>
+<Text style={styles.subtitle}>Enter your email and we'll send you a reset link.</Text>
 
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor={COLORS.subtle}
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  if (emailError) setEmailError('');
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                editable={!isLoading}
-              />
-            </View>
-            {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
-
-            <TouchableOpacity
-              style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
-              onPress={handleReset}
-              activeOpacity={0.8}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Send reset link</Text>
-              )}
-            </TouchableOpacity>
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#B0B0B4"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (emailError) setEmailError('');
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              editable={!isLoading}
+            />
           </View>
+          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+
+          <TouchableOpacity
+            style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
+            onPress={handleReset}
+            activeOpacity={0.85}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Send reset link</Text>
+            )}
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -157,46 +155,34 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { ...TYPE.largeTitle, fontSize: 20, color: COLORS.text },
-  content: { padding: SPACING.l, paddingTop: SPACING.m },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.l,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
-  },
-  subtitle: { ...TYPE.body, color: COLORS.subtle, marginBottom: SPACING.l },
+  content: { paddingHorizontal: SPACING.l, paddingTop: SPACING.m, gap: 20 },
+  subtitle: { ...TYPE.body, color: COLORS.subtle },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 14,
     paddingHorizontal: SPACING.m,
-    backgroundColor: COLORS.bg,
-    marginBottom: SPACING.s,
+    backgroundColor: 'transparent',
+    height: 54,
   },
   inputIcon: { marginRight: SPACING.s },
   input: {
     flex: 1,
-    ...TYPE.body,
-    fontSize: 15,
+    fontSize: 16,
+    fontFamily: 'Nunito-Regular',
     color: COLORS.text,
-    paddingVertical: 14,
+    height: '100%',
   },
   primaryButton: {
     backgroundColor: COLORS.text,
-    paddingVertical: 16,
-    borderRadius: RADIUS.card,
+    height: 54,
+    borderRadius: RADIUS.button,
     alignItems: 'center',
-    marginTop: SPACING.s,
+    justifyContent: 'center',
   },
-  primaryButtonText: { ...TYPE.bodyStrong, fontSize: 16, color: '#FFFFFF' },
+  primaryButtonText: { fontSize: 15, fontFamily: 'Nunito-Bold', color: '#FFFFFF' },
   primaryButtonDisabled: { opacity: 0.6 },
-  errorText: { ...TYPE.caption, fontSize: 12, color: '#F44336', marginBottom: SPACING.s, marginLeft: SPACING.m },
+  errorText: { fontSize: 12, fontFamily: 'Nunito-Regular', color: COLORS.danger, marginLeft: SPACING.m, marginTop: -12 },
 });
