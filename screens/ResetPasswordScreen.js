@@ -105,19 +105,17 @@ export default function ResetPasswordScreen({ navigation, route }) {
           <View style={styles.backButton} />
         </View>
         <View style={[styles.content, styles.centered, { paddingBottom: insets.bottom + 20 }]}>
-          <View style={styles.card}>
-            <Ionicons name="link-outline" size={48} color={COLORS.subtle} style={styles.invalidIcon} />
-            <Text style={styles.subtitle}>Invalid or expired link</Text>
-            <Text style={styles.body}>
-              This reset link is invalid or has expired. Request a new link or go back to sign in.
-            </Text>
-            <TouchableOpacity style={styles.secondaryButton} onPress={handleRequestNewLink} activeOpacity={0.8}>
-              <Text style={styles.secondaryButtonText}>Request new link</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.primaryButton} onPress={handleBackToLogin} activeOpacity={0.8}>
-              <Text style={styles.primaryButtonText}>Back to login</Text>
-            </TouchableOpacity>
-          </View>
+          <Ionicons name="link-outline" size={48} color={COLORS.subtle} style={styles.invalidIcon} />
+          <Text style={styles.subtitle}>Invalid or expired link</Text>
+          <Text style={styles.body}>
+            This reset link is invalid or has expired. Request a new link or go back to sign in.
+          </Text>
+          <TouchableOpacity style={styles.secondaryButton} onPress={handleRequestNewLink} activeOpacity={0.8}>
+            <Text style={styles.secondaryButtonText}>Request new link</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleBackToLogin} activeOpacity={0.85}>
+            <Text style={styles.primaryButtonText}>Back to login</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -145,58 +143,56 @@ export default function ResetPasswordScreen({ navigation, route }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.card}>
-            <Text style={styles.subtitle}>Enter your new password below.</Text>
+          <Text style={styles.subtitle}>Enter your new password below.</Text>
 
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="New password"
-                placeholderTextColor={COLORS.subtle}
-                value={newPassword}
-                onChangeText={(text) => { setNewPassword(text); if (passwordError) setPasswordError(''); }}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="new-password"
-                editable={!isLoading}
-              />
-            </View>
-            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm new password"
-                placeholderTextColor={COLORS.subtle}
-                value={confirmPassword}
-                onChangeText={(text) => { setConfirmPassword(text); if (confirmError) setConfirmError(''); }}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="new-password"
-                editable={!isLoading}
-              />
-            </View>
-            {confirmError ? <Text style={styles.errorText}>{confirmError}</Text> : null}
-
-            <TouchableOpacity
-              style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
-              onPress={handleSubmit}
-              activeOpacity={0.8}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Submit</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.linkButton} onPress={handleRequestNewLink} disabled={isLoading}>
-              <Text style={styles.linkButtonText}>Request new link</Text>
-            </TouchableOpacity>
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="New password"
+              placeholderTextColor="#B0B0B4"
+              value={newPassword}
+              onChangeText={(text) => { setNewPassword(text); if (passwordError) setPasswordError(''); }}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="new-password"
+              editable={!isLoading}
+            />
           </View>
+          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color={COLORS.subtle} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm new password"
+              placeholderTextColor="#B0B0B4"
+              value={confirmPassword}
+              onChangeText={(text) => { setConfirmPassword(text); if (confirmError) setConfirmError(''); }}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="new-password"
+              editable={!isLoading}
+            />
+          </View>
+          {confirmError ? <Text style={styles.errorText}>{confirmError}</Text> : null}
+
+          <TouchableOpacity
+            style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
+            onPress={handleSubmit}
+            activeOpacity={0.85}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Submit</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.linkButton} onPress={handleRequestNewLink} disabled={isLoading}>
+            <Text style={styles.linkButtonText}>Request new link</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -216,59 +212,49 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { ...TYPE.largeTitle, fontSize: 20, color: COLORS.text },
-  content: { padding: SPACING.l, paddingTop: SPACING.m },
-  centered: { flexGrow: 1, justifyContent: 'center' },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.l,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
-  },
+  content: { paddingHorizontal: SPACING.l, paddingTop: SPACING.m, gap: 20 },
+  centered: { flexGrow: 1, justifyContent: 'center', alignItems: 'stretch' },
   invalidIcon: { alignSelf: 'center', marginBottom: SPACING.m },
-  subtitle: { ...TYPE.body, color: COLORS.subtle, marginBottom: SPACING.l },
-  body: { ...TYPE.body, color: COLORS.subtle, marginBottom: SPACING.l, lineHeight: 20 },
+  subtitle: { ...TYPE.body, color: COLORS.subtle },
+  body: { ...TYPE.body, color: COLORS.subtle, lineHeight: 20 },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 14,
     paddingHorizontal: SPACING.m,
-    backgroundColor: COLORS.bg,
-    marginBottom: SPACING.s,
+    backgroundColor: 'transparent',
+    height: 54,
   },
   inputIcon: { marginRight: SPACING.s },
   input: {
     flex: 1,
-    ...TYPE.body,
-    fontSize: 15,
+    fontSize: 16,
+    fontFamily: 'Nunito-Regular',
     color: COLORS.text,
-    paddingVertical: 14,
+    height: '100%',
   },
   primaryButton: {
     backgroundColor: COLORS.text,
-    paddingVertical: 16,
-    borderRadius: RADIUS.card,
+    height: 54,
+    borderRadius: RADIUS.button,
     alignItems: 'center',
-    marginTop: SPACING.s,
+    justifyContent: 'center',
   },
-  primaryButtonText: { ...TYPE.bodyStrong, fontSize: 16, color: '#FFFFFF' },
+  primaryButtonText: { fontSize: 15, fontFamily: 'Nunito-Bold', color: '#FFFFFF' },
   primaryButtonDisabled: { opacity: 0.6 },
   secondaryButton: {
-    paddingVertical: 16,
-    borderRadius: RADIUS.card,
+    height: 54,
+    borderRadius: RADIUS.button,
     alignItems: 'center',
-    marginTop: SPACING.s,
-    backgroundColor: COLORS.border,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    backgroundColor: 'transparent',
   },
-  secondaryButtonText: { ...TYPE.bodyStrong, fontSize: 16, color: COLORS.text },
-  linkButton: { alignItems: 'center', paddingVertical: SPACING.m, marginTop: SPACING.s },
-  linkButtonText: { ...TYPE.body, fontSize: 14, color: COLORS.brand },
-  errorText: { ...TYPE.caption, fontSize: 12, color: '#F44336', marginBottom: SPACING.s, marginLeft: SPACING.m },
+  secondaryButtonText: { fontSize: 15, fontFamily: 'Nunito-Bold', color: COLORS.text },
+  linkButton: { alignItems: 'center', paddingVertical: SPACING.m },
+  linkButtonText: { fontSize: 14, fontFamily: 'Nunito-Regular', color: COLORS.brand },
+  errorText: { fontSize: 12, fontFamily: 'Nunito-Regular', color: COLORS.danger, marginLeft: SPACING.m, marginTop: -12 },
 });
