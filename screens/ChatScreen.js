@@ -34,20 +34,29 @@ export default function ChatScreen({ navigation, route }) {
 
   const listRef = useRef(null);
 
+  const parseUTC = (raw) => {
+    const s = String(raw);
+    const hasTimezone = s.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(s);
+    return new Date(hasTimezone ? s : s + 'Z');
+  };
+
+  const localTime = (d) =>
+    `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
   const formatTime = (createdAt) => {
     if (!createdAt) return 'Now';
     try {
-      const date = new Date(createdAt);
+      const date = parseUTC(createdAt);
       if (isNaN(date.getTime())) return 'Now';
-      
+
       const now = new Date();
       const diffMs = now.getTime() - date.getTime();
       const diffMins = Math.floor(diffMs / 60000);
-      
+
       if (diffMins < 1) return 'Just now';
       if (diffMins < 60) return `${diffMins}m ago`;
-      
-      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+      return localTime(date);
     } catch (e) {
       return 'Now';
     }
@@ -115,13 +124,13 @@ export default function ChatScreen({ navigation, route }) {
     lightHaptic();
     setIsSending(true);
 
-    // Optimistically add message to UI
+    const now = new Date();
     const tempMessage = {
       id: `temp-${Date.now()}`,
       fromMe: true,
       text,
-      ts: 'Sending...',
-      createdAt: new Date().toISOString(),
+      ts: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
+      createdAt: now.toISOString(),
       isRead: false,
     };
 

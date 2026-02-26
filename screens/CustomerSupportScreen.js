@@ -99,7 +99,7 @@ export default function CustomerSupportScreen({ navigation }) {
       id: `temp-${Date.now()}`,
       fromMe: true,
       text,
-      ts: now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      ts: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
       createdAt: now.toISOString(),
     };
     setMessages((prev) => [...prev, tempMessage]);
@@ -141,40 +141,40 @@ export default function CustomerSupportScreen({ navigation }) {
     }
   };
 
+  const parseUTC = (raw) => {
+    const s = String(raw);
+    const hasTimezone = s.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(s);
+    return new Date(hasTimezone ? s : s + 'Z');
+  };
+
+  const localTime = (d) =>
+    `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
   const formatMessageTime = (item) => {
-    // If we have createdAt, format it properly
     if (item.createdAt) {
       try {
-        const date = new Date(item.createdAt);
+        const date = parseUTC(item.createdAt);
         if (!isNaN(date.getTime())) {
           const now = new Date();
           const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-          
-          // Same day - show time
+
           if (messageDate.getTime() === today.getTime()) {
-            // Check if within last minute for "Just now"
             const diffMs = now.getTime() - date.getTime();
-            const diffMins = Math.floor(diffMs / 60000);
-            
-            if (diffMins < 1) return 'Just now';
-            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            if (diffMs < 60000) return 'Just now';
+            return localTime(date);
           }
-          
-          // Different day
-          const diffMs = now.getTime() - date.getTime();
-          const diffDays = Math.floor(diffMs / 86400000);
+
+          const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
           if (diffDays === 1) return 'Yesterday';
           if (diffDays < 7) return `${diffDays}d ago`;
-          
+
           return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
       } catch (e) {
-        console.error('Error formatting message time:', e);
+        // fall through
       }
     }
-    
-    // Fallback to existing ts field
     return item.ts || 'Just now';
   };
 
@@ -206,7 +206,7 @@ export default function CustomerSupportScreen({ navigation }) {
           }}
           activeOpacity={0.8}
         >
-          <Ionicons name="chevron-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -323,12 +323,8 @@ const styles = StyleSheet.create({
   headerIcon: {
     width: 36,
     height: 36,
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
   },
   headerCenter: {
     flex: 1,
@@ -452,19 +448,23 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 10,
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.button,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 22,
+    paddingLeft: 16,
+    paddingRight: 6,
+    paddingVertical: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
   },
   input: {
     flex: 1,
-    ...TYPE.body,
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nunito-Regular',
     color: COLORS.text,
-    padding: 0,
-    margin: 0,
+    lineHeight: 20,
+    paddingTop: 8,
+    paddingBottom: 8,
+    minHeight: 36,
+    textAlignVertical: 'center',
   },
   sendButton: {
     width: 36,
