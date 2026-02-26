@@ -105,6 +105,40 @@ function mergeRanges(ranges) {
   return out;
 }
 
+/** Merge consecutive blocked date ranges for display; each item has { start, end, ids: (number|string)[] } for unblock. */
+function mergeConsecutiveBlockedRanges(ranges) {
+  if (!ranges || ranges.length === 0) return [];
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const withId = ranges
+    .map((r) => ({ ...r, id: r.id ?? r.blocked_date_id }))
+    .filter((r) => r.id != null && r.id !== '');
+  const sorted = withId
+    .map((r) => ({
+      start: startOfDay(r.start),
+      end: startOfDay(r.end),
+      id: r.id,
+    }))
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+  const merged = [];
+  for (const r of sorted) {
+    const rStart = r.start.getTime();
+    const rEnd = r.end.getTime();
+    if (merged.length === 0) {
+      merged.push({ start: r.start, end: r.end, ids: [r.id] });
+      continue;
+    }
+    const last = merged[merged.length - 1];
+    const lastEnd = last.end.getTime();
+    if (rStart <= lastEnd + oneDayMs) {
+      if (rEnd > lastEnd) last.end = r.end;
+      last.ids.push(r.id);
+    } else {
+      merged.push({ start: r.start, end: r.end, ids: [r.id] });
+    }
+  }
+  return merged;
+}
+
 export default function SmartCalendarScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
@@ -240,8 +274,12 @@ export default function SmartCalendarScreen({ navigation }) {
   };
 
   const unblockSelected = async () => {
-    if (!selectionStart || !selectedCarId) {
+    if (!selectedCarId) {
       Alert.alert('Error', 'Please select a car first');
+      return;
+    }
+    if (!selectionStart) {
+      Alert.alert('Select dates', 'Tap a start date, then an end date on the calendar to select the range to unblock.');
       return;
     }
 
@@ -400,6 +438,12 @@ export default function SmartCalendarScreen({ navigation }) {
   };
 
   const selectedLabel = selectionStart ? fmtRange(selectionStart, selectionEnd || selectionStart) : 'No dates selected';
+
+  // Merge consecutive blocked dates for display as ranges (e.g. "Mar 8 – Mar 17")
+  const mergedBlockedForDisplay = useMemo(
+    () => mergeConsecutiveBlockedRanges(unavailable),
+    [unavailable]
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -631,52 +675,54 @@ export default function SmartCalendarScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Blocked dates</Text>
           {!selectedCarId ? (
             <Text style={styles.helperText}>Select a car to view blocked dates</Text>
-          ) : unavailable.length === 0 ? (
+          ) : mergedBlockedForDisplay.length === 0 ? (
             <Text style={styles.helperText}>No blocked dates yet.</Text>
           ) : (
-            unavailable.map((r, i) => (
+            mergedBlockedForDisplay.map((r, i) => (
               <TouchableOpacity
-                key={`${i}-${startOfDay(r.start).toISOString()}`}
+                key={`${i}-${startOfDay(r.start).getTime()}-${r.ids.length}`}
                 style={styles.blockedRow}
-                onPress={async () => {
-                  if (r.id && selectedCarId) {
-                    Alert.alert(
-                      'Unblock Date',
-                      `Remove blocked date: ${fmtRange(r.start, r.end)}?`,
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Unblock',
-                          style: 'destructive',
-                          onPress: async () => {
-                            setIsBlocking(true);
-                            try {
-                              const result = await unblockCarDate(selectedCarId, r.id);
-                              if (result.success) {
-                                await loadBlockedDates();
-                                Alert.alert('Success', 'Date unblocked successfully');
-                              } else {
-                                Alert.alert('Error', result.error || 'Failed to unblock date');
-                              }
-                            } catch (error) {
-                              console.error('Error unblocking date:', error);
-                              Alert.alert('Error', 'Failed to unblock date. Please try again.');
-                            } finally {
-                              setIsBlocking(false);
+                onPress={() => {
+                  const carId = selectedCarId;
+                  const idsToUnblock = r.ids || [];
+                  if (idsToUnblock.length === 0 || !carId) return;
+                  Alert.alert(
+                    'Unblock dates',
+                    `Remove blocked period: ${fmtRange(r.start, r.end)}?`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Unblock',
+                        style: 'destructive',
+                        onPress: async () => {
+                          setIsBlocking(true);
+                          try {
+                            const results = await Promise.all(
+                              idsToUnblock.map((id) => unblockCarDate(carId, id))
+                            );
+                            const allOk = results.every((res) => res.success);
+                            if (allOk) {
+                              await loadBlockedDates();
+                              Alert.alert('Success', 'Dates unblocked successfully');
+                            } else {
+                              const err = results.find((res) => !res.success);
+                              Alert.alert('Error', err?.error || 'Failed to unblock');
                             }
-                          },
+                          } catch (error) {
+                            console.error('Error unblocking date:', error);
+                            Alert.alert('Error', 'Failed to unblock. Please try again.');
+                          } finally {
+                            setIsBlocking(false);
+                          }
                         },
-                      ]
-                    );
-                  }
+                      },
+                    ]
+                  );
                 }}
                 activeOpacity={0.7}
               >
                 <View style={styles.blockedRowLeft}>
                   <Text style={styles.blockedText}>{fmtRange(r.start, r.end)}</Text>
-                  {r.reason && (
-                    <Text style={styles.blockedReason}>{r.reason}</Text>
-                  )}
                 </View>
                 <Ionicons name="close-circle" size={18} color={COLORS.subtle} />
               </TouchableOpacity>
