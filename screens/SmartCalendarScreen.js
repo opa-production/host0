@@ -192,20 +192,44 @@ export default function SmartCalendarScreen({ navigation }) {
     }
 
     const end = selectionEnd || selectionStart;
-    // Backend expects datetime format (ISO with time), not just date
-    const startDate = startOfDay(selectionStart).toISOString();
-    const endDate = startOfDay(end).toISOString();
+    const range = normalizeRange(selectionStart, end);
+    const startDate = startOfDay(range.start).toISOString();
+    const endDate = startOfDay(range.end).toISOString();
 
     setIsBlocking(true);
     try {
-      const result = await blockCarDates(selectedCarId, startDate, endDate);
-      if (result.success) {
-        // Reload blocked dates
+      // If backend only creates one day per request, block each day in the range.
+      const startMs = startOfDay(range.start).getTime();
+      const endMs = startOfDay(range.end).getTime();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      const daysToBlock = Math.round((endMs - startMs) / oneDayMs) + 1;
+
+      if (daysToBlock <= 0) {
+        setIsBlocking(false);
+        return;
+      }
+
+      let allOk = true;
+      let lastError = null;
+
+      for (let i = 0; i < daysToBlock; i += 1) {
+        const dayStart = new Date(startMs + i * oneDayMs);
+        const dayEnd = new Date(startMs + i * oneDayMs);
+        const dayStartStr = startOfDay(dayStart).toISOString();
+        const dayEndStr = startOfDay(dayEnd).toISOString();
+        const result = await blockCarDates(selectedCarId, dayStartStr, dayEndStr);
+        if (!result.success) {
+          allOk = false;
+          lastError = result.error;
+        }
+      }
+
+      if (allOk) {
         await loadBlockedDates();
         clearSelection();
-        Alert.alert('Success', 'Dates blocked successfully');
+        Alert.alert('Success', daysToBlock === 1 ? 'Date blocked successfully' : `${daysToBlock} dates blocked successfully`);
       } else {
-        Alert.alert('Error', result.error || 'Failed to block dates');
+        Alert.alert('Error', lastError || 'Failed to block some dates');
       }
     } catch (error) {
       console.error('Error blocking dates:', error);
