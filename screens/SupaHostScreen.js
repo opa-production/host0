@@ -18,35 +18,41 @@ export default function SupaHostScreen({ navigation: nav }) {
   }, [navigation]);
 
   const pricing = useMemo(() => {
-    const monthly = { 
-      label: 'Monthly', 
-      originalPrice: 'KES 5,000',
-      currentPrice: 'KES 3,500',
-      period: '/ mo'
+    const monthlyCurrent = 6500;
+    const monthlyOriginal = 8500;
+    const yearlyOriginal = 78000; // 12 * 6500
+    const yearlyCurrent = 6500 * 10; // 2 months free = 65,000
+    const monthlyDiscountPercent = Math.round(((monthlyOriginal - monthlyCurrent) / monthlyOriginal) * 100);
+    const yearlyDiscountPercent = Math.round(((yearlyOriginal - yearlyCurrent) / yearlyOriginal) * 100); // ~17%
+    const monthly = {
+      label: 'Monthly',
+      originalPrice: `KSh ${monthlyOriginal.toLocaleString()}`,
+      currentPrice: `KSh ${monthlyCurrent.toLocaleString()}`,
+      period: '/ mo',
+      discountPercent: monthlyDiscountPercent,
+      savingsLabel: `${monthlyDiscountPercent}% off`,
     };
-    const yearly = { 
-      label: 'Yearly', 
-      originalPrice: 'KES 60,000',
-      currentPrice: 'KES 45,000',
-      period: '/ yr'
+    const yearly = {
+      label: 'Yearly',
+      originalPrice: `KSh ${yearlyOriginal.toLocaleString()}`,
+      currentPrice: `KSh ${yearlyCurrent.toLocaleString()}`,
+      period: '/ yr',
+      discountPercent: yearlyDiscountPercent,
+      savingsLabel: '2 months free',
     };
     return billing === 'monthly' ? monthly : yearly;
   }, [billing]);
 
   const benefits = [
-    'Reduced commission on cars',
-    'Boosted visibility',
-    'Unlimited number of listings',
+    'Unlimited cars',
+    'Professional fleet management dashboard',
+    'Reduced commission of only 10%',
     'Verified badge',
-    'Instant payouts',
-    'Smart calendar access',
-    'Enable pay on site',
+    'Priority search',
+    'Corporate branding — add your company logo (ideal for NGO & corporate leads)',
+    'Access to host success support',
+    'Business intelligence',
   ];
-
-  const handleGetBadge = () => {
-    lightHaptic();
-    nav.navigate('GetBadge');
-  };
 
   return (
     <View style={styles.container}>
@@ -64,7 +70,7 @@ export default function SupaHostScreen({ navigation: nav }) {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Become a SupaHost</Text>
+        <Text style={styles.headerTitle}>Ardena for Business</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -72,7 +78,7 @@ export default function SupaHostScreen({ navigation: nav }) {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]} 
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.subtitle}>Unlock boosted earnings and visibility with the premium host badge.</Text>
+        <Text style={styles.subtitle}>For fleets, NGOs, and corporates: professional tools, lower commission, and a verified presence to win more business.</Text>
 
         <View style={styles.toggleContainer}>
           <TouchableOpacity
@@ -100,14 +106,24 @@ export default function SupaHostScreen({ navigation: nav }) {
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>SupaHost</Text>
+            <Text style={styles.cardTitle}>Ardena for Business</Text>
           </View>
-          
+
           <View style={styles.priceContainer}>
-            <Text style={styles.originalPrice}>{pricing.originalPrice}</Text>
+            <Text style={styles.originalPrice}>{pricing.originalPrice}{pricing.period}</Text>
             <View style={styles.currentPriceRow}>
               <Text style={styles.currentPrice}>{pricing.currentPrice}</Text>
               <Text style={styles.pricePeriod}>{pricing.period}</Text>
+            </View>
+            <View style={styles.discountRow}>
+              <View style={styles.savingsBadge}>
+                <Text style={styles.savingsBadgeText}>{pricing.discountPercent}% off</Text>
+              </View>
+              {pricing.label === 'Yearly' && (
+                <View style={[styles.savingsBadge, styles.savingsBadgeSecondary]}>
+                  <Text style={[styles.savingsBadgeText, styles.savingsBadgeSecondaryText]}>{pricing.savingsLabel}</Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -126,9 +142,12 @@ export default function SupaHostScreen({ navigation: nav }) {
           <TouchableOpacity
             style={styles.primaryButton}
             activeOpacity={0.9}
-            onPress={handleGetBadge}
+            onPress={() => {
+              lightHaptic();
+              nav.navigate('ArdenaForBusinessComingSoon');
+            }}
           >
-            <Text style={styles.primaryButtonText}>Get badge</Text>
+            <Text style={styles.primaryButtonText}>Get started</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -232,7 +251,7 @@ const styles = StyleSheet.create({
   },
   originalPrice: {
     ...TYPE.body,
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.subtle,
     textDecorationLine: 'line-through',
     marginBottom: 4,
@@ -252,6 +271,22 @@ const styles = StyleSheet.create({
     ...TYPE.body,
     fontSize: 16,
     color: COLORS.subtle,
+  },
+  savingsBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(0, 122, 255, 0.12)',
+    borderRadius: 999,
+  },
+  savingsBadgeText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+    color: COLORS.brand,
+  },
+  savingsBadgeSecondaryText: {
+    color: '#34C759',
   },
   divider: {
     height: StyleSheet.hairlineWidth,

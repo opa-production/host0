@@ -99,7 +99,7 @@ export default function GetBadgeScreen({ navigation }) {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Get SupaHost badge</Text>
+        <Text style={styles.headerTitle}>Ardena for Business</Text>
         <View style={styles.backButton} />
       </View>
 

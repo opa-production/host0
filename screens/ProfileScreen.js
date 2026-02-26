@@ -280,8 +280,8 @@ export default function ProfileScreen({ navigation }) {
               style={styles.linkItem}
               onPress={() => { lightHaptic(); navigation.navigate('SupaHost'); }}
             >
-              <Ionicons name="ribbon-outline" size={22} color="#666666" style={styles.linkIcon} />
-              <Text style={styles.linkText}>Become a SupaHost</Text>
+              <Ionicons name="business-outline" size={22} color="#666666" style={styles.linkIcon} />
+              <Text style={styles.linkText}>Ardena for Business</Text>
               <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
             </TouchableOpacity>
 
