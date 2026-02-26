@@ -8,6 +8,7 @@ import { lightHaptic } from '../ui/haptics';
 import { useHost } from '../utils/HostContext';
 import { getHostBookings } from '../services/bookingService';
 import { getHostEarningsSummary } from '../services/earningsService';
+import { getHostWithdrawals } from '../services/withdrawalService';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +35,9 @@ export default function HomeScreen({ navigation }) {
     withdrawable: 0,
     paid_bookings_count: 0,
   });
+
+  // Sum of amounts for withdrawals with status 'pending' (money not yet deducted)
+  const [pendingWithdrawalTotal, setPendingWithdrawalTotal] = useState(0);
 
   // Get user name from host profile
   const userName = host?.name || host?.full_name || 'Host';
@@ -129,16 +133,27 @@ export default function HomeScreen({ navigation }) {
 
   const loadEarningsSummary = async () => {
     try {
-      const result = await getHostEarningsSummary();
-      if (result.success && result.summary) {
+      const [summaryResult, withdrawalsResult] = await Promise.all([
+        getHostEarningsSummary(),
+        getHostWithdrawals({ limit: 100 }),
+      ]);
+      if (summaryResult.success && summaryResult.summary) {
         setFinancialData({
-          total_gross: result.summary.total_gross,
-          commission_rate: result.summary.commission_rate,
-          commission_amount: result.summary.commission_amount,
-          net_earnings: result.summary.net_earnings,
-          withdrawable: result.summary.withdrawable,
-          paid_bookings_count: result.summary.paid_bookings_count,
+          total_gross: summaryResult.summary.total_gross,
+          commission_rate: summaryResult.summary.commission_rate,
+          commission_amount: summaryResult.summary.commission_amount,
+          net_earnings: summaryResult.summary.net_earnings,
+          withdrawable: summaryResult.summary.withdrawable,
+          paid_bookings_count: summaryResult.summary.paid_bookings_count,
         });
+      }
+      if (withdrawalsResult.success && Array.isArray(withdrawalsResult.withdrawals)) {
+        const pending = withdrawalsResult.withdrawals
+          .filter((w) => (String(w.status || '').toLowerCase() === 'pending'))
+          .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+        setPendingWithdrawalTotal(pending);
+      } else {
+        setPendingWithdrawalTotal(0);
       }
     } catch (error) {
       console.error('Error loading earnings summary:', error);
@@ -310,6 +325,14 @@ export default function HomeScreen({ navigation }) {
                 {isBalanceVisible ? `KSh ${formatCurrency(withdrawable)}` : '••••••'}
               </Text>
             </View>
+            {pendingWithdrawalTotal > 0 && (
+              <View style={styles.pendingWithdrawalRow}>
+                <Text style={styles.pendingWithdrawalLabel}>Pending withdrawal</Text>
+                <Text style={styles.pendingWithdrawalValue}>
+                  {isBalanceVisible ? `KSh ${formatCurrency(pendingWithdrawalTotal)}` : '••••'}
+                </Text>
+              </View>
+            )}
           </View>
 
           <TouchableOpacity 
@@ -600,6 +623,27 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     fontFamily: 'Nunito-Bold',
     color: '#FFFFFF',
+  },
+  pendingWithdrawalRow: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 193, 7, 0.4)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pendingWithdrawalLabel: {
+    ...TYPE.micro,
+    fontSize: 11,
+    color: '#FFC107',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  pendingWithdrawalValue: {
+    fontSize: 15,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FFC107',
   },
   metricsRow: {
     flexDirection: 'row',

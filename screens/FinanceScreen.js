@@ -26,6 +26,9 @@ export default function FinanceScreen({ navigation }) {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
+  // Sum of amounts for withdrawals with status 'pending' (money not yet deducted)
+  const [pendingWithdrawalTotal, setPendingWithdrawalTotal] = useState(0);
+
   const loadEarningsSummary = useCallback(async () => {
     setIsLoadingEarnings(true);
     try {
@@ -65,6 +68,10 @@ export default function FinanceScreen({ navigation }) {
       ]);
       const txList = (txResult.success && txResult.transactions) ? txResult.transactions : [];
       const withdrawals = (wdResult.success && wdResult.withdrawals) ? wdResult.withdrawals : [];
+      const pending = withdrawals
+        .filter((w) => String(w.status || '').toLowerCase() === 'pending')
+        .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+      setPendingWithdrawalTotal(pending);
       const withdrawalItems = withdrawals.map(withdrawalToTransactionItem);
       const merged = [...txList, ...withdrawalItems].sort((a, b) => (b.sortDate || 0) - (a.sortDate || 0));
       setRecentTransactions(merged);
@@ -175,6 +182,14 @@ export default function FinanceScreen({ navigation }) {
                     {isBalanceVisible ? `KSh ${formatCurrency(withdrawable)}` : '••••••'}
                   </Text>
                 </View>
+                {pendingWithdrawalTotal > 0 && (
+                  <View style={styles.pendingWithdrawalRow}>
+                    <Text style={styles.pendingWithdrawalLabel}>Pending withdrawal</Text>
+                    <Text style={styles.pendingWithdrawalValue}>
+                      {isBalanceVisible ? `KSh ${formatCurrency(pendingWithdrawalTotal)}` : '••••'}
+                    </Text>
+                  </View>
+                )}
               </>
             )}
           </View>
@@ -342,6 +357,27 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     fontFamily: 'Nunito-Bold',
     color: '#FFFFFF',
+  },
+  pendingWithdrawalRow: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 193, 7, 0.4)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pendingWithdrawalLabel: {
+    ...TYPE.micro,
+    fontSize: 11,
+    color: '#FFC107',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  pendingWithdrawalValue: {
+    fontSize: 15,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FFC107',
   },
   withdrawButton: {
     backgroundColor: '#FFFFFF',

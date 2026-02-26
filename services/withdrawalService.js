@@ -14,9 +14,10 @@ import { handleTokenExpiration } from '../utils/logoutHandler';
  * @param {string} [params.mpesa_number] - Required when payment_method_type is mpesa (e.g. 254712345678)
  * @param {string} [params.bank_name] - Required when payment_method_type is bank
  * @param {string} [params.account_number] - Required when payment_method_type is bank
+ * @param {string} [params.account_name] - Required when payment_method_type is bank (e.g. "John Smith")
  * @returns {Promise<Object>} Result with success and data or error
  */
-export const createWithdrawal = async ({ amount, payment_method_type, mpesa_number, bank_name, account_number }) => {
+export const createWithdrawal = async ({ amount, payment_method_type, mpesa_number, bank_name, account_number, account_name }) => {
   const url = getApiUrl(API_ENDPOINTS.HOST_WITHDRAWALS);
 
   try {
@@ -40,6 +41,9 @@ export const createWithdrawal = async ({ amount, payment_method_type, mpesa_numb
       }
       body.bank_name = String(bank_name).trim();
       body.account_number = String(account_number).trim();
+      if (account_name != null && String(account_name).trim()) {
+        body.account_name = String(account_name).trim();
+      }
     }
 
     const response = await fetch(url, {

@@ -67,15 +67,16 @@ export default function WithdrawScreen({ navigation, route }) {
             const bankName = method.name || (cardType === 'visa' ? 'Visa' : 'Mastercard');
             return {
               id: method.id?.toString(),
-              name: method.name || '',
+              name: method.name || method.account_name || (cardType === 'visa' ? 'Visa' : 'Mastercard'),
               details: `•••• •••• •••• ${lastFour}${expiry ? ` | Expires ${expiry}` : ''}`,
               icon: cardType === 'visa'
                 ? require('../assets/images/visa.png')
                 : require('../assets/images/mastercard.png'),
               isDefault: method.is_default || false,
               paymentMethodType: 'bank',
-              bankName,
-              accountNumber: lastFour !== '****' ? lastFour : (method.id?.toString() || ''),
+              bankName: method.bank_name || bankName,
+              accountNumber: method.account_number || (lastFour !== '****' ? lastFour : method.id?.toString() || ''),
+              accountName: method.account_name || method.name || '',
             };
           }
           
@@ -116,22 +117,59 @@ export default function WithdrawScreen({ navigation, route }) {
     navigation.navigate('AddPaymentMethod');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const numericAmount = Number(amount.replace(/,/g, ''));
     if (!numericAmount || Number.isNaN(numericAmount) || numericAmount <= 0) {
-      alert('Please enter a valid amount.');
+      Alert.alert('Invalid amount', 'Please enter a valid amount.');
       return;
     }
     if (numericAmount > withdrawable) {
-      alert('Amount exceeds your withdrawable balance.');
+      Alert.alert('Amount too high', 'Amount exceeds your withdrawable balance.');
       return;
     }
     if (!selectedMethod) {
-      alert('Please select a payment method.');
+      Alert.alert('Select method', 'Please select a payment method.');
       return;
     }
-    // TODO: Process withdrawal with backend
-    navigation.goBack();
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        amount: numericAmount,
+        payment_method_type: selectedMethod.paymentMethodType,
+      };
+      if (selectedMethod.paymentMethodType === 'mpesa') {
+        const digits = (selectedMethod.mpesaNumber || amount).replace(/\D/g, '');
+        if (!digits || digits.length < 9) {
+          Alert.alert('Invalid number', 'Please use a valid M-Pesa number.');
+          setIsSubmitting(false);
+          return;
+        }
+        payload.mpesa_number = digits.startsWith('254') ? digits : `254${digits.replace(/^0/, '')}`;
+      } else {
+        payload.bank_name = selectedMethod.bankName || selectedMethod.name || '';
+        payload.account_number = String(selectedMethod.accountNumber || '').trim();
+        payload.account_name = (selectedMethod.accountName || selectedMethod.name || '').trim();
+        if (!payload.bank_name || !payload.account_number) {
+          Alert.alert('Invalid method', 'This payment method is missing bank details.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      const result = await createWithdrawal(payload);
+      if (result.success) {
+        Alert.alert('Withdrawal requested', 'Your withdrawal has been submitted and is pending processing.', [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
+      } else {
+        Alert.alert('Withdrawal failed', result.error || 'Could not submit withdrawal. Please try again.');
+      }
+    } catch (e) {
+      Alert.alert('Error', e?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -253,13 +291,17 @@ export default function WithdrawScreen({ navigation, route }) {
                   <TouchableOpacity 
                     style={[
                       styles.withdrawButton,
-                      (!amount || !selectedMethod) && styles.withdrawButtonDisabled
+                      (!amount || !selectedMethod || isSubmitting) && styles.withdrawButtonDisabled
                     ]} 
                     onPress={handleSubmit}
                     activeOpacity={0.8}
-                    disabled={!amount || !selectedMethod}
+                    disabled={!amount || !selectedMethod || isSubmitting}
                   >
-                    <Text style={styles.withdrawButtonText}>Withdraw</Text>
+                    {isSubmitting ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.withdrawButtonText}>Withdraw</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
