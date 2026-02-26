@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ImageBackground, Image, Linking } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 
+const TERMS_KEY = '@terms_accepted';
+
 export default function LandingScreen({ navigation }) {
   const [imageError, setImageError] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(TERMS_KEY).then((value) => {
+      if (value === 'true') setTermsAccepted(true);
+    });
+  }, []);
 
   const handleContinue = (screen) => {
     if (!termsAccepted) {
@@ -46,7 +55,15 @@ export default function LandingScreen({ navigation }) {
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <View style={styles.ctaSection}>
-        <TouchableOpacity style={styles.termsRow} onPress={() => setTermsAccepted(!termsAccepted)} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.termsRow} onPress={() => {
+          const next = !termsAccepted;
+          setTermsAccepted(next);
+          if (next) {
+            AsyncStorage.setItem(TERMS_KEY, 'true');
+          } else {
+            AsyncStorage.removeItem(TERMS_KEY);
+          }
+        }} activeOpacity={0.7}>
           <Ionicons
             name={termsAccepted ? 'checkbox' : 'square-outline'}
             size={22}
