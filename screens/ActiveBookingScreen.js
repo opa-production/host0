@@ -336,6 +336,32 @@ export default function ActiveBookingScreen({ navigation, route }) {
     }
   };
 
+  // Check if pickup time has been reached (on or after pickup date/time)
+  const isPickupTimeReached = () => {
+    if (!booking?.startDateRaw) return false;
+
+    try {
+      const now = new Date();
+      const startDate = new Date(booking.startDateRaw);
+
+      if (booking.pickupTime) {
+        const timeParts = booking.pickupTime.split(':');
+        if (timeParts.length >= 2) {
+          const hours = parseInt(timeParts[0], 10);
+          const minutes = parseInt(timeParts[1], 10);
+          startDate.setHours(hours, minutes, 0, 0);
+        }
+      } else {
+        startDate.setHours(0, 0, 0, 0);
+      }
+
+      return now >= startDate;
+    } catch (e) {
+      console.error('Error checking pickup time:', e);
+      return false;
+    }
+  };
+
   // Check if dropoff time has been reached
   const isDropoffTimeReached = () => {
     if (!booking?.endDateRaw) return false;
@@ -375,6 +401,10 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const shouldShowConfirmDropoff = () => {
     const status = booking?.status?.toLowerCase() || '';
     return status === 'active' && !isConfirmingDropoff;
+  };
+
+  const canConfirmPickup = () => {
+    return shouldShowConfirmPickup() && isPickupTimeReached();
   };
 
   const canConfirmDropoff = () => {
@@ -679,20 +709,38 @@ export default function ActiveBookingScreen({ navigation, route }) {
             <>
               <View style={styles.divider} />
               <TouchableOpacity
-                style={[styles.confirmButton, styles.confirmPickupButton]}
+                style={[
+                  styles.confirmButton,
+                  styles.confirmPickupButton,
+                  !canConfirmPickup() && styles.confirmButtonDisabled,
+                ]}
                 onPress={handleConfirmPickup}
-                disabled={isConfirmingPickup}
-                activeOpacity={0.8}
+                disabled={isConfirmingPickup || !canConfirmPickup()}
+                activeOpacity={canConfirmPickup() ? 0.8 : 1}
               >
                 {isConfirmingPickup ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <>
-                    <Ionicons name="checkmark-circle-outline" size={22} color="#FFFFFF" />
-                    <Text style={styles.confirmButtonText}>Confirm Pickup</Text>
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={22}
+                      color={canConfirmPickup() ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)'}
+                    />
+                    <Text style={[
+                      styles.confirmButtonText,
+                      !canConfirmPickup() && styles.confirmButtonTextDisabled,
+                    ]}>
+                      Confirm Pickup
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
+              {!canConfirmPickup() && (
+                <Text style={styles.disabledHint}>
+                  Pickup can only be confirmed on or after the scheduled pickup date
+                </Text>
+              )}
             </>
           )}
         </View>
@@ -1082,37 +1130,37 @@ export default function ActiveBookingScreen({ navigation, route }) {
             activeOpacity={0.7}
             onPress={() => {
               lightHaptic();
-              navigation.navigate('Chat', {
-                clientId: booking.clientId,
-                clientName: booking.renter?.name || 'Client',
+              navigation.navigate('Map', {
+                title: booking?.vehicleName,
+                plate: booking?.plate,
+                initialRegion: booking?.pickupLat && booking?.pickupLong
+                  ? { latitude: booking.pickupLat, longitude: booking.pickupLong, latitudeDelta: 0.01, longitudeDelta: 0.01 }
+                  : undefined,
               });
             }}
           >
             <View style={styles.actionLeft}>
-              <Ionicons name="chatbubble-ellipses-outline" size={20} color={COLORS.text} />
-              <Text style={styles.actionLinkText}>Message Client</Text>
+              <Ionicons name="navigate-outline" size={20} color={COLORS.text} />
+              <Text style={styles.actionLinkText}>Track my car</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
           </TouchableOpacity>
-          {(booking?.pickupLocation?.length > 0 || booking?.returnLocation?.length > 0) && (
-            <>
-              <View style={styles.actionDivider} />
-              <TouchableOpacity
-                style={styles.actionLink}
-                activeOpacity={0.7}
-                onPress={() => {
-                  lightHaptic();
-                  // TODO: Open map with location
-                }}
-              >
-                <View style={styles.actionLeft}>
-                  <Ionicons name="map-outline" size={20} color={COLORS.text} />
-                  <Text style={styles.actionLinkText}>View on Map</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
-              </TouchableOpacity>
-            </>
-          )}
+          <View style={styles.actionDivider} />
+          <TouchableOpacity
+            style={styles.actionLink}
+            activeOpacity={0.7}
+            onPress={() => {
+              lightHaptic();
+              // TODO: Generate booking agreement
+              Alert.alert('Coming soon', 'Booking agreement generation will be available soon.');
+            }}
+          >
+            <View style={styles.actionLeft}>
+              <Ionicons name="document-text-outline" size={20} color={COLORS.text} />
+              <Text style={styles.actionLinkText}>Generate booking agreement</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
+          </TouchableOpacity>
           <View style={styles.actionDivider} />
           <TouchableOpacity
             style={styles.actionLink}
