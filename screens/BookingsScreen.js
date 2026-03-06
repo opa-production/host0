@@ -8,6 +8,7 @@ import { lightHaptic } from '../ui/haptics';
 import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
+import { getBookingExtensions } from '../services/extensionService';
 
 export default function BookingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -83,6 +84,17 @@ export default function BookingsScreen({ navigation }) {
               }
             }
 
+            let pendingExtension = null;
+            const statusLower = (booking.status || '').toLowerCase();
+            if (statusLower === 'confirmed' || statusLower === 'active') {
+              try {
+                const extResult = await getBookingExtensions(booking.booking_id || booking.id);
+                if (extResult.success && extResult.extensions?.length > 0) {
+                  pendingExtension = extResult.extensions.find(e => e.status === 'pending_host_approval') || null;
+                }
+              } catch (_) {}
+            }
+
             return {
               id: booking.id,
               bookingId: booking.booking_id,
@@ -117,6 +129,7 @@ export default function BookingsScreen({ navigation }) {
               cancellationReason: booking.cancellation_reason,
               createdAt: booking.created_at,
               updatedAt: booking.updated_at,
+              pendingExtension,
             };
           })
         );
@@ -306,6 +319,24 @@ export default function BookingsScreen({ navigation }) {
                       )}
                     </View>
                   </View>
+
+                  {booking.pendingExtension && (
+                    <View style={styles.extensionBanner}>
+                      <View style={styles.extensionBannerLeft}>
+                        <Ionicons name="time-outline" size={16} color="#FF9500" />
+                        <View style={styles.extensionBannerText}>
+                          <Text style={styles.extensionBannerTitle}>Extension Request</Text>
+                          <Text style={styles.extensionBannerSub}>
+                            +{booking.pendingExtension.extra_days} day{booking.pendingExtension.extra_days !== 1 ? 's' : ''} · {formatCurrency(booking.pendingExtension.extra_amount)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.extensionActionHint}>
+                        <Text style={styles.extensionActionHintText}>Review</Text>
+                        <Ionicons name="chevron-forward" size={14} color="#FF9500" />
+                      </View>
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -624,5 +655,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
+  },
+  extensionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FF95000D',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#FF950033',
+  },
+  extensionBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  extensionBannerText: {
+    flex: 1,
+  },
+  extensionBannerTitle: {
+    fontSize: 13,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FF9500',
+    marginBottom: 2,
+  },
+  extensionBannerSub: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.text,
+  },
+  extensionActionHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  extensionActionHintText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FF9500',
   },
 });

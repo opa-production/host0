@@ -2,7 +2,13 @@ import React from 'react';
 import { StyleSheet, View, TouchableOpacity, StatusBar, Text, PermissionsAndroid, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import MapView from 'react-native-maps';
+
+let MapView = null;
+try {
+  MapView = require('react-native-maps').default;
+} catch (_) {
+  // react-native-maps not available (e.g. Expo Go, web)
+}
 
 export default function MapScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -62,9 +68,15 @@ export default function MapScreen({ navigation, route }) {
       )}
 
       {/* Map */}
-      {mapError ? (
+      {!MapView || mapError ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Map unavailable</Text>
+          <Ionicons name="map-outline" size={48} color="#C7C7CC" style={{ marginBottom: 12 }} />
+          <Text style={styles.errorText}>
+            {!MapView ? 'Maps require a development build.' : 'Map unavailable'}
+          </Text>
+          <Text style={styles.errorSubtext}>
+            {!MapView ? 'Use a dev build or open in a browser for full features.' : 'Please try again later.'}
+          </Text>
         </View>
       ) : (
         <MapView
@@ -147,5 +159,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
     color: '#666666',
+  },
+  errorSubtext: {
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+    color: '#8E8E93',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

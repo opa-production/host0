@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
   CAR_TOGGLE_VISIBILITY: (carId) => `/api/v1/host/cars/${carId}/toggle-visibility`,
   HOST_UPLOAD_VEHICLE_IMAGES: (carId) => `/api/v1/host/upload/vehicle/${carId}/images`,
   HOST_CAR_MEDIA: (carId) => `/api/v1/host/cars/${carId}/media`, // PUT endpoint for URLs (recommended)
+  HOST_CAR_DRIVE_SETTINGS: (carId) => `/api/v1/host/cars/${carId}/drive-settings`,
   
   // Payment Methods
   PAYMENT_METHODS: '/api/v1/host/payment-methods',
@@ -88,6 +89,11 @@ export const API_ENDPOINTS = {
   HOST_BLOCK_DATES: (carId) => `/api/v1/host/cars/${carId}/block-dates`,
   HOST_GET_BLOCKED_DATES: (carId) => `/api/v1/host/cars/${carId}/blocked-dates`,
   HOST_UNBLOCK_DATE: (carId, blockedDateId) => `/api/v1/host/cars/${carId}/blocked-dates/${blockedDateId}`,
+
+  // Booking Extensions
+  HOST_BOOKING_EXTENSIONS: (bookingId) => `/api/v1/host/bookings/${bookingId}/extensions`,
+  HOST_BOOKING_EXTENSION_APPROVE: (bookingId, extensionId) => `/api/v1/host/bookings/${bookingId}/extensions/${extensionId}/approve`,
+  HOST_BOOKING_EXTENSION_REJECT: (bookingId, extensionId) => `/api/v1/host/bookings/${bookingId}/extensions/${extensionId}/reject`,
 
   // KYC (Veriff)
   HOST_KYC_SESSION: '/api/v1/host/kyc/session',

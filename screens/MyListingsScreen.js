@@ -130,6 +130,15 @@ export default function MyListingsScreen({ navigation }) {
     </View>
   );
 
+  const getDriveSettingLabel = (value) => {
+    switch (value) {
+      case 'self_only': return 'Self drive only';
+      case 'self_and_chauffeur': return 'Self drive or chauffeur';
+      case 'chauffeur_only': return 'Chauffeur only';
+      default: return value || 'Not set';
+    }
+  };
+
   const getStatusInfo = (status, isComplete) => {
     // Prioritize status field - if status is set, use it (especially for awaiting_verification)
     // Only show incomplete if status is explicitly 'incomplete' AND not awaiting verification
@@ -235,6 +244,12 @@ export default function MyListingsScreen({ navigation }) {
                   <Ionicons name="car-outline" size={14} color="#1C1C1E" />
                   <Text style={styles.metricText}>{item.totalTrips || 0} trips</Text>
                 </View>
+                {(item.drive_setting || (item.allowed_drive_types && item.allowed_drive_types.length > 0)) && (
+                  <View style={styles.metricItem}>
+                    <Ionicons name="settings-outline" size={14} color="#1C1C1E" />
+                    <Text style={styles.metricText}>{getDriveSettingLabel(item.drive_setting)}</Text>
+                  </View>
+                )}
               </>
             )}
             <View style={styles.metricItem}>

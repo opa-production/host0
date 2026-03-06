@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { getHostClientProfile } from '../services/clientProfileService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getUserId } from '../utils/userStorage';
+import { getBookingExtensions, approveExtension, rejectExtension } from '../services/extensionService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -24,6 +25,12 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const [isConfirmingDropoff, setIsConfirmingDropoff] = useState(false);
   const [clientAvatar, setClientAvatar] = useState(null);
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
+  const [extensions, setExtensions] = useState([]);
+  const [isLoadingExtensions, setIsLoadingExtensions] = useState(false);
+  const [isApprovingExtension, setIsApprovingExtension] = useState(null);
+  const [isRejectingExtension, setIsRejectingExtension] = useState(null);
+  const [rejectReasonId, setRejectReasonId] = useState(null);
+  const [rejectReasonText, setRejectReasonText] = useState('');
   const bookingId = route?.params?.bookingId || route?.params?.booking_id;
 
   const formatDate = (dateString) => {
@@ -374,6 +381,105 @@ export default function ActiveBookingScreen({ navigation, route }) {
     return shouldShowConfirmDropoff() && isDropoffTimeReached();
   };
 
+  const loadExtensions = async () => {
+    if (!bookingId) return;
+    const status = booking?.status?.toLowerCase() || '';
+    if (status !== 'confirmed' && status !== 'active') return;
+
+    setIsLoadingExtensions(true);
+    try {
+      const result = await getBookingExtensions(bookingId);
+      if (result.success) {
+        setExtensions(result.extensions);
+      }
+    } catch (e) {
+      console.error('Error loading extensions:', e);
+    } finally {
+      setIsLoadingExtensions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (booking) loadExtensions();
+  }, [booking?.status, bookingId]);
+
+  const handleApproveExtension = async (extensionId) => {
+    lightHaptic();
+    Alert.alert(
+      'Approve Extension',
+      'Are you sure you want to approve this trip extension request?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Approve',
+          onPress: async () => {
+            setIsApprovingExtension(extensionId);
+            try {
+              const result = await approveExtension(bookingId, extensionId);
+              if (result.success) {
+                Alert.alert('Approved', 'Extension approved. The client can now pay for the extra days.');
+                await loadExtensions();
+              } else {
+                Alert.alert('Error', result.error || 'Could not approve extension.');
+              }
+            } catch (e) {
+              Alert.alert('Error', e.message || 'An unexpected error occurred.');
+            } finally {
+              setIsApprovingExtension(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleRejectExtension = async (extensionId) => {
+    lightHaptic();
+    if (rejectReasonId !== extensionId) {
+      setRejectReasonId(extensionId);
+      setRejectReasonText('');
+      return;
+    }
+
+    setIsRejectingExtension(extensionId);
+    try {
+      const result = await rejectExtension(bookingId, extensionId, rejectReasonText.trim());
+      if (result.success) {
+        Alert.alert('Rejected', 'Extension request has been rejected.');
+        setRejectReasonId(null);
+        setRejectReasonText('');
+        await loadExtensions();
+      } else {
+        Alert.alert('Error', result.error || 'Could not reject extension.');
+      }
+    } catch (e) {
+      Alert.alert('Error', e.message || 'An unexpected error occurred.');
+    } finally {
+      setIsRejectingExtension(null);
+    }
+  };
+
+  const getExtensionStatusColor = (status) => {
+    switch (status) {
+      case 'pending_host_approval': return '#FF9500';
+      case 'host_approved': return '#007AFF';
+      case 'paid': return '#34C759';
+      case 'rejected': return '#FF3B30';
+      case 'expired': return '#8E8E93';
+      default: return '#8E8E93';
+    }
+  };
+
+  const getExtensionStatusLabel = (status) => {
+    switch (status) {
+      case 'pending_host_approval': return 'Pending Your Approval';
+      case 'host_approved': return 'Approved — Awaiting Payment';
+      case 'paid': return 'Paid — Booking Updated';
+      case 'rejected': return 'Rejected';
+      case 'expired': return 'Expired';
+      default: return status;
+    }
+  };
 
   // Show loading or empty state
   if (isLoading) {
@@ -658,6 +764,120 @@ export default function ActiveBookingScreen({ navigation, route }) {
             </>
           )}
         </View>
+
+        {/* Extension Requests */}
+        {(booking?.status?.toLowerCase() === 'confirmed' || booking?.status?.toLowerCase() === 'active') && extensions.length > 0 && (
+          <View style={styles.card}>
+            <View style={styles.extensionHeader}>
+              <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
+              <Text style={styles.sectionTitle}>Trip Extension Requests</Text>
+            </View>
+
+            {extensions.map((ext) => {
+              const isPending = ext.status === 'pending_host_approval';
+              const showRejectInput = rejectReasonId === ext.id;
+              return (
+                <View key={ext.id} style={styles.extensionItem}>
+                  <View style={[styles.extensionStatusBadge, { backgroundColor: getExtensionStatusColor(ext.status) + '1A' }]}>
+                    <Text style={[styles.extensionStatusText, { color: getExtensionStatusColor(ext.status) }]}>
+                      {getExtensionStatusLabel(ext.status)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.extensionDetails}>
+                    <View style={styles.extensionDetailRow}>
+                      <Text style={styles.extensionDetailLabel}>Current end date</Text>
+                      <Text style={styles.extensionDetailValue}>{formatDate(ext.old_end_date)}</Text>
+                    </View>
+                    <View style={styles.extensionDivider} />
+                    <View style={styles.extensionDetailRow}>
+                      <Text style={styles.extensionDetailLabel}>Requested end date</Text>
+                      <Text style={[styles.extensionDetailValue, { color: '#007AFF' }]}>{formatDate(ext.requested_end_date)}</Text>
+                    </View>
+                    <View style={styles.extensionDivider} />
+                    <View style={styles.extensionDetailRow}>
+                      <Text style={styles.extensionDetailLabel}>Extra days</Text>
+                      <Text style={styles.extensionDetailValue}>+{ext.extra_days}</Text>
+                    </View>
+                    <View style={styles.extensionDivider} />
+                    <View style={styles.extensionDetailRow}>
+                      <Text style={styles.extensionDetailLabel}>Extra amount</Text>
+                      <Text style={[styles.extensionDetailValue, { fontFamily: 'Nunito-Bold' }]}>{formatCurrency(ext.extra_amount)}</Text>
+                    </View>
+                    {ext.new_dropoff_location && !ext.dropoff_same_as_previous && (
+                      <>
+                        <View style={styles.extensionDivider} />
+                        <View style={styles.extensionDetailRow}>
+                          <Text style={styles.extensionDetailLabel}>New dropoff</Text>
+                          <Text style={styles.extensionDetailValue} numberOfLines={2}>{ext.new_dropoff_location}</Text>
+                        </View>
+                      </>
+                    )}
+                    {ext.dropoff_same_as_previous && (
+                      <>
+                        <View style={styles.extensionDivider} />
+                        <View style={styles.extensionDetailRow}>
+                          <Text style={styles.extensionDetailLabel}>Dropoff location</Text>
+                          <Text style={[styles.extensionDetailValue, { color: COLORS.subtle }]}>Same as original</Text>
+                        </View>
+                      </>
+                    )}
+                  </View>
+
+                  {ext.status === 'rejected' && ext.host_note && (
+                    <View style={styles.extensionNote}>
+                      <Text style={styles.extensionNoteLabel}>Rejection reason</Text>
+                      <Text style={styles.extensionNoteText}>{ext.host_note}</Text>
+                    </View>
+                  )}
+
+                  {isPending && (
+                    <View style={styles.extensionActions}>
+                      {showRejectInput && (
+                        <View style={styles.rejectReasonContainer}>
+                          <TextInput
+                            style={styles.rejectReasonInput}
+                            placeholder="Reason for rejection (optional)"
+                            placeholderTextColor="#B0B0B4"
+                            value={rejectReasonText}
+                            onChangeText={setRejectReasonText}
+                            multiline
+                          />
+                        </View>
+                      )}
+                      <View style={styles.extensionButtonRow}>
+                        <TouchableOpacity
+                          style={styles.rejectButton}
+                          onPress={() => handleRejectExtension(ext.id)}
+                          disabled={isRejectingExtension === ext.id}
+                          activeOpacity={0.8}
+                        >
+                          {isRejectingExtension === ext.id ? (
+                            <ActivityIndicator size="small" color="#FF3B30" />
+                          ) : (
+                            <Text style={styles.rejectButtonText}>{showRejectInput ? 'Confirm Reject' : 'Reject'}</Text>
+                          )}
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.approveButton}
+                          onPress={() => handleApproveExtension(ext.id)}
+                          disabled={isApprovingExtension === ext.id}
+                          activeOpacity={0.8}
+                        >
+                          {isApprovingExtension === ext.id ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                          ) : (
+                            <Text style={styles.approveButtonText}>Approve</Text>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         {/* Renter profile - styled like host profile */}
         <View style={styles.card}>
@@ -1466,5 +1686,122 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     fontFamily: 'Nunito-Regular',
+  },
+  extensionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  extensionItem: {
+    marginTop: 12,
+  },
+  extensionStatusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  extensionStatusText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+  },
+  extensionDetails: {
+    backgroundColor: COLORS.bg,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    padding: 12,
+  },
+  extensionDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  extensionDetailLabel: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    flex: 1,
+  },
+  extensionDetailValue: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: COLORS.text,
+    textAlign: 'right',
+    flex: 1,
+  },
+  extensionDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.borderStrong,
+  },
+  extensionNote: {
+    marginTop: 10,
+    backgroundColor: '#FF3B300D',
+    borderRadius: 8,
+    padding: 10,
+  },
+  extensionNoteLabel: {
+    fontSize: 11,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FF3B30',
+    marginBottom: 4,
+  },
+  extensionNoteText: {
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.text,
+    lineHeight: 18,
+  },
+  extensionActions: {
+    marginTop: 12,
+  },
+  rejectReasonContainer: {
+    marginBottom: 10,
+  },
+  rejectReasonInput: {
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.text,
+    minHeight: 56,
+    textAlignVertical: 'top',
+  },
+  extensionButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  approveButton: {
+    flex: 1,
+    backgroundColor: '#34C759',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  approveButtonText: {
+    fontSize: 15,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FFFFFF',
+  },
+  rejectButton: {
+    flex: 1,
+    backgroundColor: '#FF3B300D',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FF3B3033',
+  },
+  rejectButtonText: {
+    fontSize: 15,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#FF3B30',
   },
 });

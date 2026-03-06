@@ -5,6 +5,7 @@ import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken, getUserId, clearUserData } from '../utils/userStorage';
 import { handleTokenExpiration } from '../utils/logoutHandler';
 import { supabase, STORAGE_BUCKETS } from '../config/supabase';
+import { getCarDriveSettings } from './driveSettingsService';
 
 /**
  * Create car with basic information
@@ -1099,6 +1100,19 @@ export const getHostCars = async () => {
       // Determine if car has images
       const hasImages = !!(coverPhoto || images.length > 0);
 
+      // Fetch drive settings from API
+      let drive_setting = null;
+      let allowed_drive_types = [];
+      if (car.id) {
+        try {
+          const driveResult = await getCarDriveSettings(car.id);
+          if (driveResult.success) {
+            drive_setting = driveResult.drive_setting;
+            allowed_drive_types = driveResult.allowed_drive_types || [];
+          }
+        } catch (_) {}
+      }
+
       // Fetch verification status from API
       let verificationStatus = 'awaiting_verification'; // Default
       if (car.id) {
@@ -1188,6 +1202,8 @@ export const getHostCars = async () => {
         updated_at: car.updated_at || new Date().toISOString(),
         totalTrips: 0, // Default value, can be updated from API if available
         rating: null, // Default value, can be updated from API if available
+        drive_setting,
+        allowed_drive_types,
       };
     });
 

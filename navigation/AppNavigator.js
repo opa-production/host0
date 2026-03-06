@@ -37,7 +37,6 @@ import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
 import UserAgreementScreen from '../screens/UserAgreementScreen';
 import LiabilityInsuranceScreen from '../screens/LiabilityInsuranceScreen';
 import IntellectualPropertyScreen from '../screens/IntellectualPropertyScreen';
-import MapScreen from '../screens/MapScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import AddPaymentMethodScreen from '../screens/AddPaymentMethodScreen';
 import FinanceScreen from '../screens/FinanceScreen';
@@ -67,6 +66,7 @@ import ChatScreen from '../screens/ChatScreen';
 import CalendarSyncScreen from '../screens/CalendarSyncScreen';
 import KycIntroScreen from '../screens/Kyc/KycIntroScreen';
 import KycResultScreen from '../screens/Kyc/KycResultScreen';
+import MapScreen from '../screens/MapScreen';
 
 const normalizeDeepLink = (url) => {
   if (!url || !url.startsWith('ardenahost://')) {
