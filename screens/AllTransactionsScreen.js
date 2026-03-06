@@ -48,9 +48,12 @@ export default function AllTransactionsScreen({ navigation, route }) {
     return numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
+  const isRejectedWithdrawal = (t) => t?.withdrawalStatus === 'rejected';
+
   const getAmountStyle = (t) => {
-    if (t?.title === 'Commission') return styles.amountCommission;
-    if (t?.title === 'Withdrawal') return styles.amountWithdrawal;
+    if (isRejectedWithdrawal(t)) return styles.amountRejected;
+    if (t?.title && t.title.toLowerCase().includes('commission')) return styles.amountCommission;
+    if (t?.title && t.title.toLowerCase().includes('withdrawal')) return styles.amountWithdrawal;
     if (t?.amount > 0) return styles.amountIncoming;
     return styles.amount;
   };
@@ -96,11 +99,12 @@ export default function AllTransactionsScreen({ navigation, route }) {
               {transactions.map((t, idx) => {
                 const isNegative = t.amount < 0;
                 const amountText = `${isNegative ? '-' : ''}KSh ${formatCurrency(Math.abs(t.amount))}`;
+                const rejected = isRejectedWithdrawal(t);
                 return (
-                  <View key={t.id ?? `${idx}`}>
+                  <View key={`${t.id || 'tx'}-${idx}`}>
                     <View style={styles.row}>
                       <View style={styles.left}>
-                        <Text style={styles.rowTitle}>{t.title}</Text>
+                        <Text style={[styles.rowTitle, rejected && styles.rejectedText]}>{t.title}</Text>
                         <Text style={styles.rowSub}>{t.subtitle}</Text>
                       </View>
                       <Text style={getAmountStyle(t)}>{amountText}</Text>
@@ -200,6 +204,14 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#FF9500',
+  },
+  amountRejected: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#FF3B30',
+  },
+  rejectedText: {
+    color: '#FF3B30',
   },
   emptyState: {
     padding: SPACING.l,

@@ -182,5 +182,6 @@ export function withdrawalToTransactionItem(w) {
     subtitle,
     amount,
     sortDate,
+    withdrawalStatus: (w.status || '').toLowerCase(),
   };
 }

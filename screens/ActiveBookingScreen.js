@@ -1130,27 +1130,6 @@ export default function ActiveBookingScreen({ navigation, route }) {
             activeOpacity={0.7}
             onPress={() => {
               lightHaptic();
-              navigation.navigate('Map', {
-                title: booking?.vehicleName,
-                plate: booking?.plate,
-                initialRegion: booking?.pickupLat && booking?.pickupLong
-                  ? { latitude: booking.pickupLat, longitude: booking.pickupLong, latitudeDelta: 0.01, longitudeDelta: 0.01 }
-                  : undefined,
-              });
-            }}
-          >
-            <View style={styles.actionLeft}>
-              <Ionicons name="navigate-outline" size={20} color={COLORS.text} />
-              <Text style={styles.actionLinkText}>Track my car</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
-          </TouchableOpacity>
-          <View style={styles.actionDivider} />
-          <TouchableOpacity
-            style={styles.actionLink}
-            activeOpacity={0.7}
-            onPress={() => {
-              lightHaptic();
               // TODO: Generate booking agreement
               Alert.alert('Coming soon', 'Booking agreement generation will be available soon.');
             }}
@@ -1167,12 +1146,38 @@ export default function ActiveBookingScreen({ navigation, route }) {
             activeOpacity={0.7}
             onPress={() => {
               lightHaptic();
-              navigation.navigate('ReportIssue', { bookingRef: `${booking?.vehicleName || 'Booking'} • ${booking?.bookingId || booking?.id || ''}` });
+              navigation.navigate('ReportIssue', {
+                bookingRef: `${booking?.vehicleName || 'Booking'} • ${booking?.bookingId || booking?.id || ''}`,
+                bookingId: booking?.bookingId || booking?.id,
+              });
             }}
           >
             <View style={styles.actionLeft}>
               <Ionicons name="flag-outline" size={20} color={COLORS.text} />
               <Text style={styles.actionLinkText}>Report Issue</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
+          </TouchableOpacity>
+          <View style={styles.actionDivider} />
+          <TouchableOpacity
+            style={styles.actionLink}
+            activeOpacity={0.7}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('Map', {
+                title: booking?.vehicleName,
+                plate: booking?.plate,
+                initialRegion: booking?.pickupLat && booking?.pickupLong
+                  ? { latitude: booking.pickupLat, longitude: booking.pickupLong, latitudeDelta: 0.01, longitudeDelta: 0.01 }
+                  : undefined,
+              });
+            }}
+          >
+            <View style={styles.actionLeft}>
+              <View style={{ width: 20, alignItems: 'center' }}>
+                <Ionicons name="car-sport-outline" size={20} color={COLORS.text} />
+              </View>
+              <Text style={[styles.actionLinkText, { flex: 1, flexShrink: 0 }]} numberOfLines={1}>Track my car</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
           </TouchableOpacity>
@@ -1686,6 +1691,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   actionLeft: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,

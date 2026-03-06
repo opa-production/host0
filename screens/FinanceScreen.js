@@ -223,20 +223,23 @@ export default function FinanceScreen({ navigation }) {
                 {recentTransactions.slice(0, 4).map((t, idx) => {
                   const isNegative = t.amount < 0;
                   const amountText = `${isNegative ? '-' : ''}KSh ${formatCurrency(Math.abs(t.amount))}`;
+                  const isRejected = t.withdrawalStatus === 'rejected';
                   const amountStyle =
-                    (t.title && t.title.toLowerCase().includes('commission'))
-                      ? styles.transactionAmountCommission
-                      : (t.title && t.title.toLowerCase().includes('withdrawal'))
-                        ? styles.transactionAmountWithdrawal
-                        : t.amount > 0
-                          ? styles.transactionAmountIncoming
-                          : styles.transactionAmount;
+                    isRejected
+                      ? styles.transactionAmountRejected
+                      : (t.title && t.title.toLowerCase().includes('commission'))
+                        ? styles.transactionAmountCommission
+                        : (t.title && t.title.toLowerCase().includes('withdrawal'))
+                          ? styles.transactionAmountWithdrawal
+                          : t.amount > 0
+                            ? styles.transactionAmountIncoming
+                            : styles.transactionAmount;
 
                   return (
-                    <View key={t.id ?? `tx-${idx}`}>
+                    <View key={`${t.id || 'tx'}-${idx}`}>
                       <View style={styles.transactionRow}>
                         <View style={styles.transactionLeft}>
-                          <Text style={styles.transactionTitle}>{t.title}</Text>
+                          <Text style={[styles.transactionTitle, isRejected && styles.rejectedText]}>{t.title}</Text>
                           <Text style={styles.transactionSubtitle}>{t.subtitle}</Text>
                         </View>
                         <Text style={amountStyle}>
@@ -471,6 +474,14 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#FF9500',
+  },
+  transactionAmountRejected: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#FF3B30',
+  },
+  rejectedText: {
+    color: '#FF3B30',
   },
   viewMoreRow: {
     flexDirection: 'row',
