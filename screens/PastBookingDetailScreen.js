@@ -412,7 +412,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                   </Text>
                 </View>
               </View>
-              <View style={styles.divider} />
+              <View style={styles.tripDivider} />
               <View style={styles.detailRow}>
                 <View style={styles.iconCircle}>
                   <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
@@ -426,7 +426,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                   </Text>
                 </View>
               </View>
-              <View style={styles.divider} />
+              <View style={styles.tripDivider} />
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Duration</Text>
                 <Text style={styles.detailValue}>
@@ -545,7 +545,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
               <View style={styles.rowBetween}>
                 <Text style={styles.rowLabel}>Daily rate</Text>
-                <Text style={styles.rowValue}>
+                <Text style={styles.rowValueMuted}>
                   KSh {formatCurrency(detailBooking?.daily_rate ?? routeBooking.dailyRate ?? 3500)}
                 </Text>
               </View>
@@ -554,7 +554,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
               <View style={styles.rowBetween}>
                 <Text style={styles.rowLabel}>Base price</Text>
-                <Text style={styles.rowValue}>
+                <Text style={styles.rowValueMuted}>
                   KSh {formatCurrency(detailBooking?.base_price ?? routeBooking.base_price ?? 7000)}
                 </Text>
               </View>
@@ -574,7 +574,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
               <View style={styles.divider} />
               <View style={styles.rowBetween}>
                 <Text style={[styles.rowLabel, styles.rowStrong]}>Total paid</Text>
-                <Text style={[styles.rowValue, styles.rowStrong]}>
+                <Text style={[styles.rowValueOrange, styles.rowStrong]}>
                   KSh {formatCurrency(totalPriceForDisplay || 7500)}
                 </Text>
               </View>
@@ -582,13 +582,13 @@ export default function PastBookingDetailScreen({ navigation, route }) {
               <View style={styles.divider} />
               <View style={styles.rowBetween}>
                 <Text style={styles.rowLabel}>Platform commission</Text>
-                <Text style={styles.rowValue}>KSh {formatCurrency(commissionRaw || 1125)}</Text>
+                <Text style={styles.rowValueRed}>KSh {formatCurrency(commissionRaw || 1125)}</Text>
               </View>
 
               <View style={styles.divider} />
               <View style={styles.rowBetween}>
                 <Text style={styles.rowLabel}>Your payout</Text>
-                <Text style={styles.rowValue}>KSh {formatCurrency(payoutForDisplay || 6375)}</Text>
+                <Text style={styles.rowValueGreen}>KSh {formatCurrency(payoutForDisplay || 6375)}</Text>
               </View>
 
               <View style={styles.divider} />
@@ -994,6 +994,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
     marginVertical: 6,
   },
+  tripDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.text,
+    marginVertical: 6,
+  },
   rowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1009,6 +1014,22 @@ const styles = StyleSheet.create({
   },
   rowStrong: {
     fontFamily: 'Nunito-Bold',
+  },
+  rowValueMuted: {
+    ...TYPE.bodyStrong,
+    color: COLORS.subtle,
+  },
+  rowValueRed: {
+    ...TYPE.bodyStrong,
+    color: '#FF3B30',
+  },
+  rowValueGreen: {
+    ...TYPE.bodyStrong,
+    color: '#34C759',
+  },
+  rowValueOrange: {
+    ...TYPE.bodyStrong,
+    color: '#FF9500',
   },
   receiptLink: {
     flexDirection: 'row',

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { isBiometricEnabled, setupBiometric, disableBiometric, isBiometricAvailable } from '../utils/biometric';
+import StatusModal from '../ui/StatusModal';
 import { useHost } from '../utils/HostContext';
 
 // Simple Toggle Component
@@ -25,6 +26,8 @@ const SettingsScreen = () => {
   const { logout } = useHost();
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricSuccessVisible, setBiometricSuccessVisible] = useState(false);
+  const [biometricError, setBiometricError] = useState(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -54,10 +57,9 @@ const SettingsScreen = () => {
       const availability = await isBiometricAvailable();
       
       if (!availability.available) {
-        Alert.alert(
-          'Biometric Unavailable',
-          availability.error || 'Biometric authentication is not available on this device. Please ensure you have biometric credentials set up in your device settings.',
-          [{ text: 'OK' }]
+        setBiometricError(
+          availability.error ||
+            'Biometric authentication is not available on this device. Please ensure you have biometric credentials set up in your device settings.'
         );
         return;
       }
@@ -66,17 +68,10 @@ const SettingsScreen = () => {
       
       if (result.success) {
         setBiometricsEnabled(true);
-        Alert.alert(
-          'Biometric Enabled',
-          'Biometric login has been enabled. You will be prompted to authenticate with your fingerprint or face ID on your next login.',
-          [{ text: 'OK' }]
-        );
+        setBiometricSuccessVisible(true);
+        setBiometricError(null);
       } else {
-        Alert.alert(
-          'Setup Failed',
-          result.error || 'Failed to set up biometric authentication. Please try again.',
-          [{ text: 'OK' }]
-        );
+        setBiometricError(result.error || 'Failed to set up biometric authentication. Please try again.');
       }
     } else {
       // User wants to disable biometrics
@@ -84,11 +79,7 @@ const SettingsScreen = () => {
       if (result.success) {
         setBiometricsEnabled(false);
       } else {
-        Alert.alert(
-          'Error',
-          result.error || 'Failed to disable biometric authentication.',
-          [{ text: 'OK' }]
-        );
+        setBiometricError(result.error || 'Failed to disable biometric authentication.');
       }
     }
   };
@@ -243,6 +234,26 @@ const SettingsScreen = () => {
           </Text>
         </View> */}
       </ScrollView>
+
+      {/* Biometric success modal */}
+      <StatusModal
+        visible={biometricSuccessVisible}
+        type="success"
+        title="Biometric enabled"
+        message="Biometric login has been enabled. You’ll be able to use your fingerprint or face ID the next time you sign in."
+        primaryLabel="Got it"
+        onPrimary={() => setBiometricSuccessVisible(false)}
+      />
+
+      {/* Biometric error modal */}
+      <StatusModal
+        visible={!!biometricError}
+        type="error"
+        title="Biometric issue"
+        message={biometricError}
+        primaryLabel="OK"
+        onPrimary={() => setBiometricError(null)}
+      />
     </View>
   );
 };

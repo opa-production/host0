@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import StatusModal from '../ui/StatusModal';
 import { useHost } from '../utils/HostContext';
 import { updateHostProfile } from '../services/authService';
 
@@ -25,6 +26,7 @@ export default function UpdateProfileScreen({ navigation, route }) {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
+  const [statusModal, setStatusModal] = useState({ visible: false, type: 'success', title: '', message: '' });
 
   const initiallyComplete =
     !!(initialData.bio && initialData.bio.trim()) &&
@@ -67,7 +69,12 @@ export default function UpdateProfileScreen({ navigation, route }) {
   // Handle save
   const handleSave = async () => {
     if (!validateForm()) {
-      Alert.alert('Validation Error', 'Please correct the errors before saving.');
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Validation error',
+        message: 'Please correct the errors before saving.',
+      });
       return;
     }
 
@@ -99,23 +106,29 @@ export default function UpdateProfileScreen({ navigation, route }) {
       if (result.success) {
         await updateHost(result.host);
         setSavedSuccessfully(true);
-
-        Alert.alert(
-          'Success',
-          'Profile updated successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.goBack(),
-            },
-          ]
-        );
+        setStatusModal({
+          visible: true,
+          type: 'success',
+          title: 'Profile updated',
+          message: 'Your profile details have been saved.',
+          onClose: () => navigation.goBack(),
+        });
       } else {
-        Alert.alert('Update Failed', result.error || 'Failed to update profile. Please try again.');
+        setStatusModal({
+          visible: true,
+          type: 'error',
+          title: 'Update failed',
+          message: result.error || 'Failed to update profile. Please try again.',
+        });
       }
     } catch (error) {
       console.error('Update profile error:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Error',
+        message: 'An unexpected error occurred. Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -278,6 +291,19 @@ export default function UpdateProfileScreen({ navigation, route }) {
           </TouchableOpacity>
         )}
       </ScrollView>
+      <StatusModal
+        visible={statusModal.visible}
+        type={statusModal.type || 'success'}
+        title={statusModal.title}
+        message={statusModal.message}
+        primaryLabel="OK"
+        onPrimary={() => {
+          setStatusModal((prev) => ({ ...prev, visible: false }));
+          if (statusModal.onClose) {
+            statusModal.onClose();
+          }
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }

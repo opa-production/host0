@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Switch } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { addMpesaPaymentMethod, addCardPaymentMethod, getPaymentMethods, deletePaymentMethod } from '../services/paymentService';
 import { formatPhoneNumber } from '../utils/phoneUtils';
+import StatusModal from '../ui/StatusModal';
 
 export default function AddPaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -33,6 +34,12 @@ export default function AddPaymentMethodScreen({ navigation }) {
   const [cardErrors, setCardErrors] = useState({});
   const [isSubmittingCard, setIsSubmittingCard] = useState(false);
   const [isLoadingMethods, setIsLoadingMethods] = useState(false);
+  const [statusModal, setStatusModal] = useState({
+    visible: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
 
   const selectMpesa = () => {
     setSelectedType('mpesa');
@@ -210,38 +217,33 @@ export default function AddPaymentMethodScreen({ navigation }) {
         setMpesaErrors({});
         setSelectedType(null);
         
-        // Reload payment methods before showing alert
+        // Reload payment methods before showing success
         await loadPaymentMethods();
         
-        // Success - show alert and navigate back
-        Alert.alert(
-          'Success',
-          'M-Pesa payment method added successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Navigate back
-                navigation.goBack();
-              },
-            },
-          ]
-        );
+        // Success modal
+        setStatusModal({
+          visible: true,
+          type: 'success',
+          title: 'Payment method added',
+          message: 'M-Pesa payment method added successfully.',
+          onClose: () => navigation.goBack(),
+        });
       } else {
-        // Error - show alert
-        Alert.alert(
-          'Failed to Add Payment Method',
-          result.error || 'Failed to add M-Pesa payment method. Please try again.',
-          [{ text: 'OK' }]
-        );
+        setStatusModal({
+          visible: true,
+          type: 'error',
+          title: 'Failed to add',
+          message: result.error || 'Failed to add M-Pesa payment method. Please try again.',
+        });
       }
     } catch (error) {
       console.error('M-Pesa submission error:', error);
-      Alert.alert(
-        'Error',
-        'An unexpected error occurred. Please try again.',
-        [{ text: 'OK' }]
-      );
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Error',
+        message: 'An unexpected error occurred. Please try again.',
+      });
     } finally {
       setIsSubmittingMpesa(false);
     }
@@ -387,38 +389,33 @@ export default function AddPaymentMethodScreen({ navigation }) {
         setCardErrors({});
         setSelectedType(null);
         
-        // Reload payment methods before showing alert
+        // Reload payment methods before showing success
         await loadPaymentMethods();
         
-        // Success - show alert and navigate back
-        Alert.alert(
-          'Success',
-          'Card payment method added successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Navigate back
-                navigation.goBack();
-              },
-            },
-          ]
-        );
+        // Success modal
+        setStatusModal({
+          visible: true,
+          type: 'success',
+          title: 'Payment method added',
+          message: 'Card payment method added successfully.',
+          onClose: () => navigation.goBack(),
+        });
       } else {
-        // Error - show alert
-        Alert.alert(
-          'Failed to Add Payment Method',
-          result.error || 'Failed to add card payment method. Please try again.',
-          [{ text: 'OK' }]
-        );
+        setStatusModal({
+          visible: true,
+          type: 'error',
+          title: 'Failed to add',
+          message: result.error || 'Failed to add card payment method. Please try again.',
+        });
       }
     } catch (error) {
       console.error('Card submission error:', error);
-      Alert.alert(
-        'Error',
-        'An unexpected error occurred. Please try again.',
-        [{ text: 'OK' }]
-      );
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Error',
+        message: 'An unexpected error occurred. Please try again.',
+      });
     } finally {
       setIsSubmittingCard(false);
     }
@@ -428,45 +425,42 @@ export default function AddPaymentMethodScreen({ navigation }) {
   const handleRemoveMethod = async (id) => {
     lightHaptic();
     
-    // Show confirmation alert
-    Alert.alert(
-      'Delete Payment Method',
-      'Are you sure you want to delete this payment method?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Call API to delete payment method
-              const result = await deletePaymentMethod(id);
-              
-              if (result.success) {
-                // Reload from API to ensure sync (this will update the UI)
-                await loadPaymentMethods();
-              } else {
-                Alert.alert(
-                  'Delete Failed',
-                  result.error || 'Failed to delete payment method. Please try again.',
-                  [{ text: 'OK' }]
-                );
-              }
-            } catch (error) {
-              console.error('Delete payment method error:', error);
-              Alert.alert(
-                'Error',
-                'An unexpected error occurred. Please try again.',
-                [{ text: 'OK' }]
-              );
-            }
-          },
-        },
-      ]
-    );
+    // Show confirmation via status modal-style pattern is heavier; keep a simple inline confirm:
+    setStatusModal({
+      visible: true,
+      type: 'info',
+      title: 'Delete payment method',
+      message: 'Are you sure you want to delete this payment method?',
+      primaryLabel: 'Delete',
+      onPrimary: async () => {
+        try {
+          const result = await deletePaymentMethod(id);
+          if (result.success) {
+            await loadPaymentMethods();
+            setStatusModal((prev) => ({ ...prev, visible: false }));
+          } else {
+            setStatusModal({
+              visible: true,
+              type: 'error',
+              title: 'Delete failed',
+              message: result.error || 'Failed to delete payment method. Please try again.',
+            });
+          }
+        } catch (error) {
+          console.error('Delete payment method error:', error);
+          setStatusModal({
+            visible: true,
+            type: 'error',
+            title: 'Error',
+            message: 'An unexpected error occurred. Please try again.',
+          });
+        }
+      },
+      secondaryLabel: 'Cancel',
+      onSecondary: () => {
+        setStatusModal((prev) => ({ ...prev, visible: false }));
+      },
+    });
   };
 
   return (
@@ -865,6 +859,26 @@ export default function AddPaymentMethodScreen({ navigation }) {
           </View>
         )}
       </ScrollView>
+      <StatusModal
+        visible={statusModal.visible}
+        type={statusModal.type || 'success'}
+        title={statusModal.title}
+        message={statusModal.message}
+        primaryLabel={statusModal.primaryLabel || 'OK'}
+        secondaryLabel={statusModal.secondaryLabel}
+        onPrimary={() => {
+          if (statusModal.onPrimary) {
+            statusModal.onPrimary();
+          } else if (statusModal.onClose) {
+            statusModal.onClose();
+          }
+          setStatusModal((prev) => ({ ...prev, visible: false, secondaryLabel: undefined, onSecondary: undefined, onPrimary: undefined, onClose: undefined }));
+        }}
+        onSecondary={statusModal.onSecondary}
+        onRequestClose={() =>
+          setStatusModal((prev) => ({ ...prev, visible: false }))
+        }
+      />
     </KeyboardAvoidingView>
   );
 }
