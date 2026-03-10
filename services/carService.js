@@ -6,6 +6,7 @@ import { getUserToken, getUserId, clearUserData } from '../utils/userStorage';
 import { handleTokenExpiration } from '../utils/logoutHandler';
 import { supabase, STORAGE_BUCKETS } from '../config/supabase';
 import { getCarDriveSettings } from './driveSettingsService';
+import { getHostBookings, isBookingCompleted } from './bookingService';
 
 /**
  * Create car with basic information
@@ -1049,6 +1050,23 @@ export const getHostCars = async () => {
     });
     console.log('🚗 [GET HOST CARS API] Full response:', JSON.stringify(carsArray, null, 2));
 
+    // Build trips-per-car map from completed bookings so My Cars can show real trip counts
+    const tripsByCarId = {};
+    try {
+      const bookingsResult = await getHostBookings();
+      if (bookingsResult.success && Array.isArray(bookingsResult.bookings)) {
+        bookingsResult.bookings.forEach((booking) => {
+          const carId = booking.car_id || booking.carId || booking.vehicle_id;
+          if (!carId) return;
+          if (!isBookingCompleted(booking)) return;
+          tripsByCarId[carId] = (tripsByCarId[carId] || 0) + 1;
+        });
+      }
+      console.log('🚗 [GET HOST CARS API] Trips by car ID map:', tripsByCarId);
+    } catch (e) {
+      console.warn('🚗 [GET HOST CARS API] Failed to build trips map from bookings:', e?.message || e);
+    }
+
     // Get user ID for fetching images from Supabase
     const userId = await getUserId();
     console.log('🚗 [GET HOST CARS API] User ID for image fetching:', userId);
@@ -1099,6 +1117,32 @@ export const getHostCars = async () => {
       
       // Determine if car has images
       const hasImages = !!(coverPhoto || images.length > 0);
+
+      // Trips and rating stats from API (if available)
+      let totalTrips =
+        (car.total_trips != null ? Number(car.total_trips) : null) ??
+        (car.trips_count != null ? Number(car.trips_count) : null) ??
+        (car.trips != null ? Number(car.trips) : null) ??
+        null;
+
+      // If API did not provide a clean trips number, fall back to computed map from bookings
+      if (
+        totalTrips == null ||
+        Number.isNaN(totalTrips) ||
+        totalTrips === 0
+      ) {
+        const byCarId = tripsByCarId[car.id];
+        if (byCarId != null && !Number.isNaN(Number(byCarId))) {
+          totalTrips = Number(byCarId);
+        } else {
+          totalTrips = 0;
+        }
+      }
+
+      const rating =
+        (car.average_rating != null ? Number(car.average_rating) : null) ??
+        (car.rating != null ? Number(car.rating) : null) ??
+        null;
 
       // Fetch drive settings from API
       let drive_setting = null;
@@ -1200,8 +1244,8 @@ export const getHostCars = async () => {
         available: car.is_hidden !== undefined ? !car.is_hidden : (car.is_visible !== undefined ? car.is_visible : (car.visible !== undefined ? car.visible : (car.available !== undefined ? car.available : true))),
         createdAt: car.created_at || new Date().toISOString(),
         updated_at: car.updated_at || new Date().toISOString(),
-        totalTrips: 0, // Default value, can be updated from API if available
-        rating: null, // Default value, can be updated from API if available
+        totalTrips,
+        rating,
         drive_setting,
         allowed_drive_types,
       };
