@@ -5,7 +5,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText } from '../services/bookingService';
+import StatusModal from '../ui/StatusModal';
+import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText, deleteBooking } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
 
@@ -14,6 +15,8 @@ export default function PastBookingsScreen({ navigation }) {
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ visible: false, bookingId: null });
+  const [errorModal, setErrorModal] = useState({ visible: false, message: '' });
 
   const getStatusColor = (status) => {
     if (isBookingCompleted(status)) return '#34C759'; // Completed (car dropped off)
@@ -119,6 +122,38 @@ export default function PastBookingsScreen({ navigation }) {
     }, [])
   );
 
+  const confirmDeleteBooking = (bookingId) => {
+    if (!bookingId) return;
+    setDeleteModal({ visible: true, bookingId });
+  };
+
+  const handleDeleteConfirmed = async () => {
+    const bookingId = deleteModal.bookingId;
+    if (!bookingId) {
+      setDeleteModal({ visible: false, bookingId: null });
+      return;
+    }
+    try {
+      const result = await deleteBooking(bookingId);
+      if (result.success) {
+        setBookings((prev) => prev.filter((b) => (b.bookingId || b.id) !== bookingId));
+        setDeleteModal({ visible: false, bookingId: null });
+      } else {
+        setDeleteModal({ visible: false, bookingId: null });
+        setErrorModal({
+          visible: true,
+          message: result.error || 'Failed to delete booking. Please try again.',
+        });
+      }
+    } catch (e) {
+      setDeleteModal({ visible: false, bookingId: null });
+      setErrorModal({
+        visible: true,
+        message: e?.message || 'Failed to delete booking. Please try again.',
+      });
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
@@ -162,73 +197,106 @@ export default function PastBookingsScreen({ navigation }) {
               const coverImage = b.vehicleImage;
               
               return (
-                <TouchableOpacity
-                  key={b.id}
-                  style={styles.gridCard}
-                  onPress={() => {
-                    lightHaptic();
-                    navigation.navigate('PastBookingDetail', { booking: b });
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.gridHeaderRow}>
-                    {coverImage ? (
-                      <Image 
-                        source={{ uri: coverImage }} 
-                        style={styles.vehicleAvatar}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={styles.vehicleAvatar}>
-                        <Ionicons name="car-outline" size={24} color={COLORS.subtle} />
-                      </View>
-                    )}
-                    <View style={styles.gridDetails}>
-                      <Text style={styles.gridTitle} numberOfLines={1}>
-                        {b.vehicleName} {b.carModel ? `• ${b.carModel}` : ''}
-                      </Text>
-                      <View style={styles.gridMetrics}>
-                        <View style={styles.gridMetricItem}>
-                          <Ionicons name="person-outline" size={14} color={COLORS.subtle} />
-                          <Text style={styles.gridMetricText} numberOfLines={1}>
-                            {b.renter?.name || 'Client'}
-                          </Text>
-                        </View>
-                        <View style={styles.gridMetricItem}>
-                          <Ionicons name="calendar-outline" size={14} color={COLORS.subtle} />
-                          <Text style={styles.gridMetricText}>
-                            {b.startDate} - {b.endDate}
-                          </Text>
-                        </View>
-                        {b.duration && (
-                          <View style={styles.gridMetricItem}>
-                            <Ionicons name="time-outline" size={14} color={COLORS.subtle} />
-                            <Text style={styles.gridMetricText}>
-                              {b.duration}
-                            </Text>
-                          </View>
-                        )}
-                        <View style={styles.gridMetricItem}>
-                          <View style={[styles.statusDot, { backgroundColor: getStatusColor(b.status) }]} />
-                          <Text style={[styles.gridMetricText, { color: getStatusColor(b.status) }]}>
-                            {getStatusText(b.status)}
-                          </Text>
-                        </View>
-                      </View>
-                      {b.totalPaid && (
-                        <View style={styles.amountRow}>
-                          <Text style={styles.amountLabel}>Amount Earned</Text>
-                          <Text style={styles.amountValue}>KSh {typeof b.totalPaid === 'string' ? b.totalPaid.replace(/[^\d]/g, '') : b.totalPaid.toLocaleString()}</Text>
+                <View key={b.id} style={styles.gridCard}>
+                  <TouchableOpacity
+                    style={styles.cardPressArea}
+                    onPress={() => {
+                      lightHaptic();
+                      navigation.navigate('PastBookingDetail', { booking: b });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.gridHeaderRow}>
+                      {coverImage ? (
+                        <Image 
+                          source={{ uri: coverImage }} 
+                          style={styles.vehicleAvatar}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.vehicleAvatar}>
+                          <Ionicons name="car-outline" size={24} color={COLORS.subtle} />
                         </View>
                       )}
+                      <View style={styles.gridDetails}>
+                        <Text style={styles.gridTitle} numberOfLines={1}>
+                          {b.vehicleName} {b.carModel ? `• ${b.carModel}` : ''}
+                        </Text>
+                        <View style={styles.gridMetrics}>
+                          <View style={styles.gridMetricItem}>
+                            <Ionicons name="person-outline" size={14} color={COLORS.subtle} />
+                            <Text style={styles.gridMetricText} numberOfLines={1}>
+                              {b.renter?.name || 'Client'}
+                            </Text>
+                          </View>
+                          <View style={styles.gridMetricItem}>
+                            <Ionicons name="calendar-outline" size={14} color={COLORS.subtle} />
+                            <Text style={styles.gridMetricText}>
+                              {b.startDate} - {b.endDate}
+                            </Text>
+                          </View>
+                          {b.duration && (
+                            <View style={styles.gridMetricItem}>
+                              <Ionicons name="time-outline" size={14} color={COLORS.subtle} />
+                              <Text style={styles.gridMetricText}>
+                                {b.duration}
+                              </Text>
+                            </View>
+                          )}
+                          <View style={styles.gridMetricItem}>
+                            <View style={[styles.statusDot, { backgroundColor: getStatusColor(b.status) }]} />
+                            <Text style={[styles.gridMetricText, { color: getStatusColor(b.status) }]}>
+                              {getStatusText(b.status)}
+                            </Text>
+                          </View>
+                        </View>
+                        {b.totalPaid && (
+                          <View style={styles.amountRow}>
+                            <Text style={styles.amountLabel}>Amount Earned</Text>
+                            <Text style={styles.amountValue}>KSh {typeof b.totalPaid === 'string' ? b.totalPaid.replace(/[^\d]/g, '') : b.totalPaid.toLocaleString()}</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteIconButton}
+                    onPress={() => {
+                      lightHaptic();
+                      confirmDeleteBooking(b.bookingId || b.id);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                  </TouchableOpacity>
+                </View>
               );
             })}
           </View>
         )}
       </ScrollView>
+      {/* Delete confirm modal */}
+      <StatusModal
+        visible={deleteModal.visible}
+        type="info"
+        title="Delete booking"
+        message="Are you sure you want to permanently delete this booking?"
+        primaryLabel="Delete"
+        secondaryLabel="Cancel"
+        onPrimary={handleDeleteConfirmed}
+        onSecondary={() => setDeleteModal({ visible: false, bookingId: null })}
+        onRequestClose={() => setDeleteModal({ visible: false, bookingId: null })}
+      />
+
+      {/* Error modal */}
+      <StatusModal
+        visible={errorModal.visible}
+        type="error"
+        title="Unable to delete"
+        message={errorModal.message}
+        primaryLabel="OK"
+        onPrimary={() => setErrorModal({ visible: false, message: '' })}
+      />
     </View>
   );
 }
@@ -270,6 +338,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
+  },
+  cardPressArea: {
+    flex: 1,
   },
   gridHeaderRow: {
     flexDirection: 'row',
@@ -328,6 +399,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.text,
     fontFamily: 'Nunito-SemiBold',
+  },
+  deleteIconButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    padding: 4,
   },
   loadingContainer: {
     flex: 1,

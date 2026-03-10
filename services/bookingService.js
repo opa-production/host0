@@ -4,6 +4,7 @@
  */
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken } from '../utils/userStorage';
+import { handleTokenExpiration } from '../utils/logoutHandler';
 
 /**
  * Get client/renter display name from API booking object (list or detail).
@@ -514,6 +515,108 @@ export const confirmDropoff = async (bookingId) => {
       success: false,
       error: error.message || 'Network error',
       booking: null,
+    };
+  }
+};
+
+/**
+ * Delete a completed or cancelled booking for the authenticated host.
+ * Backend enforces:
+ * - booking must belong to host
+ * - status must be "completed" or "cancelled"
+ * - returns 404 if not found for host
+ */
+export const deleteBooking = async (bookingId) => {
+  if (!bookingId) {
+    return {
+      success: false,
+      error: 'Booking ID is required',
+    };
+  }
+
+  const url = getApiUrl(API_ENDPOINTS.HOST_DELETE_BOOKING(bookingId));
+  const startTime = Date.now();
+  console.log('📅 [DELETE BOOKING API] Deleting booking...', { bookingId, url });
+
+  try {
+    const token = await getUserToken();
+    if (!token) {
+      console.error('📅 [DELETE BOOKING API] ERROR: No authentication token found');
+      return {
+        success: false,
+        error: 'No authentication token found',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log('📅 [DELETE BOOKING API] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      responseTime: `${responseTime}ms`,
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to delete booking';
+      try {
+        const errorData = await response.json();
+        console.error('📅 [DELETE BOOKING API] Error response data:', JSON.stringify(errorData, null, 2));
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map((err) => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else if (errorData.detail || errorData.message) {
+          errorMessage = errorData.detail || errorData.message;
+        }
+      } catch (e) {
+        console.error('📅 [DELETE BOOKING API] Could not parse error response as JSON:', e);
+        errorMessage = response.statusText || errorMessage;
+      }
+
+      if (response.status === 401) {
+        console.log('📅 [DELETE BOOKING API] Token expired or invalid (401), logging out');
+        await handleTokenExpiration();
+        return {
+          success: false,
+          error: 'Session expired. Please login again.',
+        };
+      }
+
+      // 404 is returned when booking is not found for that host
+      if (response.status === 404) {
+        return {
+          success: false,
+          error: 'Booking not found for this account.',
+        };
+      }
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    console.log('📅 [DELETE BOOKING API] ✅ SUCCESS! Booking deleted:', {
+      bookingId,
+      totalTime: `${Date.now() - startTime}ms`,
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+    console.error(`📅 [DELETE BOOKING API] ❌ ERROR occurred after ${totalTime}ms:`, error);
+    return {
+      success: false,
+      error: error.message || 'Network error',
     };
   }
 };

@@ -5,7 +5,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText } from '../services/bookingService';
+import StatusModal from '../ui/StatusModal';
+import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText, deleteBooking } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
 import { getBookingExtensions } from '../services/extensionService';
@@ -15,6 +16,8 @@ export default function BookingsScreen({ navigation }) {
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ visible: false, bookingId: null });
+  const [errorModal, setErrorModal] = useState({ visible: false, message: '' });
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -220,6 +223,45 @@ export default function BookingsScreen({ navigation }) {
     }
   };
 
+  const confirmDeleteBooking = (booking) => {
+    const statusLower = (booking.status || '').toLowerCase();
+    if (statusLower !== 'cancelled') {
+      return;
+    }
+    const id = booking.bookingId || booking.id;
+    if (!id) return;
+    setDeleteModal({ visible: true, bookingId: id });
+  };
+
+  const handleDeleteConfirmed = async () => {
+    const bookingId = deleteModal.bookingId;
+    if (!bookingId) {
+      setDeleteModal({ visible: false, bookingId: null });
+      return;
+    }
+    try {
+      const result = await deleteBooking(bookingId);
+      if (result.success) {
+        setBookings((prev) =>
+          prev.filter((b) => (b.bookingId || b.id) !== bookingId)
+        );
+        setDeleteModal({ visible: false, bookingId: null });
+      } else {
+        setDeleteModal({ visible: false, bookingId: null });
+        setErrorModal({
+          visible: true,
+          message: result.error || 'Failed to delete booking. Please try again.',
+        });
+      }
+    } catch (e) {
+      setDeleteModal({ visible: false, bookingId: null });
+      setErrorModal({
+        visible: true,
+        message: e?.message || 'Failed to delete booking. Please try again.',
+      });
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
@@ -294,83 +336,97 @@ export default function BookingsScreen({ navigation }) {
                 : null;
               
               return (
-                <TouchableOpacity
-                  key={booking.id}
-                  style={styles.gridCard}
-                  onPress={() => handleBookingPress(booking)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.gridHeaderRow}>
-                    {coverImage ? (
-                      <Image 
-                        source={{ uri: coverImage }} 
-                        style={styles.vehicleAvatar}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={styles.vehicleAvatar}>
-                        <Ionicons name="car-outline" size={24} color={COLORS.subtle} />
-                      </View>
-                    )}
-                    <View style={styles.gridDetails}>
-                      <Text style={styles.gridTitle} numberOfLines={1}>
-                        {booking.carName} {booking.carModel ? `• ${booking.carModel}` : ''}
-                      </Text>
-                      <View style={styles.gridMetrics}>
-                        <View style={styles.gridMetricItem}>
-                          <Ionicons name="person-outline" size={14} color={COLORS.subtle} />
-                          <Text style={styles.gridMetricText} numberOfLines={1}>
-                            {booking.clientName}
-                          </Text>
-                        </View>
-                        <View style={styles.gridMetricItem}>
-                          <Ionicons name="calendar-outline" size={14} color={COLORS.subtle} />
-                          <Text style={styles.gridMetricText}>
-                            {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
-                          </Text>
-                        </View>
-                        {booking.rentalDays && (
-                          <View style={styles.gridMetricItem}>
-                            <Ionicons name="time-outline" size={14} color={COLORS.subtle} />
-                            <Text style={styles.gridMetricText}>
-                              {formatDuration(booking.rentalDays)}
-                            </Text>
-                          </View>
-                        )}
-                        <View style={styles.gridMetricItem}>
-                          <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
-                          <Text style={[styles.gridMetricText, { color: getStatusColor(booking.status) }]}>
-                            {getStatusText(booking.status)}
-                          </Text>
-                        </View>
-                      </View>
-                      {booking.totalPrice && (
-                        <View style={styles.amountRow}>
-                          <Text style={styles.amountLabel}>Amount Earned</Text>
-                          <Text style={styles.amountValue}>{formatCurrency(booking.totalPrice)}</Text>
+                <View key={booking.id} style={styles.gridCard}>
+                  <TouchableOpacity
+                    style={styles.cardPressArea}
+                    onPress={() => handleBookingPress(booking)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.gridHeaderRow}>
+                      {coverImage ? (
+                        <Image 
+                          source={{ uri: coverImage }} 
+                          style={styles.vehicleAvatar}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.vehicleAvatar}>
+                          <Ionicons name="car-outline" size={24} color={COLORS.subtle} />
                         </View>
                       )}
+                      <View style={styles.gridDetails}>
+                        <Text style={styles.gridTitle} numberOfLines={1}>
+                          {booking.carName} {booking.carModel ? `• ${booking.carModel}` : ''}
+                        </Text>
+                        <View style={styles.gridMetrics}>
+                          <View style={styles.gridMetricItem}>
+                            <Ionicons name="person-outline" size={14} color={COLORS.subtle} />
+                            <Text style={styles.gridMetricText} numberOfLines={1}>
+                              {booking.clientName}
+                            </Text>
+                          </View>
+                          <View style={styles.gridMetricItem}>
+                            <Ionicons name="calendar-outline" size={14} color={COLORS.subtle} />
+                            <Text style={styles.gridMetricText}>
+                              {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
+                            </Text>
+                          </View>
+                          {booking.rentalDays && (
+                            <View style={styles.gridMetricItem}>
+                              <Ionicons name="time-outline" size={14} color={COLORS.subtle} />
+                              <Text style={styles.gridMetricText}>
+                                {formatDuration(booking.rentalDays)}
+                              </Text>
+                            </View>
+                          )}
+                          <View style={styles.gridMetricItem}>
+                            <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
+                            <Text style={[styles.gridMetricText, { color: getStatusColor(booking.status) }]}>
+                              {getStatusText(booking.status)}
+                            </Text>
+                          </View>
+                        </View>
+                        {booking.totalPrice && (
+                          <View style={styles.amountRow}>
+                            <Text style={styles.amountLabel}>Amount Earned</Text>
+                            <Text style={styles.amountValue}>{formatCurrency(booking.totalPrice)}</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
-                  </View>
 
-                  {booking.pendingExtension && (
-                    <View style={styles.extensionBanner}>
-                      <View style={styles.extensionBannerLeft}>
-                        <Ionicons name="time-outline" size={16} color="#FF9500" />
-                        <View style={styles.extensionBannerText}>
-                          <Text style={styles.extensionBannerTitle}>Extension Request</Text>
-                          <Text style={styles.extensionBannerSub}>
-                            +{booking.pendingExtension.extra_days} day{booking.pendingExtension.extra_days !== 1 ? 's' : ''} · {formatCurrency(booking.pendingExtension.extra_amount)}
-                          </Text>
+                    {booking.pendingExtension && (
+                      <View style={styles.extensionBanner}>
+                        <View style={styles.extensionBannerLeft}>
+                          <Ionicons name="time-outline" size={16} color="#FF9500" />
+                          <View style={styles.extensionBannerText}>
+                            <Text style={styles.extensionBannerTitle}>Extension Request</Text>
+                            <Text style={styles.extensionBannerSub}>
+                              +{booking.pendingExtension.extra_days} day{booking.pendingExtension.extra_days !== 1 ? 's' : ''} · {formatCurrency(booking.pendingExtension.extra_amount)}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.extensionActionHint}>
+                          <Text style={styles.extensionActionHintText}>Review</Text>
+                          <Ionicons name="chevron-forward" size={14} color="#FF9500" />
                         </View>
                       </View>
-                      <View style={styles.extensionActionHint}>
-                        <Text style={styles.extensionActionHintText}>Review</Text>
-                        <Ionicons name="chevron-forward" size={14} color="#FF9500" />
-                      </View>
-                    </View>
+                    )}
+                  </TouchableOpacity>
+
+                  {(booking.status || '').toLowerCase() === 'cancelled' && (
+                    <TouchableOpacity
+                      style={styles.deleteIconButton}
+                      onPress={() => {
+                        lightHaptic();
+                        confirmDeleteBooking(booking);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                    </TouchableOpacity>
                   )}
-                </TouchableOpacity>
+                </View>
               );
             })}
           </View>
@@ -382,6 +438,28 @@ export default function BookingsScreen({ navigation }) {
           </View>
         )}
       </ScrollView>
+      {/* Delete confirm modal for cancelled bookings */}
+      <StatusModal
+        visible={deleteModal.visible}
+        type="info"
+        title="Delete booking"
+        message="Are you sure you want to delete this cancelled booking?"
+        primaryLabel="Delete"
+        secondaryLabel="Cancel"
+        onPrimary={handleDeleteConfirmed}
+        onSecondary={() => setDeleteModal({ visible: false, bookingId: null })}
+        onRequestClose={() => setDeleteModal({ visible: false, bookingId: null })}
+      />
+
+      {/* Error modal */}
+      <StatusModal
+        visible={errorModal.visible}
+        type="error"
+        title="Unable to delete"
+        message={errorModal.message}
+        primaryLabel="OK"
+        onPrimary={() => setErrorModal({ visible: false, message: '' })}
+      />
     </View>
   );
 }
@@ -594,6 +672,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
+  cardPressArea: {
+    flex: 1,
+  },
   skeletonCard: {
     backgroundColor: COLORS.surface,
   },
@@ -667,6 +748,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.text,
     fontFamily: 'Nunito-SemiBold',
+  },
+  deleteIconButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    padding: 4,
   },
   emptyState: {
     flex: 1,
