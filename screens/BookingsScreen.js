@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, Image, RefreshControl } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -61,6 +61,20 @@ export default function BookingsScreen({ navigation }) {
   };
 
   const getStatusText = (status) => getBookingStatusDisplayText(status);
+
+  const SkeletonBox = ({ width, height, style }) => (
+    <View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: '#E5E5EA',
+          borderRadius: 8,
+        },
+        style,
+      ]}
+    />
+  );
 
   const loadBookings = async () => {
     setIsLoading(true);
@@ -250,8 +264,27 @@ export default function BookingsScreen({ navigation }) {
 
         {/* Bookings List */}
         {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.text} />
+          <View style={styles.grid}>
+            {[1, 2, 3].map((i) => (
+              <View key={i} style={[styles.gridCard, styles.skeletonCard]}>
+                <View style={styles.gridHeaderRow}>
+                  <SkeletonBox width={60} height={60} style={{ borderRadius: 30 }} />
+                  <View style={styles.gridDetails}>
+                    <SkeletonBox width={180} height={16} style={{ marginBottom: 8, borderRadius: 6 }} />
+                    <View style={styles.gridMetrics}>
+                      <SkeletonBox width={120} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
+                      <SkeletonBox width={160} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
+                      <SkeletonBox width={80} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
+                      <SkeletonBox width={70} height={12} style={{ borderRadius: 4 }} />
+                    </View>
+                    <View style={styles.amountRow}>
+                      <SkeletonBox width={90} height={12} style={{ borderRadius: 4 }} />
+                      <SkeletonBox width={80} height={14} style={{ borderRadius: 4 }} />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            ))}
           </View>
         ) : bookings.length > 0 ? (
           <View style={styles.grid}>
@@ -561,6 +594,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
+  skeletonCard: {
+    backgroundColor: COLORS.surface,
+  },
   gridHeaderRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -649,12 +685,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.subtle,
     textAlign: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
   },
   extensionBanner: {
     flexDirection: 'row',
