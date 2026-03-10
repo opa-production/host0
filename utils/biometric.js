@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BIOMETRIC_ENABLED_KEY = '@biometric_enabled';
 const BIOMETRIC_SETUP_KEY = '@biometric_setup_complete';
+const BIOMETRIC_DEVICE_TOKEN_KEY = '@host_biometric_device_token';
 
 /**
  * Check if biometric authentication is available on the device
@@ -137,5 +138,44 @@ export const getBiometricTypeName = async () => {
     return availability.biometricType;
   }
   return 'Biometric';
+};
+
+/**
+ * Persist host biometric device token (for backend biometric-login).
+ */
+export const saveBiometricDeviceToken = async (token) => {
+  try {
+    if (!token) {
+      await AsyncStorage.removeItem(BIOMETRIC_DEVICE_TOKEN_KEY);
+      return;
+    }
+    await AsyncStorage.setItem(BIOMETRIC_DEVICE_TOKEN_KEY, token);
+  } catch (error) {
+    console.error('Error saving biometric device token:', error);
+  }
+};
+
+/**
+ * Get stored host biometric device token.
+ */
+export const getBiometricDeviceToken = async () => {
+  try {
+    const token = await AsyncStorage.getItem(BIOMETRIC_DEVICE_TOKEN_KEY);
+    return token || null;
+  } catch (error) {
+    console.error('Error getting biometric device token:', error);
+    return null;
+  }
+};
+
+/**
+ * Clear stored host biometric device token.
+ */
+export const clearBiometricDeviceToken = async () => {
+  try {
+    await AsyncStorage.removeItem(BIOMETRIC_DEVICE_TOKEN_KEY);
+  } catch (error) {
+    console.error('Error clearing biometric device token:', error);
+  }
 };
 

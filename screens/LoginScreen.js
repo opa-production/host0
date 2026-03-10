@@ -15,11 +15,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, RADIUS, SPACING } from '../ui/tokens';
-import { isBiometricEnabled, authenticateWithBiometric } from '../utils/biometric';
+import {
+  isBiometricEnabled,
+  isBiometricAvailable,
+  authenticateWithBiometric,
+  getBiometricDeviceToken,
+  saveBiometricDeviceToken,
+} from '../utils/biometric';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setUserId, setUserToken, getUserProfile } from '../utils/userStorage';
-import { loginHost, googleAuthHost } from '../services/authService';
+import { loginHost, googleAuthHost, biometricLoginHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
 import { GoogleSignin, statusCodes } from '../utils/googleSignIn';
 
@@ -43,38 +49,52 @@ export default function LoginScreen({ navigation }) {
       const checkAndPromptBiometric = async () => {
         setCheckingBiometric(true);
         const enabled = await isBiometricEnabled();
-        
+
         if (!isMounted) return;
-        
-        if (enabled) {
-          // Check if we have stored profile for biometric login
-          const storedProfile = await getUserProfile();
-          
+
+        if (!enabled) {
+          setCheckingBiometric(false);
+          return;
+        }
+
+        // Require a stored device token to attempt backend biometric login
+        const deviceToken = await getBiometricDeviceToken();
+
+        if (!isMounted) return;
+
+        if (!deviceToken) {
+          setCheckingBiometric(false);
+          return;
+        }
+
+        // Small delay to ensure UI is ready
+        timeoutId = setTimeout(async () => {
           if (!isMounted) return;
-          
-          if (storedProfile) {
-            // Small delay to ensure UI is ready
-            timeoutId = setTimeout(async () => {
-              if (!isMounted) return;
-              const result = await authenticateWithBiometric();
-              
-              if (!isMounted) return;
-              
-              if (result.success) {
-                // Biometric authentication successful - navigate to main app
-                navigation.replace('MainTabs');
-              } else {
-                // Authentication failed or cancelled - allow manual login
-                setCheckingBiometric(false);
-              }
-            }, 500);
+
+          const result = await authenticateWithBiometric();
+
+          if (!isMounted) return;
+
+          if (!result.success) {
+            // Authentication failed or cancelled - allow manual login
+            setCheckingBiometric(false);
+            return;
+          }
+
+          // Local biometric auth passed; hit backend biometric-login
+          const apiResult = await biometricLoginHost(deviceToken);
+
+          if (!isMounted) return;
+
+          if (apiResult.success && apiResult.host) {
+            await login(apiResult.host);
+            navigation.replace('MainTabs');
           } else {
-            // No stored profile, skip biometric
+            // If token invalid/revoked, stop trying biometric on next launch
+            console.warn('🔐 [LoginScreen] Biometric login failed:', apiResult.error);
             setCheckingBiometric(false);
           }
-        } else {
-          setCheckingBiometric(false);
-        }
+        }, 500);
       };
 
       checkAndPromptBiometric();
@@ -117,15 +137,28 @@ export default function LoginScreen({ navigation }) {
     console.log('🔐 [LoginScreen] Starting login process...');
 
     try {
+      // Determine if we should request a backend device_token for biometrics
+      const biometricPrefEnabled = await isBiometricEnabled();
+      const availability = await isBiometricAvailable();
+      const shouldEnableBiometrics =
+        biometricPrefEnabled && availability.available;
+
       // Call the actual API login endpoint
       console.log('🔐 [LoginScreen] Calling loginHost API...');
-      const result = await loginHost(email, password);
+      const result = await loginHost(email, password, {
+        enableBiometrics: shouldEnableBiometrics,
+        deviceName: Platform.OS === 'ios' ? 'Host iOS device' : 'Host Android device',
+      });
       console.log('🔐 [LoginScreen] loginHost result:', result.success ? 'SUCCESS' : 'FAILED', result.error || '');
 
       if (result.success) {
         console.log('🔐 [LoginScreen] Login successful, storing profile and navigating...');
         // Login successful - store host profile and navigate
         await login(result.host);
+        // Persist biometric device token when provided
+        if (result.deviceToken) {
+          await saveBiometricDeviceToken(result.deviceToken);
+        }
         navigation.replace('MainTabs');
       } else {
         console.error('🔐 [LoginScreen] Login failed:', result.error);

@@ -24,6 +24,8 @@ export const API_ENDPOINTS = {
   HOST_DELETE_ACCOUNT: '/api/v1/host/account',
   HOST_ME: '/api/v1/host/me',
   HOST_UPDATE_PROFILE: '/api/v1/host/profile',
+  HOST_BIOMETRIC_LOGIN: '/api/v1/host/auth/biometric-login',
+  HOST_BIOMETRIC_REVOKE: '/api/v1/host/auth/biometric-revoke',
   
   // Cars
   CARS: '/api/v1/cars',

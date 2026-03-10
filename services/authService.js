@@ -79,7 +79,7 @@ export const registerHost = async (fullName, email, password, passwordConfirmati
 /**
  * Login host and store credentials
  */
-export const loginHost = async (email, password) => {
+export const loginHost = async (email, password, options = {}) => {
   const url = getApiUrl(API_ENDPOINTS.HOST_LOGIN);
   console.log('🔐 [loginHost] Attempting login to:', url);
   console.log('🔐 [loginHost] Email:', email);
@@ -95,6 +95,8 @@ export const loginHost = async (email, password) => {
       body: JSON.stringify({
         email: email,
         password: password,
+        enableBiometrics: !!options.enableBiometrics,
+        deviceName: options.deviceName || undefined,
       }),
     });
 
@@ -128,6 +130,7 @@ export const loginHost = async (email, password) => {
       success: true,
       token: data.access_token,
       host: data.host,
+      deviceToken: data.device_token || null,
     };
   } catch (error) {
     console.error('🔐 [loginHost] Error occurred:', error.message);
@@ -140,6 +143,92 @@ export const loginHost = async (email, password) => {
       success: false,
       error: errorMessage,
     };
+  }
+};
+
+/**
+ * Biometric login for host using stored device_token.
+ */
+export const biometricLoginHost = async (deviceToken) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_BIOMETRIC_LOGIN);
+  console.log('🔐 [biometricLoginHost] Attempting biometric login to:', url);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        device_token: deviceToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorMessage = await getApiErrorMessage(response, 'Biometric login failed');
+      const formattedError = formatErrorMessage(errorMessage, 'login');
+      throw new Error(formattedError);
+    }
+
+    const data = await response.json();
+
+    if (!data.access_token || !data.host) {
+      throw new Error('Invalid response from server');
+    }
+
+    await setUserToken(data.access_token);
+    await setUserId(data.host.id.toString());
+
+    return {
+      success: true,
+      token: data.access_token,
+      host: data.host,
+    };
+  } catch (error) {
+    console.error('🔐 [biometricLoginHost] Error occurred:', error.message);
+    logError(error, 'BiometricLogin');
+    return {
+      success: false,
+      error: formatErrorMessage(error, 'login'),
+    };
+  }
+};
+
+/**
+ * Revoke biometric login for the current host.
+ * If deviceToken is provided, revokes only that device; otherwise all.
+ */
+export const revokeHostBiometrics = async (deviceToken) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_BIOMETRIC_REVOKE);
+  console.log('🔐 [revokeHostBiometrics] Revoking host biometrics at:', url);
+
+  try {
+    const token = await getUserToken();
+    if (!token) {
+      return { success: false, error: 'No authentication token found. Please login again.' };
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(deviceToken ? { device_token: deviceToken } : {}),
+    });
+
+    if (!response.ok) {
+      const errorMessage = await getApiErrorMessage(response, 'Failed to disable biometric login');
+      const formattedError = formatErrorMessage(errorMessage, 'login');
+      return { success: false, error: formattedError };
+    }
+
+    return { success: true };
+  } catch (error) {
+    logError(error, 'RevokeBiometrics');
+    return { success: false, error: formatErrorMessage(error, 'login') };
   }
 };
 

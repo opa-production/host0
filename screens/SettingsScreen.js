@@ -5,9 +5,17 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { isBiometricEnabled, setupBiometric, disableBiometric, isBiometricAvailable } from '../utils/biometric';
+import {
+  isBiometricEnabled,
+  setupBiometric,
+  disableBiometric,
+  isBiometricAvailable,
+  getBiometricDeviceToken,
+  clearBiometricDeviceToken,
+} from '../utils/biometric';
 import StatusModal from '../ui/StatusModal';
 import { useHost } from '../utils/HostContext';
+import { revokeHostBiometrics } from '../services/authService';
 
 // Simple Toggle Component
 const Toggle = ({ value, onValueChange, disabled = false }) => (
@@ -75,11 +83,27 @@ const SettingsScreen = () => {
       }
     } else {
       // User wants to disable biometrics
-      const result = await disableBiometric();
-      if (result.success) {
-        setBiometricsEnabled(false);
-      } else {
-        setBiometricError(result.error || 'Failed to disable biometric authentication.');
+      try {
+        const deviceToken = await getBiometricDeviceToken();
+        const revokeResult = await revokeHostBiometrics(deviceToken || undefined);
+
+        if (!revokeResult.success) {
+          setBiometricError(
+            revokeResult.error || 'Failed to disable biometric authentication on the server.'
+          );
+          return;
+        }
+
+        const localResult = await disableBiometric();
+        await clearBiometricDeviceToken();
+
+        if (localResult.success) {
+          setBiometricsEnabled(false);
+        } else {
+          setBiometricError(localResult.error || 'Failed to disable biometric authentication.');
+        }
+      } catch (error) {
+        setBiometricError(error?.message || 'Failed to disable biometric authentication.');
       }
     }
   };
