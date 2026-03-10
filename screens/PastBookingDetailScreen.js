@@ -6,11 +6,32 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
-import { getBookingDetails, getClientDisplayName } from '../services/bookingService';
+import { getBookingDetails, getClientDisplayName, getBookingStatusDisplayText } from '../services/bookingService';
 import { getHostClientProfile } from '../services/clientProfileService';
 import { getClientRatings, submitHostClientRating } from '../services/ratingService';
 import { downloadBookingReceipt } from '../services/receiptService';
 import { getUserId } from '../utils/userStorage';
+
+const getStatusColor = (status) => {
+  const statusLower = status?.toLowerCase() || '';
+  if (statusLower === 'completed' || statusLower === 'dropped_off' || statusLower === 'dropped off') {
+    return '#34C759';
+  }
+  switch (statusLower) {
+    case 'confirmed':
+    case 'active':
+      return '#007AFF';
+    case 'pending':
+    case 'upcoming':
+      return '#FF9500';
+    case 'cancelled':
+      return '#FF3B30';
+    default:
+      return '#8E8E93';
+  }
+};
+
+const getStatusText = (status) => getBookingStatusDisplayText(status);
 
 export default function PastBookingDetailScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -269,6 +290,41 @@ export default function PastBookingDetailScreen({ navigation, route }) {
           </View>
         ) : (
           <>
+            {/* Booking Meta & Status */}
+            <View style={styles.card}>
+              <View style={styles.statusHeader}>
+                <View style={styles.bookingIdRow}>
+                  <Text style={styles.bookingIdLabel}>Booking ID</Text>
+                  <Text style={styles.bookingIdValue}>
+                    {detailBooking?.booking_id || routeBooking.bookingId || routeBooking.id || '—'}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor: getStatusColor(
+                        detailBooking?.status || routeBooking.status || 'completed'
+                      ) + '1A',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      {
+                        color: getStatusColor(
+                          detailBooking?.status || routeBooking.status || 'completed'
+                        ),
+                      },
+                    ]}
+                  >
+                    {getStatusText(detailBooking?.status || routeBooking.status || 'completed')}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
             {/* Vehicle Info */}
             <View style={styles.heroCard}>
               {booking.vehicleImage ? (
@@ -296,33 +352,75 @@ export default function PastBookingDetailScreen({ navigation, route }) {
               </View>
             </View>
 
-        {/* Booking Dates */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Booking details</Text>
-          <View style={styles.detailRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
+            {/* Trip Details */}
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Trip details</Text>
+              <View style={styles.detailRow}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.detailLabel}>Start</Text>
+                  <Text style={styles.detailValue}>
+                    {booking.startDate || detailBooking?.start_date || ''}
+                    {(booking.startTime || detailBooking?.pickup_time) &&
+                      ` • ${booking.startTime || detailBooking?.pickup_time}`}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.detailRow}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.detailLabel}>End</Text>
+                  <Text style={styles.detailValue}>
+                    {booking.endDate || detailBooking?.end_date || ''}
+                    {(booking.endTime || detailBooking?.return_time) &&
+                      ` • ${booking.endTime || detailBooking?.return_time}`}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Duration</Text>
+                <Text style={styles.detailValue}>
+                  {(detailBooking?.rental_days ??
+                    routeBooking.rental_days ??
+                    routeBooking.rentalDays ??
+                    booking.duration) || '—'}
+                </Text>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.detailLabel}>Start</Text>
-              <Text style={styles.detailValue}>
-                {booking.startDate || ''}{booking.startTime ? ` • ${booking.startTime}` : ''}
-              </Text>
+
+            {/* Locations */}
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Locations</Text>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Pickup</Text>
+                <Text style={styles.detailValue} numberOfLines={2}>
+                  {Array.isArray(detailBooking?.pickup_location)
+                    ? detailBooking.pickup_location.join(', ')
+                    : detailBooking?.pickup_location ||
+                      routeBooking.pickup_location ||
+                      routeBooking.pickupLocation ||
+                      'Not specified'}
+                </Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Dropoff</Text>
+                <Text style={styles.detailValue} numberOfLines={2}>
+                  {Array.isArray(detailBooking?.return_location)
+                    ? detailBooking.return_location.join(', ')
+                    : detailBooking?.return_location ||
+                      routeBooking.return_location ||
+                      routeBooking.returnLocation ||
+                      'Not specified'}
+                </Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.detailRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.detailLabel}>End</Text>
-              <Text style={styles.detailValue}>
-                {booking.endDate || ''}{booking.endTime ? ` • ${booking.endTime}` : ''}
-              </Text>
-            </View>
-          </View>
-        </View>
 
         {/* Renter Info */}
         <View style={styles.card}>
@@ -397,43 +495,110 @@ export default function PastBookingDetailScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Payout */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Payout</Text>
+            {/* Price & payout */}
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Price & payout</Text>
 
-          <View style={styles.amountRow}>
-            <Text style={styles.amountLabel}>Your payout</Text>
-            <Text style={styles.amountValue}>KSh {formatCurrency(booking.payout)}</Text>
-          </View>
+              <View style={styles.rowBetween}>
+                <Text style={styles.rowLabel}>Daily rate</Text>
+                <Text style={styles.rowValue}>
+                  KSh {formatCurrency(detailBooking?.daily_rate ?? routeBooking.dailyRate ?? 0)}
+                </Text>
+              </View>
 
-          <View style={styles.divider} />
+              <View style={styles.divider} />
 
-          <View style={styles.rowBetween}>
-            <Text style={styles.rowLabel}>Total paid</Text>
-            <Text style={styles.rowValue}>KSh {formatCurrency(booking.totalPaid)}</Text>
-          </View>
+              <View style={styles.rowBetween}>
+                <Text style={styles.rowLabel}>Base price</Text>
+                <Text style={styles.rowValue}>
+                  KSh {formatCurrency(detailBooking?.base_price ?? routeBooking.base_price ?? 0)}
+                </Text>
+              </View>
 
-          <View style={styles.divider} />
+              {detailBooking?.damage_waiver_enabled && (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.rowLabel}>Damage waiver</Text>
+                    <Text style={styles.rowValue}>
+                      KSh {formatCurrency(detailBooking?.damage_waiver_fee ?? 0)}
+                    </Text>
+                  </View>
+                </>
+              )}
 
-          <TouchableOpacity
-            style={styles.receiptLink}
-            onPress={async () => {
-              if (!bookingId || isDownloadingReceipt) return;
-              setIsDownloadingReceipt(true);
-              const result = await downloadBookingReceipt(bookingId);
-              setIsDownloadingReceipt(false);
-              if (!result.success) {
-                Alert.alert('Receipt', result.error || 'Could not download receipt.');
-              }
-            }}
-            activeOpacity={0.7}
-            disabled={isDownloadingReceipt}
-          >
-            <Ionicons name="document-text-outline" size={18} color={COLORS.brand} />
-            <Text style={styles.receiptLinkText}>{isDownloadingReceipt ? 'Opening…' : 'View receipt'}</Text>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
-          </TouchableOpacity>
-        </View>
+              <View style={styles.divider} />
+              <View style={styles.rowBetween}>
+                <Text style={[styles.rowLabel, styles.rowStrong]}>Total paid</Text>
+                <Text style={[styles.rowValue, styles.rowStrong]}>
+                  KSh {formatCurrency(detailBooking?.total_price ?? booking.totalPaid)}
+                </Text>
+              </View>
+
+              <View style={styles.divider} />
+              <View style={styles.rowBetween}>
+                <Text style={styles.rowLabel}>Your payout</Text>
+                <Text style={styles.rowValue}>KSh {formatCurrency(booking.payout)}</Text>
+              </View>
+
+              <View style={styles.divider} />
+
+              <TouchableOpacity
+                style={styles.receiptLink}
+                onPress={async () => {
+                  if (!bookingId || isDownloadingReceipt) return;
+                  setIsDownloadingReceipt(true);
+                  const result = await downloadBookingReceipt(bookingId);
+                  setIsDownloadingReceipt(false);
+                  if (!result.success) {
+                    Alert.alert('Receipt', result.error || 'Could not download receipt.');
+                  }
+                }}
+                activeOpacity={0.7}
+                disabled={isDownloadingReceipt}
+              >
+                <Ionicons name="document-text-outline" size={18} color={COLORS.brand} />
+                <Text style={styles.receiptLinkText}>
+                  {isDownloadingReceipt ? 'Opening…' : 'View receipt'}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Additional booking details */}
+            {(detailBooking?.drive_type ||
+              detailBooking?.check_in_preference ||
+              detailBooking?.special_requirements) && (
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Additional details</Text>
+                {detailBooking?.drive_type && (
+                  <>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Drive type</Text>
+                      <Text style={styles.detailValue}>{detailBooking.drive_type}</Text>
+                    </View>
+                    <View style={styles.divider} />
+                  </>
+                )}
+                {detailBooking?.check_in_preference && (
+                  <>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Check-in preference</Text>
+                      <Text style={styles.detailValue}>{detailBooking.check_in_preference}</Text>
+                    </View>
+                    <View style={styles.divider} />
+                  </>
+                )}
+                {detailBooking?.special_requirements && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Special requirements</Text>
+                    <Text style={styles.detailValue} numberOfLines={3}>
+                      {detailBooking.special_requirements}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
           </>
         )}
       </ScrollView>
@@ -563,9 +728,11 @@ const styles = StyleSheet.create({
   heroCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.bg,
     borderRadius: RADIUS.card,
     padding: SPACING.m,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
   },
   heroAvatar: {
     width: 60,
@@ -593,9 +760,11 @@ const styles = StyleSheet.create({
     color: COLORS.subtle,
   },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.bg,
     borderRadius: RADIUS.card,
     padding: SPACING.m,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -773,6 +942,9 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     color: COLORS.text,
   },
+  rowStrong: {
+    fontFamily: 'Nunito-Bold',
+  },
   receiptLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -910,5 +1082,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.subtle,
     textAlign: 'center',
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bookingIdRow: {
+    flex: 1,
+  },
+  bookingIdLabel: {
+    ...TYPE.body,
+    fontSize: 12,
+    color: COLORS.subtle,
+    marginBottom: 4,
+  },
+  bookingIdValue: {
+    ...TYPE.bodyStrong,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
   },
 });
