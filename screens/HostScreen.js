@@ -563,30 +563,30 @@ export default function HostScreen({ navigation }) {
         </View>
       )}
 
-      {/* Floating buttons - drive settings above add car */}
-      {cars.length >= 1 && (
+      {/* Floating buttons - add car always (when 0 or 1 cars); drive settings only when at least 1 car */}
+      {!isLoading && (
         <View style={[styles.floatingButtonsContainer, { bottom: 68 + insets.bottom + 16 }]}>
           <View style={styles.floatingButtonsColumn}>
-            <TouchableOpacity
-              style={styles.floatingDriveSettingsButton}
-              onPress={openDriveSettingsModal}
-              activeOpacity={0.9}
-            >
-              <Ionicons name="settings-outline" size={22} color={COLORS.text} />
-              <View style={styles.driveSettingsCarBadge}>
-                <Ionicons name="car-sport-outline" size={10} color={COLORS.text} />
-              </View>
-            </TouchableOpacity>
-            {cars.length < 2 && (
+            {cars.length >= 1 && (
               <TouchableOpacity
-                style={styles.floatingButton}
-                onPress={handleAddVehicle}
+                style={styles.floatingDriveSettingsButton}
+                onPress={openDriveSettingsModal}
                 activeOpacity={0.9}
               >
-                <Ionicons name="car-sport" size={20} color="#FFFFFF" />
-                <Ionicons name="add" size={16} color="#FFFFFF" style={styles.plusIcon} />
+                <Ionicons name="settings-outline" size={22} color={COLORS.text} />
+                <View style={styles.driveSettingsCarBadge}>
+                  <Ionicons name="car-sport-outline" size={10} color={COLORS.text} />
+                </View>
               </TouchableOpacity>
             )}
+            <TouchableOpacity
+              style={styles.floatingButton}
+              onPress={handleAddVehicle}
+              activeOpacity={0.9}
+            >
+              <Ionicons name="car-sport" size={20} color="#FFFFFF" />
+              <Ionicons name="add" size={16} color="#FFFFFF" style={styles.plusIcon} />
+            </TouchableOpacity>
           </View>
         </View>
       )}
