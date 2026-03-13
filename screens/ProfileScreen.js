@@ -14,8 +14,9 @@ import { getKycStatus } from '../services/kycService';
 export default function ProfileScreen({ navigation }) {
   const { host, logout, refreshProfile, updateHost } = useHost();
   const insets = useSafeAreaInsets();
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [kycStatus, setKycStatus] = useState(null);
+  const lastProfileRefreshRef = useRef(0);
+  const PROFILE_REFRESH_THROTTLE_MS = 60 * 1000; // 1 minute
 
   // Skeleton component for loading state with shimmer effect
   const SkeletonBox = ({ width, height, style }) => {
@@ -64,22 +65,31 @@ export default function ProfileScreen({ navigation }) {
     console.log('📸 [ProfileScreen] host.avatar_url changed:', host?.avatar_url);
   }, [host?.avatar_url]);
 
-  // Refresh profile and KYC status when screen comes into focus
+  // Refresh profile and KYC in background on focus, throttled so /host/me isn't called continuously
   useFocusEffect(
     React.useCallback(() => {
-      const loadProfile = async () => {
-        setIsRefreshing(true);
-        await refreshProfile();
-        const kycResult = await getKycStatus();
-        if (kycResult.success && kycResult.status != null) {
+      let isMounted = true;
+      const now = Date.now();
+      const shouldRefreshProfile = now - lastProfileRefreshRef.current >= PROFILE_REFRESH_THROTTLE_MS;
+
+      const loadInBackground = async () => {
+        const promises = [getKycStatus()];
+        if (shouldRefreshProfile) {
+          lastProfileRefreshRef.current = now;
+          promises.unshift(refreshProfile());
+        }
+        const results = await Promise.all(promises);
+        if (!isMounted) return;
+        const kycResult = shouldRefreshProfile ? results[1] : results[0];
+        if (kycResult?.success && kycResult?.status != null) {
           setKycStatus(kycResult.status);
         } else {
           setKycStatus(null);
         }
-        setIsRefreshing(false);
       };
-      loadProfile();
-    }, [])
+      loadInBackground();
+      return () => { isMounted = false; };
+    }, [refreshProfile])
   );
 
   const pickImage = async () => {
@@ -198,15 +208,15 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
           <View style={styles.profileDetails}>
-            {isRefreshing ? (
+            {!host ? (
               <>
                 <SkeletonBox width={150} height={20} style={{ marginBottom: 8, borderRadius: 6 }} />
                 <SkeletonBox width={200} height={14} style={{ borderRadius: 6 }} />
               </>
             ) : (
               <>
-                <Text style={styles.profileName}>{host?.full_name || 'Host User'}</Text>
-                <Text style={styles.profileEmail}>{host?.email || ''}</Text>
+                <Text style={styles.profileName}>{host.full_name || 'Host User'}</Text>
+                <Text style={styles.profileEmail}>{host.email || ''}</Text>
               </>
             )}
           </View>
