@@ -563,7 +563,7 @@ export default function HostScreen({ navigation }) {
         </View>
       )}
 
-      {/* Floating buttons - add car always (when 0 or 1 cars); drive settings only when at least 1 car */}
+      {/* Floating buttons - add car only when less than 2 cars; drive settings when at least 1 car */}
       {!isLoading && (
         <View style={[styles.floatingButtonsContainer, { bottom: 68 + insets.bottom + 16 }]}>
           <View style={styles.floatingButtonsColumn}>
@@ -579,14 +579,16 @@ export default function HostScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
             )}
-            <TouchableOpacity
-              style={styles.floatingButton}
-              onPress={handleAddVehicle}
-              activeOpacity={0.9}
-            >
-              <Ionicons name="car-sport" size={20} color="#FFFFFF" />
-              <Ionicons name="add" size={16} color="#FFFFFF" style={styles.plusIcon} />
-            </TouchableOpacity>
+            {cars.length < 2 && (
+              <TouchableOpacity
+                style={styles.floatingButton}
+                onPress={handleAddVehicle}
+                activeOpacity={0.9}
+              >
+                <Ionicons name="car-sport" size={20} color="#FFFFFF" />
+                <Ionicons name="add" size={16} color="#FFFFFF" style={styles.plusIcon} />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
