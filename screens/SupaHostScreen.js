@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useLayoutEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Alert, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Platform, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -7,10 +7,40 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 
+const PLANS = {
+  starter: {
+    id: 'starter',
+    name: 'Starter',
+    price: 3500,
+    blurb: 'Essential tools for small fleets',
+    features: [
+      'Up to 10 car listings',
+      'Smart calendar',
+      '10% platform commission',
+      'Priority in search results',
+    ],
+  },
+  premium: {
+    id: 'premium',
+    name: 'Premium',
+    price: 6500,
+    blurb: 'Full business toolkit & visibility',
+    features: [
+      'Up to 50 car listings',
+      'Smart calendar',
+      '8% platform commission',
+      'Priority in search results',
+      'Advanced analytics dashboard',
+      'Verified badge',
+      'Corporate branding',
+    ],
+  },
+};
+
 export default function SupaHostScreen({ navigation: nav }) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const [billing, setBilling] = useState('monthly'); // monthly | yearly
+  const [selectedPlan, setSelectedPlan] = useState('starter'); // starter | premium
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -18,47 +48,12 @@ export default function SupaHostScreen({ navigation: nav }) {
     });
   }, [navigation]);
 
-  const pricing = useMemo(() => {
-    const monthlyCurrent = 6500;
-    const monthlyOriginal = 8500;
-    const yearlyOriginal = 78000; // 12 * 6500
-    const yearlyCurrent = 6500 * 10; // 2 months free = 65,000
-    const monthlyDiscountPercent = Math.round(((monthlyOriginal - monthlyCurrent) / monthlyOriginal) * 100);
-    const yearlyDiscountPercent = Math.round(((yearlyOriginal - yearlyCurrent) / yearlyOriginal) * 100); // ~17%
-    const monthly = {
-      label: 'Monthly',
-      originalPrice: `KSh ${monthlyOriginal.toLocaleString()}`,
-      currentPrice: `KSh ${monthlyCurrent.toLocaleString()}`,
-      period: '/ mo',
-      discountPercent: monthlyDiscountPercent,
-      savingsLabel: `${monthlyDiscountPercent}% off`,
-    };
-    const yearly = {
-      label: 'Yearly',
-      originalPrice: `KSh ${yearlyOriginal.toLocaleString()}`,
-      currentPrice: `KSh ${yearlyCurrent.toLocaleString()}`,
-      period: '/ yr',
-      discountPercent: yearlyDiscountPercent,
-      savingsLabel: '2 months free',
-    };
-    return billing === 'monthly' ? monthly : yearly;
-  }, [billing]);
-
-  const benefits = [
-    'Unlimited cars',
-    'Professional fleet management dashboard',
-    'Reduced commission of only 10%',
-    'Verified badge',
-    'Priority search',
-    'Corporate branding — add your company logo (ideal for NGO & corporate leads)',
-    'Access to host success support',
-    'Business intelligence',
-  ];
+  const plan = useMemo(() => PLANS[selectedPlan], [selectedPlan]);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-      
+
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
@@ -75,69 +70,92 @@ export default function SupaHostScreen({ navigation: nav }) {
         <View style={styles.backButton} />
       </View>
 
-      <ScrollView 
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]} 
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.subtitle}>For fleets, NGOs, and corporates: professional tools, lower commission, and a verified presence to win more business.</Text>
+        <Text style={styles.subtitle}>
+          For fleets, NGOs, and corporates: list more cars, pay lower commission, and stand out with a verified business profile.
+        </Text>
 
         <View style={styles.toggleWrapper}>
           <BlurView intensity={72} tint="light" style={StyleSheet.absoluteFillObject} />
           <View style={styles.toggleContainer} pointerEvents="box-none">
             <TouchableOpacity
-              style={[styles.toggleOption, billing === 'monthly' && styles.toggleOptionActive]}
+              style={[styles.toggleOption, selectedPlan === 'starter' && styles.toggleOptionActive]}
               onPress={() => {
                 lightHaptic();
-                setBilling('monthly');
+                setSelectedPlan('starter');
               }}
               activeOpacity={0.85}
             >
-              <Text style={[styles.toggleText, billing === 'monthly' && styles.toggleTextActive]}>Monthly</Text>
+              <Text
+                style={[styles.toggleText, selectedPlan === 'starter' && styles.toggleTextActive]}
+              >
+                Starter
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toggleOption, billing === 'yearly' && styles.toggleOptionActive]}
+              style={[styles.toggleOption, selectedPlan === 'premium' && styles.toggleOptionActive]}
               onPress={() => {
                 lightHaptic();
-                setBilling('yearly');
+                setSelectedPlan('premium');
               }}
               activeOpacity={0.85}
             >
-              <Text style={[styles.toggleText, billing === 'yearly' && styles.toggleTextActive]}>Yearly</Text>
+              <Text
+                style={[styles.toggleText, selectedPlan === 'premium' && styles.toggleTextActive]}
+              >
+                Premium
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Ardena for Business</Text>
+            <View style={styles.cardHeaderTextBlock}>
+              {plan.id === 'premium' ? (
+                <View style={styles.cardTitleRow}>
+                  <Text style={styles.cardTitle}>Premium</Text>
+                  <Image
+                    source={require('../assets/images/badge.png')}
+                    style={styles.cardPremiumBadge}
+                    resizeMode="contain"
+                    accessibilityLabel="Verified premium"
+                    accessibilityRole="image"
+                  />
+                </View>
+              ) : (
+                <Text style={styles.cardTitle}>{plan.name}</Text>
+              )}
+              <Text style={styles.cardBlurb}>{plan.blurb}</Text>
+            </View>
+            {selectedPlan === 'premium' && (
+              <View style={styles.popularBadge}>
+                <Text style={styles.popularBadgeText}>Popular</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.priceContainer}>
-            <Text style={styles.originalPrice}>{pricing.originalPrice}{pricing.period}</Text>
             <View style={styles.currentPriceRow}>
-              <Text style={styles.currentPrice}>{pricing.currentPrice}</Text>
-              <Text style={styles.pricePeriod}>{pricing.period}</Text>
+              <Text style={styles.currentPrice}>KSh {plan.price.toLocaleString()}</Text>
+              <Text style={styles.pricePeriod}>/ month</Text>
             </View>
-            <View style={styles.discountRow}>
-              <View style={styles.savingsBadge}>
-                <Text style={styles.savingsBadgeText}>{pricing.discountPercent}% off</Text>
-              </View>
-              {pricing.label === 'Yearly' && (
-                <View style={[styles.savingsBadge, styles.savingsBadgeSecondary]}>
-                  <Text style={[styles.savingsBadgeText, styles.savingsBadgeSecondaryText]}>{pricing.savingsLabel}</Text>
-                </View>
-              )}
-            </View>
+            <Text style={styles.billingNote}>Billed monthly · cancel anytime</Text>
           </View>
 
           <View style={styles.divider} />
 
-          <Text style={styles.benefitsTitle}>Benefits</Text>
+          <Text style={styles.benefitsTitle}>{"What's included"}</Text>
           <View style={styles.benefitsList}>
-            {benefits.map((item) => (
+            {plan.features.map((item) => (
               <View style={styles.benefitItem} key={item}>
-                <Ionicons name="checkmark" size={18} color="#111111" />
+                <View style={styles.benefitTick}>
+                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                </View>
                 <Text style={styles.benefitText}>{item}</Text>
               </View>
             ))}
@@ -192,10 +210,12 @@ const styles = StyleSheet.create({
     ...TYPE.body,
     fontSize: 13,
     color: '#8E8E93',
+    lineHeight: 19,
   },
   toggleWrapper: {
     alignSelf: 'center',
-    width: '68%',
+    width: '92%',
+    maxWidth: 400,
     borderRadius: RADIUS.pill,
     overflow: 'hidden',
     ...Platform.select({
@@ -217,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     padding: 4,
     backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.45)' : 'transparent',
-    minHeight: 44,
+    minHeight: 48,
   },
   toggleOption: {
     flex: 1,
@@ -245,7 +265,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     ...TYPE.bodyStrong,
-    fontSize: 14,
+    fontSize: 15,
     color: 'rgba(0,0,0,0.55)',
   },
   toggleTextActive: {
@@ -260,41 +280,56 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  cardHeaderTextBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cardTitleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  /** Transparent PNG — sits to the right of “Premium” */
+  cardPremiumBadge: {
+    width: 28,
+    height: 28,
+    marginTop: 1,
   },
   cardTitle: {
     ...TYPE.section,
-    fontSize: 15,
+    fontSize: 20,
+    fontFamily: 'Nunito-Bold',
     color: '#1C1C1E',
   },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  cardBlurb: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  popularBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: '#f3f3f3',
+    paddingVertical: 5,
+    backgroundColor: 'rgba(0, 122, 255, 0.12)',
     borderRadius: 999,
   },
-  badgeText: {
+  popularBadgeText: {
     fontSize: 12,
     fontFamily: 'Nunito-SemiBold',
-    color: '#111111',
+    color: COLORS.brand,
   },
   priceContainer: {
     marginVertical: 4,
-  },
-  originalPrice: {
-    ...TYPE.body,
-    fontSize: 15,
-    color: COLORS.subtle,
-    textDecorationLine: 'line-through',
-    marginBottom: 4,
   },
   currentPriceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 8,
+    flexWrap: 'wrap',
   },
   currentPrice: {
     ...TYPE.largeTitle,
@@ -307,21 +342,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.subtle,
   },
-  savingsBadge: {
-    alignSelf: 'flex-start',
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(0, 122, 255, 0.12)',
-    borderRadius: 999,
-  },
-  savingsBadgeText: {
+  billingNote: {
+    ...TYPE.body,
     fontSize: 12,
-    fontFamily: 'Nunito-SemiBold',
-    color: COLORS.brand,
-  },
-  savingsBadgeSecondaryText: {
-    color: '#34C759',
+    color: COLORS.subtle,
+    marginTop: 8,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
@@ -333,18 +358,29 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
   },
   benefitsList: {
-    gap: 8,
+    gap: 10,
   },
   benefitItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 10,
+  },
+  benefitTick: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
   },
   benefitText: {
     flex: 1,
     ...TYPE.body,
-    fontSize: 13,
+    fontSize: 14,
     color: '#1C1C1E',
+    lineHeight: 20,
+    paddingTop: 1,
   },
   primaryButton: {
     backgroundColor: COLORS.brand,
