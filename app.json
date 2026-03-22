@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "ardenahost",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/app-icon-padded.png",
     "splash": {
       "image": "./assets/images/logo.png",
       "resizeMode": "contain",
@@ -22,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.png",
+        "foregroundImage": "./assets/images/app-icon-padded.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.ardenahost.app",

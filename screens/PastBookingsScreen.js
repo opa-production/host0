@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, Image, Animated, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,60 @@ import StatusModal from '../ui/StatusModal';
 import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText, deleteBooking } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
+
+const SKELETON_CARD_COUNT = 4;
+
+function SkeletonBlock({ style }) {
+  const opacity = useRef(new Animated.Value(0.35)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.65,
+          duration: 650,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 650,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+
+  return (
+    <Animated.View
+      style={[styles.skeletonBlock, style, { opacity }]}
+    />
+  );
+}
+
+function PastBookingCardSkeleton() {
+  return (
+    <View style={styles.gridCard}>
+      <View style={styles.gridHeaderRow}>
+        <SkeletonBlock style={styles.skeletonAvatar} />
+        <View style={styles.gridDetails}>
+          <SkeletonBlock style={styles.skeletonTitle} />
+          <View style={styles.skeletonMetrics}>
+            <SkeletonBlock style={styles.skeletonLineShort} />
+            <SkeletonBlock style={styles.skeletonLineMedium} />
+            <SkeletonBlock style={styles.skeletonLineShort} />
+            <SkeletonBlock style={styles.skeletonLineTiny} />
+          </View>
+          <View style={styles.skeletonAmountRow}>
+            <SkeletonBlock style={styles.skeletonAmountLabel} />
+            <SkeletonBlock style={styles.skeletonAmountValue} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 export default function PastBookingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -42,8 +96,10 @@ export default function PastBookingsScreen({ navigation }) {
     }
   };
 
-  const loadBookings = async () => {
-    setIsLoading(true);
+  const loadBookings = async ({ showFullScreenLoader = true } = {}) => {
+    if (showFullScreenLoader) {
+      setIsLoading(true);
+    }
     try {
       const result = await getHostBookings();
       if (result.success && result.bookings) {
@@ -109,7 +165,7 @@ export default function PastBookingsScreen({ navigation }) {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadBookings();
+    loadBookings({ showFullScreenLoader: false });
   }, []);
 
   useEffect(() => {
@@ -182,8 +238,10 @@ export default function PastBookingsScreen({ navigation }) {
         }
       >
         {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.text} />
+          <View style={styles.skeletonGrid} accessibilityLabel="Loading past bookings">
+            {Array.from({ length: SKELETON_CARD_COUNT }, (_, i) => (
+              <PastBookingCardSkeleton key={`skeleton-${i}`} />
+            ))}
           </View>
         ) : bookings.length === 0 ? (
           <View style={styles.emptyState}>
@@ -406,11 +464,60 @@ const styles = StyleSheet.create({
     right: 8,
     padding: 4,
   },
-  loadingContainer: {
-    flex: 1,
+  skeletonGrid: {
+    marginTop: 16,
+  },
+  skeletonBlock: {
+    backgroundColor: COLORS.borderStrong,
+    borderRadius: 6,
+  },
+  skeletonAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  skeletonTitle: {
+    height: 16,
+    width: '78%',
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  skeletonMetrics: {
+    gap: 8,
+  },
+  skeletonLineShort: {
+    height: 12,
+    width: '55%',
+    borderRadius: 6,
+  },
+  skeletonLineMedium: {
+    height: 12,
+    width: '72%',
+    borderRadius: 6,
+  },
+  skeletonLineTiny: {
+    height: 12,
+    width: '40%',
+    borderRadius: 6,
+  },
+  skeletonAmountRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderStrong,
+  },
+  skeletonAmountLabel: {
+    height: 12,
+    width: '38%',
+    borderRadius: 6,
+  },
+  skeletonAmountValue: {
+    height: 14,
+    width: '28%',
+    borderRadius: 6,
   },
   metaRow: {
     flexDirection: 'row',
