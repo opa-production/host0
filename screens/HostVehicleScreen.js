@@ -6,11 +6,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, TYPE, SPACING } from '../ui/tokens';
 import { createCarBasics, updateCarSpecs, updateCarPricing, saveVehicleImageUrls } from '../services/carService';
 import { uploadVehicleImages, uploadVehicleVideo } from '../services/mediaService';
+import CitySelectionScreen from './HostVehicle/CitySelectionScreen';
 import BasicInfoScreen from './HostVehicle/BasicInfoMediaScreen';
 import MediaUploadScreen from './HostVehicle/MediaUploadScreen';
 import CarSpecsScreen from './HostVehicle/CarSpecsScreen';
 import RentalInfoScreen from './HostVehicle/RentalInfoScreen';
 import ReviewScreen from './HostVehicle/ReviewScreen';
+
+const LISTING_STEP_TITLES = [
+  'Your area',
+  'Basic Info',
+  'Specifications',
+  'Rental Info',
+  'Upload Media',
+  'Review',
+];
 
 export default function HostVehicleScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -35,10 +45,16 @@ export default function HostVehicleScreen({ navigation, route }) {
     return 2; // Specs step
   };
 
-  const [currentStep, setCurrentStep] = useState(getInitialStep());
+  const [currentStep, setCurrentStep] = useState(() =>
+    existingCar ? getInitialStep() : 0
+  );
   const [carId, setCarId] = useState(existingCarId || existingCar?.carId || existingCar?.id || null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const totalSteps = existingCar ? 5 : 6;
   const [formData, setFormData] = useState({
+    // Step 0: Listing city (new listings only)
+    hostCityId: existingCar?.hostCityId || null,
+    hostCityName: existingCar?.hostCityName || null,
     // Step 1: Basic Info
     name: existingCar?.name || '',
     model: existingCar?.model || '',
@@ -342,7 +358,25 @@ export default function HostVehicleScreen({ navigation, route }) {
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    } else if (currentStep === 1 && !existingCar) {
+      setCurrentStep(0);
     }
+  };
+
+  const handleHeaderBack = () => {
+    if (currentStep === 0) {
+      navigation.goBack();
+      return;
+    }
+    if (currentStep === 1 && !existingCar) {
+      setCurrentStep(0);
+      return;
+    }
+    if (currentStep > 1) {
+      prevStep();
+      return;
+    }
+    navigation.goBack();
   };
 
   const handleSubmit = async () => {
@@ -392,6 +426,19 @@ export default function HostVehicleScreen({ navigation, route }) {
 
   const renderStep = () => {
     switch (currentStep) {
+      case 0:
+        return (
+          <CitySelectionScreen
+            selectedCityId={formData.hostCityId}
+            onSelectCity={(city) => {
+              updateFormData({
+                hostCityId: city.id,
+                hostCityName: city.name,
+              });
+              setCurrentStep(1);
+            }}
+          />
+        );
       case 1:
         return (
           <BasicInfoScreen
@@ -444,7 +491,8 @@ export default function HostVehicleScreen({ navigation, route }) {
     }
   };
 
-  const stepTitles = ['Basic Info', 'Specifications', 'Rental Info', 'Upload Media', 'Review'];
+  const stepTitle = LISTING_STEP_TITLES[currentStep] ?? LISTING_STEP_TITLES[0];
+  const stepNumberDisplay = existingCar ? currentStep : currentStep + 1;
 
   return (
     <View style={styles.container}>
@@ -455,23 +503,30 @@ export default function HostVehicleScreen({ navigation, route }) {
         <View style={styles.headerRow}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={handleHeaderBack}
             activeOpacity={0.7}
           >
             <Ionicons name="arrow-back" size={24} color={COLORS.text} />
           </TouchableOpacity>
           
           <View style={styles.progressContainer}>
-            <Text style={styles.stepTitle}>{stepTitles[currentStep - 1]}</Text>
+            <Text style={styles.stepTitle}>{stepTitle}</Text>
             <Text style={styles.stepIndicator}>
-              Step {currentStep} of 5
+              Step {stepNumberDisplay} of {totalSteps}
             </Text>
           </View>
         </View>
         
         {/* Progress Bar */}
         <View style={styles.progressBarContainer}>
-          <View style={[styles.progressBar, { width: `${(currentStep / 5) * 100}%` }]} />
+          <View
+            style={[
+              styles.progressBar,
+              {
+                width: `${(stepNumberDisplay / totalSteps) * 100}%`,
+              },
+            ]}
+          />
         </View>
       </View>
 

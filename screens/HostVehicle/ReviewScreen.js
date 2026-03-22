@@ -34,6 +34,13 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
       showsVerticalScrollIndicator={false}
     >
+      {/* Listing area */}
+      {formData.hostCityName ? (
+        <ReviewSection title="Your listing area">
+          <ReviewItem label="City" value={formData.hostCityName} />
+        </ReviewSection>
+      ) : null}
+
       {/* Basic Info */}
       <ReviewSection title="Basic Information">
         <ReviewItem label="Car Name" value={formData.name} />
