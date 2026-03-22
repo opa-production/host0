@@ -166,7 +166,11 @@ export default function SupaHostScreen({ navigation: nav }) {
             activeOpacity={0.9}
             onPress={() => {
               lightHaptic();
-              nav.navigate('ArdenaForBusinessComingSoon');
+              nav.navigate('BusinessPlanCheckout', {
+                planId: plan.id,
+                planName: plan.name,
+                price: plan.price,
+              });
             }}
           >
             <Text style={styles.primaryButtonText}>Get started</Text>
@@ -276,6 +280,8 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.card,
     padding: SPACING.m,
     gap: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderVisible,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -349,8 +355,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.border,
+    height: 1,
+    backgroundColor: COLORS.borderVisible,
   },
   benefitsTitle: {
     ...TYPE.section,

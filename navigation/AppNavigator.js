@@ -49,7 +49,7 @@ import HostStatsScreen from '../screens/HostStatsScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
 import ArdenaClientDownloadScreen from '../screens/ArdenaClientDownloadScreen';
 import SupaHostScreen from '../screens/SupaHostScreen';
-import ArdenaForBusinessComingSoonScreen from '../screens/ArdenaForBusinessComingSoonScreen';
+import BusinessPlanCheckoutScreen from '../screens/BusinessPlanCheckoutScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
@@ -339,8 +339,8 @@ export default function AppNavigator() {
           component={SupaHostScreen}
         />
         <Stack.Screen
-          name="ArdenaForBusinessComingSoon"
-          component={ArdenaForBusinessComingSoonScreen}
+          name="BusinessPlanCheckout"
+          component={BusinessPlanCheckoutScreen}
         />
         <Stack.Screen
           name="GetBadge"

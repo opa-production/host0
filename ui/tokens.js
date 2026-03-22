@@ -6,6 +6,8 @@ export const COLORS = {
   subtle: '#6A6A6A',
   border: '#EFEFEF',
   borderStrong: '#E5E5E5',
+  /** Use for outline “cards” on COLORS.bg — hairline + borderStrong disappears on gray */
+  borderVisible: '#C7C7CC',
   brand: '#007AFF',
   danger: '#FF2D55',
 };
