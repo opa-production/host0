@@ -14,6 +14,7 @@ export default function StatusModal({
   type = 'success',
   title,
   message,
+  children,
   primaryLabel = 'OK',
   onPrimary,
   secondaryLabel,
@@ -35,6 +36,7 @@ export default function StatusModal({
             <Ionicons name={icon.name} size={30} color={icon.color} />
           </View>
           {title ? <Text style={styles.title}>{title}</Text> : null}
+          {children}
           {message ? <Text style={styles.body}>{message}</Text> : null}
 
           <View style={styles.actions}>

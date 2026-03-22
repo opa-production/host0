@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useLayoutEffect } from 'react';
+import React, { useState, useMemo, useLayoutEffect, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Platform, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,8 +42,22 @@ const PLANS = {
 
 export default function SupaHostScreen({ navigation: nav }) {
   const navigation = useNavigation();
+  const route = useRoute();
+  /** When set (from Business plan manage), highlights current plan and adjusts checkout CTA. */
+  const activePlanCode =
+    route.params?.activePlanCode === 'premium' || route.params?.activePlanCode === 'starter'
+      ? route.params.activePlanCode
+      : undefined;
+
   const insets = useSafeAreaInsets();
   const [selectedPlan, setSelectedPlan] = useState('starter'); // starter | premium
+
+  useEffect(() => {
+    const code = route.params?.activePlanCode;
+    if (code === 'starter' || code === 'premium') {
+      setSelectedPlan(code);
+    }
+  }, [route.params?.activePlanCode]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -55,6 +69,15 @@ export default function SupaHostScreen({ navigation: nav }) {
     const p = PLANS[selectedPlan];
     return { ...p, code: p.code };
   }, [selectedPlan]);
+
+  const selectedCode = plan.code || plan.id;
+  const isManagingPlan = activePlanCode === 'starter' || activePlanCode === 'premium';
+  const isCurrentPlan = isManagingPlan && selectedCode === activePlanCode;
+  const checkoutCtaLabel = isManagingPlan
+    ? isCurrentPlan
+      ? 'Current plan'
+      : `Switch to ${plan.name}`
+    : 'Get started';
 
   return (
     <View style={styles.container}>
@@ -168,9 +191,11 @@ export default function SupaHostScreen({ navigation: nav }) {
           </View>
 
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryButton, isCurrentPlan && styles.primaryButtonDisabled]}
             activeOpacity={0.9}
+            disabled={isCurrentPlan}
             onPress={() => {
+              if (isCurrentPlan) return;
               lightHaptic();
               nav.navigate('BusinessPlanCheckout', {
                 planCode: plan.code || plan.id,
@@ -179,7 +204,7 @@ export default function SupaHostScreen({ navigation: nav }) {
               });
             }}
           >
-            <Text style={styles.primaryButtonText}>Get started</Text>
+            <Text style={styles.primaryButtonText}>{checkoutCtaLabel}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -400,6 +425,10 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.button,
     alignItems: 'center',
     marginTop: 4,
+  },
+  primaryButtonDisabled: {
+    backgroundColor: '#AEAEB2',
+    opacity: 1,
   },
   primaryButtonText: {
     ...TYPE.bodyStrong,

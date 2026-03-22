@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated, Dimensions, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,8 @@ import { useHost } from '../utils/HostContext';
 import { getHostBookings } from '../services/bookingService';
 import { getHostEarningsSummary } from '../services/earningsService';
 import { getHostWithdrawals } from '../services/withdrawalService';
+import { getHostSubscription } from '../services/subscriptionService';
+import { getHidePremiumBadgePreference } from '../utils/userStorage';
 
 const { width } = Dimensions.get('window');
 
@@ -39,8 +41,26 @@ export default function HomeScreen({ navigation }) {
   // Sum of amounts for withdrawals with status 'pending' (money not yet deducted)
   const [pendingWithdrawalTotal, setPendingWithdrawalTotal] = useState(0);
 
+  const [showPremiumBadge, setShowPremiumBadge] = useState(false);
+
   // Get user name from host profile
   const userName = host?.name || host?.full_name || 'Host';
+
+  const refreshSubscriptionBadge = useCallback(async () => {
+    try {
+      const sub = await getHostSubscription();
+      const hideBadge = await getHidePremiumBadgePreference();
+      if (sub.success && sub.subscription) {
+        const plan = String(sub.subscription.plan || '').toLowerCase();
+        const paid = sub.subscription.is_paid_active === true;
+        setShowPremiumBadge(paid && plan === 'premium' && !hideBadge);
+      } else {
+        setShowPremiumBadge(false);
+      }
+    } catch {
+      setShowPremiumBadge(false);
+    }
+  }, []);
 
   // Calculate today's actions from bookings
   const calculateTodayActions = (bookings) => {
@@ -173,7 +193,8 @@ export default function HomeScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       loadEarningsSummary();
-    }, [])
+      refreshSubscriptionBadge();
+    }, [refreshSubscriptionBadge])
   );
 
   const getGreeting = () => {
@@ -275,7 +296,17 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.header}>
           <View style={styles.greetingContainer}>
             <Text style={styles.greeting}>{getGreeting()},</Text>
-            <Text style={styles.userName}>{userName}</Text>
+            <View style={styles.userNameRow}>
+              <Text style={styles.userName}>{userName}</Text>
+              {showPremiumBadge ? (
+                <Image
+                  source={require('../assets/images/badge.png')}
+                  style={styles.homePremiumBadge}
+                  resizeMode="contain"
+                  accessibilityLabel="Premium host"
+                />
+              ) : null}
+            </View>
           </View>
         </View>
 
@@ -465,11 +496,22 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   userName: {
     fontSize: 28,
     fontFamily: 'Nunito-Bold',
     color: '#000000',
     letterSpacing: 0.35,
+    flexShrink: 1,
+  },
+  homePremiumBadge: {
+    width: 28,
+    height: 28,
   },
   headerIconButton: {
     padding: 6,

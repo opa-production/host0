@@ -10,6 +10,8 @@ export const COLORS = {
   borderVisible: '#C7C7CC',
   brand: '#007AFF',
   danger: '#FF2D55',
+  /** Subscription / renewal countdown accent */
+  countdownOrange: '#EA580C',
 };
 
 export const SPACING = {

@@ -22,6 +22,8 @@ import {
   startSubscriptionCheckout,
   pollSubscriptionPaymentStatus,
   getHostSubscription,
+  setMockSubscriptionPlan,
+  clearMockSubscriptionPlan,
 } from '../services/subscriptionService';
 
 function transformPaymentMethods(methods) {
@@ -74,8 +76,10 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [isLoadingMethods, setIsLoadingMethods] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [processingMode, setProcessingMode] = useState('mpesa'); // 'mpesa' | 'mock'
   const [errorModal, setErrorModal] = useState({ visible: false, message: '' });
-  const [successModal, setSuccessModal] = useState(false);
+  /** null = closed; starter | premium = which success copy to show */
+  const [successTier, setSuccessTier] = useState(null);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -145,6 +149,7 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
     }
 
     lightHaptic();
+    setProcessingMode('mpesa');
     setProcessing(true);
 
     try {
@@ -175,7 +180,7 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
 
       if (pollResult.outcome === 'completed') {
         await getHostSubscription();
-        setSuccessModal(true);
+        setSuccessTier(planCode === 'premium' ? 'premium' : 'starter');
         return;
       }
       if (pollResult.outcome === 'failed') {
@@ -213,6 +218,35 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
         setErrorModal({ visible: true, message: e?.message || 'Something went wrong.' });
       }
     }
+  };
+
+  const handleMockCardPay = async () => {
+    if (!PAYABLE_CODES.has(planCode)) {
+      setErrorModal({ visible: true, message: 'Invalid plan.' });
+      return;
+    }
+    lightHaptic();
+    setProcessingMode('mock');
+    setProcessing(true);
+    try {
+      await new Promise((r) => setTimeout(r, 900));
+      if (!mounted.current) return;
+      await setMockSubscriptionPlan(planCode);
+      await getHostSubscription();
+      if (!mounted.current) return;
+      setProcessing(false);
+      setSuccessTier(planCode === 'premium' ? 'premium' : 'starter');
+    } catch (e) {
+      if (mounted.current) {
+        setProcessing(false);
+        setErrorModal({ visible: true, message: e?.message || 'Mock payment failed.' });
+      }
+    }
+  };
+
+  const closeSuccess = () => {
+    setSuccessTier(null);
+    navigation.goBack();
   };
 
   return (
@@ -313,32 +347,98 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
             </View>
           )}
         </View>
+
+        {__DEV__ ? (
+          <View style={styles.outlineCard}>
+            <Text style={styles.devBanner}>Development only</Text>
+            <Text style={styles.sectionLabel}>Mock card payment</Text>
+            <Text style={styles.sectionHint}>
+              Skips M-Pesa so you can preview the success screen and the Premium badge on Home. Not in release builds.
+            </Text>
+            <View style={styles.mockCardRow}>
+              <View style={styles.mockCardIconWrap}>
+                <Image
+                  source={require('../assets/images/visa.png')}
+                  style={styles.mockCardBrand}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.paymentMethodInfo}>
+                <Text style={styles.paymentMethodTitle}>Test card</Text>
+                <Text style={styles.paymentMethodSub}>Visa ·••• 4242</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.checkoutButton,
+                styles.mockPayButton,
+                processing && styles.checkoutButtonDisabled,
+              ]}
+              disabled={processing}
+              onPress={handleMockCardPay}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.checkoutButtonText}>Pay with mock card</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.clearMockLink}
+              onPress={async () => {
+                lightHaptic();
+                await clearMockSubscriptionPlan();
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.clearMockLinkText}>Clear mock subscription</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </ScrollView>
 
       <Modal visible={processing} transparent animationType="fade">
         <View style={styles.processingOverlay}>
           <View style={styles.processingCard}>
             <ActivityIndicator size="large" color={COLORS.text} />
-            <Text style={styles.processingTitle}>Check your phone</Text>
-            <Text style={styles.processingSub}>Approve the M-Pesa prompt to complete payment.</Text>
+            <Text style={styles.processingTitle}>
+              {processingMode === 'mock' ? 'Processing test payment…' : 'Check your phone'}
+            </Text>
+            <Text style={styles.processingSub}>
+              {processingMode === 'mock'
+                ? 'Simulating a successful card charge for this checkout.'
+                : 'Approve the M-Pesa prompt to complete payment.'}
+            </Text>
           </View>
         </View>
       </Modal>
 
       <StatusModal
-        visible={successModal}
+        visible={successTier === 'premium'}
+        type="success"
+        title="Welcome to Premium"
+        children={
+          <View style={styles.premiumSuccessBadgeWrap}>
+            <Image
+              source={require('../assets/images/badge.png')}
+              style={styles.premiumSuccessBadge}
+              resizeMode="contain"
+            />
+          </View>
+        }
+        message={
+          'Your Premium plan is active. You’ll see the badge next to your name on Home, and lower commission benefits apply.\n\nManage or change your plan anytime from Profile → Ardena for Business.'
+        }
+        primaryLabel="Done"
+        onPrimary={closeSuccess}
+        onRequestClose={closeSuccess}
+      />
+
+      <StatusModal
+        visible={successTier === 'starter'}
         type="success"
         title={"You're subscribed"}
-        message="Your plan is active. You can review it anytime from your profile."
+        message="Your Starter plan is active. You can review it anytime from your profile."
         primaryLabel="Done"
-        onPrimary={() => {
-          setSuccessModal(false);
-          navigation.goBack();
-        }}
-        onRequestClose={() => {
-          setSuccessModal(false);
-          navigation.goBack();
-        }}
+        onPrimary={closeSuccess}
+        onRequestClose={closeSuccess}
       />
 
       <StatusModal
@@ -552,5 +652,57 @@ const styles = StyleSheet.create({
     color: COLORS.subtle,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  devBanner: {
+    alignSelf: 'flex-start',
+    ...TYPE.caption,
+    fontSize: 11,
+    fontFamily: 'Nunito-Bold',
+    color: '#B45309',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  mockCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: SPACING.m,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.borderVisible,
+    backgroundColor: 'transparent',
+  },
+  mockCardIconWrap: {
+    width: 80,
+    alignItems: 'flex-start',
+  },
+  mockCardBrand: {
+    width: 52,
+    height: 18,
+  },
+  mockPayButton: {
+    backgroundColor: '#1D4ED8',
+  },
+  clearMockLink: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+  },
+  clearMockLinkText: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    textDecorationLine: 'underline',
+  },
+  premiumSuccessBadgeWrap: {
+    alignItems: 'center',
+    marginBottom: SPACING.m,
+  },
+  premiumSuccessBadge: {
+    width: 80,
+    height: 80,
   },
 });

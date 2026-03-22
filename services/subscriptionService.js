@@ -1,9 +1,49 @@
 /**
  * Host business subscription (Starter / Premium) — M-Pesa STK checkout.
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken } from '../utils/userStorage';
 import { handleTokenExpiration } from '../utils/logoutHandler';
+
+/** Dev-only: persisted mock plan so you can preview Premium UI without real payment. */
+const MOCK_SUBSCRIPTION_PLAN_KEY = '@opahost_design_mock_subscription_plan';
+
+/**
+ * @returns {Promise<'starter'|'premium'|null>}
+ */
+export const getMockSubscriptionPlan = async () => {
+  if (!__DEV__) return null;
+  try {
+    const v = await AsyncStorage.getItem(MOCK_SUBSCRIPTION_PLAN_KEY);
+    if (v === 'starter' || v === 'premium') return v;
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * @param {'starter'|'premium'} plan
+ */
+export const setMockSubscriptionPlan = async (plan) => {
+  if (!__DEV__) return;
+  const p = plan === 'premium' ? 'premium' : 'starter';
+  try {
+    await AsyncStorage.setItem(MOCK_SUBSCRIPTION_PLAN_KEY, p);
+  } catch (e) {
+    if (__DEV__) console.warn('[subscription] setMockSubscriptionPlan', e);
+  }
+};
+
+export const clearMockSubscriptionPlan = async () => {
+  if (!__DEV__) return;
+  try {
+    await AsyncStorage.removeItem(MOCK_SUBSCRIPTION_PLAN_KEY);
+  } catch (e) {
+    if (__DEV__) console.warn('[subscription] clearMockSubscriptionPlan', e);
+  }
+};
 
 function parseDetail(detail) {
   if (detail == null) return '';
@@ -54,11 +94,7 @@ export const getSubscriptionPlans = async () => {
   }
 };
 
-/**
- * GET /host/subscription/me
- * @returns {Promise<{ success: boolean, subscription?: object, error?: string }>}
- */
-export const getHostSubscription = async () => {
+async function fetchHostSubscriptionFromApi() {
   const url = getApiUrl(API_ENDPOINTS.HOST_SUBSCRIPTION_ME);
   try {
     const token = await getUserToken();
@@ -87,6 +123,32 @@ export const getHostSubscription = async () => {
   } catch (e) {
     return { success: false, error: e.message || 'Network error' };
   }
+}
+
+/**
+ * GET /host/subscription/me (with __DEV__ mock overlay for design previews).
+ * @returns {Promise<{ success: boolean, subscription?: object, error?: string }>}
+ */
+export const getHostSubscription = async () => {
+  const apiResult = await fetchHostSubscriptionFromApi();
+  const mockPlan = await getMockSubscriptionPlan();
+  if (__DEV__ && mockPlan) {
+    const base =
+      apiResult.success && apiResult.subscription && typeof apiResult.subscription === 'object'
+        ? apiResult.subscription
+        : {};
+    return {
+      success: true,
+      subscription: {
+        ...base,
+        plan: mockPlan,
+        is_paid_active: true,
+        days_remaining: base.days_remaining ?? 30,
+        _design_mock: true,
+      },
+    };
+  }
+  return apiResult;
 };
 
 /**

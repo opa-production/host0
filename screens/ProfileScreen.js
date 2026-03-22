@@ -11,12 +11,17 @@ import { useHost } from '../utils/HostContext';
 import { logoutHost } from '../services/authService';
 import { getKycStatus } from '../services/kycService';
 import { getHostSubscription } from '../services/subscriptionService';
+import { getHidePremiumBadgePreference } from '../utils/userStorage';
 
 export default function ProfileScreen({ navigation }) {
   const { host, logout, refreshProfile, updateHost } = useHost();
   const insets = useSafeAreaInsets();
   const [kycStatus, setKycStatus] = useState(null);
-  const [businessPlanLine, setBusinessPlanLine] = useState(null);
+  /** Paid Starter / Premium label for subtitle (days shown separately in orange). */
+  const [businessPlanLabel, setBusinessPlanLabel] = useState(null);
+  /** e.g. "30d left" — rendered in orange next to label */
+  const [businessPlanDaysText, setBusinessPlanDaysText] = useState(null);
+  const [showPremiumBadge, setShowPremiumBadge] = useState(false);
   const lastProfileRefreshRef = useRef(0);
   const PROFILE_REFRESH_THROTTLE_MS = 60 * 1000; // 1 minute
 
@@ -90,23 +95,29 @@ export default function ProfileScreen({ navigation }) {
         }
 
         const subRes = await getHostSubscription();
+        const hideBadgePref = await getHidePremiumBadgePreference();
         if (!isMounted) return;
         if (subRes.success && subRes.subscription) {
           const s = subRes.subscription;
           const plan = (s.plan || 'free').toString().toLowerCase();
           const paid = s.is_paid_active === true;
+          setShowPremiumBadge(paid && plan === 'premium' && !hideBadgePref);
           if (paid && (plan === 'starter' || plan === 'premium')) {
             const label = plan === 'premium' ? 'Premium' : 'Starter';
-            const days =
-              s.days_remaining != null && s.days_remaining !== ''
-                ? ` · ${s.days_remaining}d left`
-                : '';
-            setBusinessPlanLine(`${label}${days}`);
+            setBusinessPlanLabel(label);
+            if (s.days_remaining != null && s.days_remaining !== '') {
+              setBusinessPlanDaysText(`${s.days_remaining}d left`);
+            } else {
+              setBusinessPlanDaysText(null);
+            }
           } else {
-            setBusinessPlanLine(null);
+            setBusinessPlanLabel(null);
+            setBusinessPlanDaysText(null);
           }
         } else {
-          setBusinessPlanLine(null);
+          setBusinessPlanLabel(null);
+          setBusinessPlanDaysText(null);
+          setShowPremiumBadge(false);
         }
       };
       loadInBackground();
@@ -237,7 +248,17 @@ export default function ProfileScreen({ navigation }) {
               </>
             ) : (
               <>
-                <Text style={styles.profileName}>{host.full_name || 'Host User'}</Text>
+                <View style={styles.profileNameRow}>
+                  <Text style={styles.profileName}>{host.full_name || 'Host User'}</Text>
+                  {showPremiumBadge ? (
+                    <Image
+                      source={require('../assets/images/badge.png')}
+                      style={styles.profilePremiumBadge}
+                      resizeMode="contain"
+                      accessibilityLabel="Premium host"
+                    />
+                  ) : null}
+                </View>
                 <Text style={styles.profileEmail}>{host.email || ''}</Text>
               </>
             )}
@@ -310,13 +331,28 @@ export default function ProfileScreen({ navigation }) {
 
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => { lightHaptic(); navigation.navigate('SupaHost'); }}
+              onPress={() => {
+                lightHaptic();
+                if (businessPlanLabel) {
+                  navigation.navigate('BusinessPlanManage');
+                } else {
+                  navigation.navigate('SupaHost');
+                }
+              }}
             >
               <Ionicons name="business-outline" size={22} color="#666666" style={styles.linkIcon} />
               <View style={styles.linkTextBlock}>
                 <Text style={styles.linkTextInner}>Ardena for Business</Text>
-                {businessPlanLine ? (
-                  <Text style={styles.linkSubText}>{businessPlanLine}</Text>
+                {businessPlanLabel ? (
+                  <Text style={styles.linkSubText}>
+                    <Text style={styles.linkSubTextPlan}>{businessPlanLabel}</Text>
+                    {businessPlanDaysText ? (
+                      <>
+                        <Text style={styles.linkSubTextPlan}>{' · '}</Text>
+                        <Text style={styles.linkSubTextCountdown}>{businessPlanDaysText}</Text>
+                      </>
+                    ) : null}
+                  </Text>
                 ) : null}
               </View>
               <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
@@ -455,11 +491,25 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  profileNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+    maxWidth: '100%',
+  },
   profileName: {
     ...TYPE.title,
     fontSize: 17,
     color: '#1C1C1E',
-    marginBottom: 4,
+    textAlign: 'center',
+    flexShrink: 1,
+  },
+  profilePremiumBadge: {
+    width: 26,
+    height: 26,
   },
   profileEmail: {
     ...TYPE.body,
@@ -514,6 +564,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Regular',
     color: '#8E8E93',
     marginTop: 2,
+  },
+  linkSubTextPlan: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: '#8E8E93',
+  },
+  linkSubTextCountdown: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Bold',
+    color: COLORS.countdownOrange,
   },
   verifiedBadge: {
     flexDirection: 'row',

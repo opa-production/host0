@@ -50,6 +50,7 @@ import FeedbackScreen from '../screens/FeedbackScreen';
 import ArdenaClientDownloadScreen from '../screens/ArdenaClientDownloadScreen';
 import SupaHostScreen from '../screens/SupaHostScreen';
 import BusinessPlanCheckoutScreen from '../screens/BusinessPlanCheckoutScreen';
+import BusinessPlanManageScreen from '../screens/BusinessPlanManageScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
@@ -341,6 +342,10 @@ export default function AppNavigator() {
         <Stack.Screen
           name="BusinessPlanCheckout"
           component={BusinessPlanCheckoutScreen}
+        />
+        <Stack.Screen
+          name="BusinessPlanManage"
+          component={BusinessPlanManageScreen}
         />
         <Stack.Screen
           name="GetBadge"

@@ -4,6 +4,39 @@ const USER_ID_KEY = '@user_id';
 const USER_TOKEN_KEY = '@user_token';
 const USER_PROFILE_KEY = '@user_profile';
 const ONBOARDING_COMPLETED_KEY = '@onboarding_completed';
+const HIDE_PREMIUM_BADGE_PREFIX = '@opahost_hide_premium_badge';
+
+async function hidePremiumBadgeStorageKey() {
+  const userId = await getUserId();
+  return `${HIDE_PREMIUM_BADGE_PREFIX}_${userId || 'local'}`;
+}
+
+/**
+ * Whether the host chose to hide the Premium verified badge on Home / Profile (still Premium).
+ * @returns {Promise<boolean>}
+ */
+export const getHidePremiumBadgePreference = async () => {
+  try {
+    const key = await hidePremiumBadgeStorageKey();
+    const v = await AsyncStorage.getItem(key);
+    return v === 'true';
+  } catch (error) {
+    console.error('Error getting hide premium badge preference:', error);
+    return false;
+  }
+};
+
+/**
+ * @param {boolean} hide
+ */
+export const setHidePremiumBadgePreference = async (hide) => {
+  try {
+    const key = await hidePremiumBadgeStorageKey();
+    await AsyncStorage.setItem(key, hide ? 'true' : 'false');
+  } catch (error) {
+    console.error('Error setting hide premium badge preference:', error);
+  }
+};
 
 /**
  * Get the current user ID from storage
@@ -112,6 +145,10 @@ export const setOnboardingCompleted = async (completed = true) => {
  */
 export const clearUserData = async () => {
   try {
+    const userId = await getUserId();
+    if (userId) {
+      await AsyncStorage.removeItem(`${HIDE_PREMIUM_BADGE_PREFIX}_${userId}`);
+    }
     await AsyncStorage.removeItem(USER_ID_KEY);
     await AsyncStorage.removeItem(USER_TOKEN_KEY);
     await AsyncStorage.removeItem(USER_PROFILE_KEY);
