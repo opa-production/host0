@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +18,11 @@ import { lightHaptic } from '../ui/haptics';
 import { getPaymentMethods } from '../services/paymentService';
 import { formatPhoneNumber } from '../utils/phoneUtils';
 import StatusModal from '../ui/StatusModal';
+import {
+  startSubscriptionCheckout,
+  pollSubscriptionPaymentStatus,
+  getHostSubscription,
+} from '../services/subscriptionService';
 
 function transformPaymentMethods(methods) {
   return methods
@@ -31,6 +37,7 @@ function transformPaymentMethods(methods) {
           icon: require('../assets/images/mpesa.png'),
           isDefault: method.is_default || false,
           type: 'mpesa',
+          mpesaRaw: method.mpesa_number || '',
         };
       }
       if (methodType === 'visa' || methodType === 'mastercard' || method.card_type) {
@@ -53,17 +60,30 @@ function transformPaymentMethods(methods) {
     .filter(Boolean);
 }
 
+const PAYABLE_CODES = new Set(['starter', 'premium']);
+
 export default function BusinessPlanCheckoutScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const route = useRoute();
   const params = route.params || {};
-  const planName = params.planName || 'Business plan';
+  const planCode = params.planCode === 'premium' ? 'premium' : 'starter';
+  const planName = params.planName || (planCode === 'premium' ? 'Premium' : 'Starter');
   const price = typeof params.price === 'number' ? params.price : Number(params.price) || 0;
 
   const [selectedMethodId, setSelectedMethodId] = useState(null);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [isLoadingMethods, setIsLoadingMethods] = useState(false);
-  const [confirmModal, setConfirmModal] = useState({ visible: false });
+  const [processing, setProcessing] = useState(false);
+  const [errorModal, setErrorModal] = useState({ visible: false, message: '' });
+  const [successModal, setSuccessModal] = useState(false);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const loadPaymentMethods = async () => {
     setIsLoadingMethods(true);
@@ -83,7 +103,7 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
         }
       }
 
-      const transformed = transformPaymentMethods(methods);
+      const transformed = transformPaymentMethods(methods).filter((m) => m.type === 'mpesa');
       setPaymentMethods(transformed);
 
       const defaultMethod = transformed.find((m) => m.isDefault);
@@ -110,10 +130,89 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
   const selectedMethod = paymentMethods.find((m) => m.id === selectedMethodId);
   const priceLabel = `KSh ${price.toLocaleString()}`;
 
-  const handlePay = () => {
-    if (!selectedMethodId || !selectedMethod) return;
+  const handleCheckout = async () => {
+    if (!PAYABLE_CODES.has(planCode)) {
+      setErrorModal({ visible: true, message: 'Invalid plan.' });
+      return;
+    }
+    if (!selectedMethod || selectedMethod.type !== 'mpesa') {
+      setErrorModal({ visible: true, message: 'Add an M-Pesa number to subscribe.' });
+      return;
+    }
+    if (!selectedMethod.mpesaRaw || String(selectedMethod.mpesaRaw).replace(/\D/g, '').length < 9) {
+      setErrorModal({ visible: true, message: 'Invalid M-Pesa number on file.' });
+      return;
+    }
+
     lightHaptic();
-    setConfirmModal({ visible: true });
+    setProcessing(true);
+
+    try {
+      const start = await startSubscriptionCheckout({
+        plan: planCode,
+        phone_number: selectedMethod.mpesaRaw,
+      });
+
+      if (!mounted.current) return;
+
+      if (!start.success) {
+        setProcessing(false);
+        setErrorModal({ visible: true, message: start.error || 'Could not start checkout.' });
+        return;
+      }
+
+      const checkoutRequestId = start.checkout_request_id;
+      if (!checkoutRequestId) {
+        setProcessing(false);
+        setErrorModal({ visible: true, message: 'Server did not return a checkout reference.' });
+        return;
+      }
+
+      const pollResult = await pollSubscriptionPaymentStatus(checkoutRequestId);
+
+      if (!mounted.current) return;
+      setProcessing(false);
+
+      if (pollResult.outcome === 'completed') {
+        await getHostSubscription();
+        setSuccessModal(true);
+        return;
+      }
+      if (pollResult.outcome === 'failed') {
+        setErrorModal({
+          visible: true,
+          message: pollResult.message || 'M-Pesa payment failed.',
+        });
+        return;
+      }
+      if (pollResult.outcome === 'cancelled') {
+        setErrorModal({
+          visible: true,
+          message: pollResult.message || 'Payment was cancelled.',
+        });
+        return;
+      }
+      if (pollResult.outcome === 'timeout') {
+        setErrorModal({
+          visible: true,
+          message: 'No confirmation yet. If you paid, your plan will update shortly. Otherwise try again.',
+        });
+        return;
+      }
+      if (pollResult.outcome === 'error') {
+        setErrorModal({
+          visible: true,
+          message: pollResult.message || 'Could not check payment status.',
+        });
+        return;
+      }
+      setErrorModal({ visible: true, message: 'Could not confirm payment status.' });
+    } catch (e) {
+      if (mounted.current) {
+        setProcessing(false);
+        setErrorModal({ visible: true, message: e?.message || 'Something went wrong.' });
+      }
+    }
   };
 
   return (
@@ -124,6 +223,7 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => {
+            if (processing) return;
             lightHaptic();
             navigation.goBack();
           }}
@@ -138,6 +238,7 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.outlineCard}>
           <Text style={styles.summaryPlan}>{planName}</Text>
@@ -148,7 +249,8 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
         </View>
 
         <View style={styles.outlineCard}>
-          <Text style={styles.sectionLabel}>Payment</Text>
+          <Text style={styles.sectionLabel}>M-Pesa</Text>
+          <Text style={styles.sectionHint}>Subscription is charged via STK push to your saved number.</Text>
 
           {isLoadingMethods ? (
             <View style={styles.loadingContainer}>
@@ -168,7 +270,7 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
                       <View style={styles.paymentLogoContainer}>
                         <Image
                           source={method.icon}
-                          style={method.type === 'mpesa' ? styles.paymentLogoMpesa : styles.paymentLogo}
+                          style={styles.paymentLogoMpesa}
                           resizeMode="contain"
                         />
                       </View>
@@ -188,10 +290,10 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
               <TouchableOpacity
                 style={[
                   styles.checkoutButton,
-                  (!selectedMethodId || isLoadingMethods) && styles.checkoutButtonDisabled,
+                  (!selectedMethodId || isLoadingMethods || processing) && styles.checkoutButtonDisabled,
                 ]}
-                disabled={!selectedMethodId || isLoadingMethods}
-                onPress={handlePay}
+                disabled={!selectedMethodId || isLoadingMethods || processing}
+                onPress={handleCheckout}
                 activeOpacity={0.9}
               >
                 <Text style={styles.checkoutButtonText}>Checkout</Text>
@@ -199,35 +301,54 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
             </>
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="wallet-outline" size={36} color={COLORS.subtle} />
-              <Text style={styles.emptyStateText}>No payment method</Text>
+              <Ionicons name="phone-portrait-outline" size={36} color={COLORS.subtle} />
+              <Text style={styles.emptyStateText}>No M-Pesa number saved</Text>
               <TouchableOpacity
                 style={styles.addMethodButton}
                 onPress={() => navigation.navigate('AddPaymentMethod')}
                 activeOpacity={0.85}
               >
-                <Text style={styles.addMethodButtonText}>Add</Text>
+                <Text style={styles.addMethodButtonText}>Add M-Pesa</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
       </ScrollView>
 
+      <Modal visible={processing} transparent animationType="fade">
+        <View style={styles.processingOverlay}>
+          <View style={styles.processingCard}>
+            <ActivityIndicator size="large" color={COLORS.text} />
+            <Text style={styles.processingTitle}>Check your phone</Text>
+            <Text style={styles.processingSub}>Approve the M-Pesa prompt to complete payment.</Text>
+          </View>
+        </View>
+      </Modal>
+
       <StatusModal
-        visible={confirmModal.visible}
+        visible={successModal}
         type="success"
-        title="Confirm on your device"
-        message={
-          selectedMethod
-            ? `${priceLabel} · ${planName}. Approve the prompt on your phone.`
-            : ''
-        }
+        title={"You're subscribed"}
+        message="Your plan is active. You can review it anytime from your profile."
         primaryLabel="Done"
         onPrimary={() => {
-          setConfirmModal({ visible: false });
+          setSuccessModal(false);
           navigation.goBack();
         }}
-        onRequestClose={() => setConfirmModal({ visible: false })}
+        onRequestClose={() => {
+          setSuccessModal(false);
+          navigation.goBack();
+        }}
+      />
+
+      <StatusModal
+        visible={errorModal.visible}
+        type="error"
+        title="Payment"
+        message={errorModal.message}
+        primaryLabel="OK"
+        onPrimary={() => setErrorModal({ visible: false, message: '' })}
+        onRequestClose={() => setErrorModal({ visible: false, message: '' })}
       />
     </View>
   );
@@ -262,7 +383,6 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.m,
     gap: 14,
   },
-  /** Outlined blocks (plan vs payment) */
   outlineCard: {
     borderRadius: RADIUS.card,
     padding: SPACING.m,
@@ -301,6 +421,13 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 14,
     color: COLORS.text,
+    marginBottom: 2,
+  },
+  sectionHint: {
+    ...TYPE.body,
+    fontSize: 12,
+    color: COLORS.subtle,
+    lineHeight: 17,
     marginBottom: 4,
   },
   loadingContainer: {
@@ -353,10 +480,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 22,
   },
-  paymentLogo: {
-    width: 44,
-    height: 22,
-  },
   paymentMethodInfo: {
     flex: 1,
   },
@@ -401,5 +524,33 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: 'Nunito-Bold',
+  },
+  processingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.l,
+  },
+  processingCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    gap: 12,
+    maxWidth: 300,
+  },
+  processingTitle: {
+    ...TYPE.section,
+    fontSize: 17,
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  processingSub: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

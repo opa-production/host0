@@ -10,11 +10,13 @@ import { uploadHostProfilePicture } from '../services/mediaService';
 import { useHost } from '../utils/HostContext';
 import { logoutHost } from '../services/authService';
 import { getKycStatus } from '../services/kycService';
+import { getHostSubscription } from '../services/subscriptionService';
 
 export default function ProfileScreen({ navigation }) {
   const { host, logout, refreshProfile, updateHost } = useHost();
   const insets = useSafeAreaInsets();
   const [kycStatus, setKycStatus] = useState(null);
+  const [businessPlanLine, setBusinessPlanLine] = useState(null);
   const lastProfileRefreshRef = useRef(0);
   const PROFILE_REFRESH_THROTTLE_MS = 60 * 1000; // 1 minute
 
@@ -85,6 +87,26 @@ export default function ProfileScreen({ navigation }) {
           setKycStatus(kycResult.status);
         } else {
           setKycStatus(null);
+        }
+
+        const subRes = await getHostSubscription();
+        if (!isMounted) return;
+        if (subRes.success && subRes.subscription) {
+          const s = subRes.subscription;
+          const plan = (s.plan || 'free').toString().toLowerCase();
+          const paid = s.is_paid_active === true;
+          if (paid && (plan === 'starter' || plan === 'premium')) {
+            const label = plan === 'premium' ? 'Premium' : 'Starter';
+            const days =
+              s.days_remaining != null && s.days_remaining !== ''
+                ? ` · ${s.days_remaining}d left`
+                : '';
+            setBusinessPlanLine(`${label}${days}`);
+          } else {
+            setBusinessPlanLine(null);
+          }
+        } else {
+          setBusinessPlanLine(null);
         }
       };
       loadInBackground();
@@ -291,7 +313,12 @@ export default function ProfileScreen({ navigation }) {
               onPress={() => { lightHaptic(); navigation.navigate('SupaHost'); }}
             >
               <Ionicons name="business-outline" size={22} color="#666666" style={styles.linkIcon} />
-              <Text style={styles.linkText}>Ardena for Business</Text>
+              <View style={styles.linkTextBlock}>
+                <Text style={styles.linkTextInner}>Ardena for Business</Text>
+                {businessPlanLine ? (
+                  <Text style={styles.linkSubText}>{businessPlanLine}</Text>
+                ) : null}
+              </View>
               <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
             </TouchableOpacity>
 
@@ -472,6 +499,21 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 13,
     color: '#1C1C1E',
+  },
+  linkTextBlock: {
+    flex: 1,
+    marginRight: 8,
+  },
+  linkTextInner: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#1C1C1E',
+  },
+  linkSubText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: '#8E8E93',
+    marginTop: 2,
   },
   verifiedBadge: {
     flexDirection: 'row',

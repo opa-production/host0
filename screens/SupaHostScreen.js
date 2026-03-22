@@ -7,9 +7,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 
+/** Display pricing & benefits (checkout still posts plan code; server charges configured KES). */
 const PLANS = {
   starter: {
     id: 'starter',
+    code: 'starter',
     name: 'Starter',
     price: 3500,
     blurb: 'Essential tools for small fleets',
@@ -22,6 +24,7 @@ const PLANS = {
   },
   premium: {
     id: 'premium',
+    code: 'premium',
     name: 'Premium',
     price: 6500,
     blurb: 'Full business toolkit & visibility',
@@ -48,7 +51,10 @@ export default function SupaHostScreen({ navigation: nav }) {
     });
   }, [navigation]);
 
-  const plan = useMemo(() => PLANS[selectedPlan], [selectedPlan]);
+  const plan = useMemo(() => {
+    const p = PLANS[selectedPlan];
+    return { ...p, code: p.code };
+  }, [selectedPlan]);
 
   return (
     <View style={styles.container}>
@@ -167,7 +173,7 @@ export default function SupaHostScreen({ navigation: nav }) {
             onPress={() => {
               lightHaptic();
               nav.navigate('BusinessPlanCheckout', {
-                planId: plan.id,
+                planCode: plan.code || plan.id,
                 planName: plan.name,
                 price: plan.price,
               });
