@@ -516,6 +516,91 @@ export const updateCarPricing = async (carId, pricing) => {
 };
 
 /**
+ * Update car pickup/dropoff location details
+ * @param {number|string} carId - Car ID
+ * @param {Object} location - Location payload
+ * @param {string} location.pickup_location - Pickup location
+ * @param {string|null} [location.dropoff_location] - Optional dropoff location
+ * @param {boolean} [location.dropoff_same_as_pickup=true] - Whether dropoff matches pickup
+ * @returns {Promise<Object>} Result with success status and car data or error
+ */
+export const updateCarLocation = async (carId, location) => {
+  if (!carId) {
+    return {
+      success: false,
+      error: 'Car ID is required. Please complete the basic information step first.',
+    };
+  }
+
+  const url = getApiUrl(API_ENDPOINTS.CAR_LOCATION(carId));
+
+  try {
+    const token = await getUserToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const pickupLocation = (location?.pickup_location || '').trim();
+    if (!pickupLocation) {
+      throw new Error('Pickup location is required');
+    }
+
+    const requestBody = {
+      pickup_location: pickupLocation,
+      dropoff_same_as_pickup: location?.dropoff_same_as_pickup !== false,
+    };
+
+    if (location?.dropoff_location && String(location.dropoff_location).trim()) {
+      requestBody.dropoff_location = String(location.dropoff_location).trim();
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to update car location';
+      try {
+        const errorData = await response.json();
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map((err) => err.msg || err).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          errorMessage = Object.values(errorData.detail).flat().join(', ');
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
+      } catch (_) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      car: data,
+    };
+  } catch (error) {
+    let errorMessage = 'Network error. Please check your connection.';
+    if (error.message === 'Network request failed') {
+      errorMessage = `Cannot connect to server at ${url}. Please check your connection and try again.`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+};
+
+/**
  * Save vehicle image URLs to backend database
  * After uploading images to Supabase Storage, this function saves the URLs to the backend
  * @param {number|string} carId - Car ID

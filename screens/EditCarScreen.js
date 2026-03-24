@@ -9,11 +9,14 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { updateCarSpecs, updateCarPricing, updateCarLocation } from '../services/carService';
+import StatusModal from '../ui/StatusModal';
 
 export default function EditCarScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -40,16 +43,95 @@ export default function EditCarScreen({ navigation, route }) {
     carRules: car?.carRules || '',
     pickupLocation: car?.pickupLocation || car?.location || '',
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusModal, setStatusModal] = useState({
+    visible: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
 
   const updateFormData = (data) => {
     setFormData(prev => ({ ...prev, ...data }));
   };
 
-  const handleSave = () => {
-    // TODO: Save to API
-    console.log('Saving car edits:', formData);
+  const handleSave = async () => {
+    const carId = car?.carId || car?.id;
+    if (!carId) {
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Unable to save',
+        message: 'Car ID is missing. Please go back and open this car again.',
+      });
+      return;
+    }
+
     lightHaptic();
-    navigation.goBack();
+    setIsSaving(true);
+    try {
+      const specsPayload = {
+        seats: formData.seats,
+        fuel_type: formData.fuelType,
+        transmission: formData.transmission,
+        color: formData.colour,
+        mileage: formData.mileage,
+        features: Array.isArray(car?.features) ? car.features : [],
+      };
+
+      const rulesArray = String(formData.carRules || '')
+        .split('\n')
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      const pricingPayload = {
+        daily_rate: formData.pricePerDay,
+        weekly_rate: formData.pricePerWeek,
+        monthly_rate: formData.pricePerMonth,
+        min_rental_days: formData.minimumRentalDays,
+        max_rental_days: formData.maxRentalDays || null,
+        min_age_requirement: formData.ageRestriction,
+        rules: rulesArray,
+      };
+
+      const locationPayload = {
+        pickup_location: formData.pickupLocation,
+        dropoff_same_as_pickup: true,
+      };
+
+      const [specsResult, pricingResult, locationResult] = await Promise.all([
+        updateCarSpecs(carId, specsPayload),
+        updateCarPricing(carId, pricingPayload),
+        updateCarLocation(carId, locationPayload),
+      ]);
+
+      const firstError = [specsResult, pricingResult, locationResult].find((r) => !r.success)?.error;
+      if (firstError) {
+        setStatusModal({
+          visible: true,
+          type: 'error',
+          title: 'Could not save changes',
+          message: firstError || 'Please review your details and try again.',
+        });
+        return;
+      }
+
+      setStatusModal({
+        visible: true,
+        type: 'success',
+        title: 'Changes saved',
+        message: 'Car details were updated successfully.',
+      });
+    } catch (error) {
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Could not save changes',
+        message: error?.message || 'Please try again.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -73,8 +155,13 @@ export default function EditCarScreen({ navigation, route }) {
           style={styles.saveButton}
           onPress={handleSave}
           activeOpacity={0.7}
+          disabled={isSaving}
         >
-          <Text style={styles.saveButtonText}>Save</Text>
+          {isSaving ? (
+            <ActivityIndicator size="small" color={COLORS.brand} />
+          ) : (
+            <Text style={styles.saveButtonText}>Save</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -316,6 +403,22 @@ export default function EditCarScreen({ navigation, route }) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <StatusModal
+        visible={statusModal.visible}
+        type={statusModal.type}
+        title={statusModal.title}
+        message={statusModal.message}
+        primaryLabel="OK"
+        onPrimary={() => {
+          const shouldGoBack = statusModal.type === 'success';
+          setStatusModal((prev) => ({ ...prev, visible: false }));
+          if (shouldGoBack) {
+            navigation.goBack();
+          }
+        }}
+        onRequestClose={() => setStatusModal((prev) => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }
