@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import StatusModal from '../ui/StatusModal';
 import { getBookingDetails, confirmPickup, confirmDropoff, getClientDisplayName, getBookingStatusDisplayText } from '../services/bookingService';
 import { downloadBookingReceipt } from '../services/receiptService';
 import { getHostClientProfile } from '../services/clientProfileService';
@@ -31,6 +32,12 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const [isRejectingExtension, setIsRejectingExtension] = useState(null);
   const [rejectReasonId, setRejectReasonId] = useState(null);
   const [rejectReasonText, setRejectReasonText] = useState('');
+  const [statusModal, setStatusModal] = useState({
+    visible: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
   const bookingId = route?.params?.bookingId || route?.params?.booking_id;
 
   const formatDate = (dateString) => {
@@ -294,6 +301,26 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
   const handleConfirmPickup = async () => {
     if (!bookingId || isConfirmingPickup) return;
+
+    const status = booking?.status?.toLowerCase?.() || '';
+    if (status === 'pending') {
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Booking still pending',
+        message: 'Pickup cannot be confirmed yet. Please wait for the booking to be accepted and marked as confirmed first.',
+      });
+      return;
+    }
+    if (!canConfirmPickup()) {
+      setStatusModal({
+        visible: true,
+        type: 'info',
+        title: 'Pickup not available yet',
+        message: 'Pickup can only be confirmed on or after the scheduled pickup date and time.',
+      });
+      return;
+    }
     
     lightHaptic();
     setIsConfirmingPickup(true);
@@ -304,11 +331,22 @@ export default function ActiveBookingScreen({ navigation, route }) {
         // Reload booking details to get updated status
         await loadBookingDetails();
       } else {
-        // Show error (you might want to add an Alert here)
         console.error('Failed to confirm pickup:', result.error);
+        setStatusModal({
+          visible: true,
+          type: 'error',
+          title: 'Could not confirm pickup',
+          message: result.error || 'Please try again in a moment.',
+        });
       }
     } catch (error) {
       console.error('Error confirming pickup:', error);
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Could not confirm pickup',
+        message: error?.message || 'An unexpected error occurred. Please try again.',
+      });
     } finally {
       setIsConfirmingPickup(false);
     }
@@ -316,6 +354,26 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
   const handleConfirmDropoff = async () => {
     if (!bookingId || isConfirmingDropoff) return;
+
+    const status = booking?.status?.toLowerCase?.() || '';
+    if (status === 'pending') {
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Booking still pending',
+        message: 'Dropoff cannot be confirmed while this booking is pending.',
+      });
+      return;
+    }
+    if (!canConfirmDropoff()) {
+      setStatusModal({
+        visible: true,
+        type: 'info',
+        title: 'Dropoff not available yet',
+        message: 'Dropoff can only be confirmed after the scheduled dropoff time.',
+      });
+      return;
+    }
     
     lightHaptic();
     setIsConfirmingDropoff(true);
@@ -326,11 +384,22 @@ export default function ActiveBookingScreen({ navigation, route }) {
         // Reload booking details to get updated status
         await loadBookingDetails();
       } else {
-        // Show error (you might want to add an Alert here)
         console.error('Failed to confirm dropoff:', result.error);
+        setStatusModal({
+          visible: true,
+          type: 'error',
+          title: 'Could not confirm dropoff',
+          message: result.error || 'Please try again in a moment.',
+        });
       }
     } catch (error) {
       console.error('Error confirming dropoff:', error);
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Could not confirm dropoff',
+        message: error?.message || 'An unexpected error occurred. Please try again.',
+      });
     } finally {
       setIsConfirmingDropoff(false);
     }
@@ -715,7 +784,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
                   !canConfirmPickup() && styles.confirmButtonDisabled,
                 ]}
                 onPress={handleConfirmPickup}
-                disabled={isConfirmingPickup || !canConfirmPickup()}
+                disabled={isConfirmingPickup}
                 activeOpacity={canConfirmPickup() ? 0.8 : 1}
               >
                 {isConfirmingPickup ? (
@@ -783,7 +852,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
                   !canConfirmDropoff() && styles.confirmButtonDisabled,
                 ]}
                 onPress={handleConfirmDropoff}
-                disabled={isConfirmingDropoff || !canConfirmDropoff()}
+                disabled={isConfirmingDropoff}
                 activeOpacity={canConfirmDropoff() ? 0.8 : 1}
               >
                 {isConfirmingDropoff ? (
@@ -1183,6 +1252,15 @@ export default function ActiveBookingScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <StatusModal
+        visible={statusModal.visible}
+        type={statusModal.type}
+        title={statusModal.title}
+        message={statusModal.message}
+        primaryLabel="OK"
+        onPrimary={() => setStatusModal((prev) => ({ ...prev, visible: false }))}
+        onRequestClose={() => setStatusModal((prev) => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }

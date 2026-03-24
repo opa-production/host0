@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import StatusModal from '../ui/StatusModal';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getBookingDetails, getClientDisplayName, getBookingStatusDisplayText, getHostBookings, isBookingCompleted } from '../services/bookingService';
@@ -46,6 +47,12 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   const [clientProfile, setClientProfile] = useState(null);
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
   const [carTrips, setCarTrips] = useState(null);
+  const [statusModal, setStatusModal] = useState({
+    visible: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
 
   const routeBooking = route?.params?.booking || {};
   const clientId = detailBooking?.client_id ?? routeBooking?.clientId ?? routeBooking?.client_id ?? null;
@@ -229,11 +236,21 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
   const submitRating = async () => {
     if (!rating) {
-      Alert.alert('Select a rating', 'Please tap a star to rate your renter.');
+      setStatusModal({
+        visible: true,
+        type: 'info',
+        title: 'Select a rating',
+        message: 'Please tap a star to rate your renter.',
+      });
       return;
     }
     if (!clientId || !bookingId) {
-      Alert.alert('Error', 'Booking or client info is missing. Cannot submit rating.');
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Rating unavailable',
+        message: 'Booking or client information is missing. Please refresh and try again.',
+      });
       return;
     }
 
@@ -256,12 +273,27 @@ export default function PastBookingDetailScreen({ navigation, route }) {
             setClientRatingSummary({ average: refetch.average ?? 0, count: refetch.count ?? 0 });
           }
         }
-        Alert.alert('Thanks!', `You rated ${booking?.renter?.name || 'the renter'} ${rating}★.`);
+        setStatusModal({
+          visible: true,
+          type: 'success',
+          title: 'Thanks!',
+          message: `You rated ${booking?.renter?.name || 'the renter'} ${rating}★.`,
+        });
       } else {
-        Alert.alert('Rating failed', result.error || 'Could not submit rating. Try again.');
+        setStatusModal({
+          visible: true,
+          type: 'error',
+          title: 'Rating failed',
+          message: result.error || 'Could not submit rating. Try again.',
+        });
       }
     } catch (e) {
-      Alert.alert('Error', e?.message || 'Could not submit rating.');
+      setStatusModal({
+        visible: true,
+        type: 'error',
+        title: 'Error',
+        message: e?.message || 'Could not submit rating.',
+      });
     } finally {
       setSubmittingRating(false);
     }
@@ -742,6 +774,16 @@ export default function PastBookingDetailScreen({ navigation, route }) {
           </KeyboardAvoidingView>
         </View>
       </Modal>
+
+      <StatusModal
+        visible={statusModal.visible}
+        type={statusModal.type}
+        title={statusModal.title}
+        message={statusModal.message}
+        primaryLabel="OK"
+        onPrimary={() => setStatusModal((prev) => ({ ...prev, visible: false }))}
+        onRequestClose={() => setStatusModal((prev) => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }
