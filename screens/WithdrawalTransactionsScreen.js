@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostEarningsTransactions } from '../services/earningsService';
-import { getHostWithdrawals, withdrawalToTransactionItem } from '../services/withdrawalService';
+import { getHostWithdrawals } from '../services/withdrawalService';
 
-export default function AllTransactionsScreen({ navigation, route }) {
+export default function WithdrawalTransactionsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [transactions, setTransactions] = useState([]);
+  const [withdrawals, setWithdrawals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAllWithdrawals = useCallback(async () => {
@@ -38,55 +37,57 @@ export default function AllTransactionsScreen({ navigation, route }) {
     return all;
   }, []);
 
-  const loadTransactions = useCallback(async () => {
+  const loadWithdrawals = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [txResult, withdrawals] = await Promise.all([
-        getHostEarningsTransactions(),
-        fetchAllWithdrawals(),
-      ]);
-      const txList = (txResult.success && txResult.transactions) ? txResult.transactions : [];
-      const withdrawalItems = withdrawals.map(withdrawalToTransactionItem);
-      const merged = [...txList, ...withdrawalItems].sort((a, b) => (b.sortDate || 0) - (a.sortDate || 0));
-      setTransactions(merged);
-    } catch (error) {
-      console.error('Error loading transactions:', error);
-      setTransactions([]);
+      const all = await fetchAllWithdrawals();
+      setWithdrawals(all);
+    } catch (_) {
+      setWithdrawals([]);
     } finally {
       setIsLoading(false);
     }
   }, [fetchAllWithdrawals]);
 
   useEffect(() => {
-    loadTransactions();
-  }, [loadTransactions]);
+    loadWithdrawals();
+  }, [loadWithdrawals]);
 
   useFocusEffect(
     useCallback(() => {
-      loadTransactions();
-    }, [loadTransactions])
+      loadWithdrawals();
+    }, [loadWithdrawals])
   );
-  
-  const formatCurrency = (amount) => {
-    const numericAmount = Number(amount) || 0;
-    return numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  const formattedCurrency = (value) => {
+    const amount = Number(value) || 0;
+    return `KSh ${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
   };
 
-  const isRejectedWithdrawal = (t) => t?.withdrawalStatus === 'rejected';
+  const getStatusDisplay = (status) => {
+    const normalized = (status || '').toLowerCase();
+    if (normalized === 'pending') return { label: 'Pending', color: '#FF9500' };
+    if (normalized === 'approved') return { label: 'Approved', color: '#007AFF' };
+    if (normalized === 'processed' || normalized === 'paid' || normalized === 'completed') {
+      return { label: 'Completed', color: '#34C759' };
+    }
+    if (normalized === 'rejected' || normalized === 'failed' || normalized === 'cancelled') {
+      return { label: 'Failed', color: '#FF3B30' };
+    }
+    return { label: status || 'Unknown', color: COLORS.subtle };
+  };
 
-  const getAmountStyle = (t) => {
-    if (isRejectedWithdrawal(t)) return styles.amountRejected;
-    if (t?.title && t.title.toLowerCase().includes('commission')) return styles.amountCommission;
-    if (t?.title && t.title.toLowerCase().includes('withdrawal')) return styles.amountWithdrawal;
-    if (t?.amount > 0) return styles.amountIncoming;
-    return styles.amount;
+  const formatWithdrawalDate = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
           style={styles.backButton}
@@ -98,42 +99,44 @@ export default function AllTransactionsScreen({ navigation, route }) {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transactions</Text>
+        <Text style={styles.headerTitle}>All Withdrawal Requests</Text>
         <View style={styles.backButton} />
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-
         <View style={styles.card}>
           {isLoading ? (
             <View style={styles.emptyState}>
-              <ActivityIndicator size="large" color={COLORS.subtle} />
-              <Text style={styles.emptySub}>Loading transactions…</Text>
+              <ActivityIndicator size="small" color={COLORS.text} />
+              <Text style={styles.emptySub}>Loading requests...</Text>
             </View>
-          ) : transactions.length === 0 ? (
+          ) : withdrawals.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No transactions yet</Text>
-              <Text style={styles.emptySub}>Your payouts, withdrawals, and fees will show here.</Text>
+              <Ionicons name="time-outline" size={28} color={COLORS.subtle} />
+              <Text style={styles.emptyTitle}>No withdrawal requests yet</Text>
+              <Text style={styles.emptySub}>Your withdrawal history will appear here.</Text>
             </View>
           ) : (
             <View style={styles.list}>
-              {transactions.map((t, idx) => {
-                const isNegative = t.amount < 0;
-                const amountText = `${isNegative ? '-' : ''}KSh ${formatCurrency(Math.abs(t.amount))}`;
-                const rejected = isRejectedWithdrawal(t);
+              {withdrawals.map((item, index) => {
+                const status = getStatusDisplay(item.status);
                 return (
-                  <View key={`${t.id || 'tx'}-${idx}`}>
+                  <View key={`${item.id || index}`}>
                     <View style={styles.row}>
                       <View style={styles.left}>
-                        <Text style={[styles.rowTitle, rejected && styles.rejectedText]}>{t.title}</Text>
-                        <Text style={styles.rowSub}>{t.subtitle}</Text>
+                        <Text style={styles.amountText}>{formattedCurrency(item.amount)}</Text>
+                        <Text style={styles.metaText}>
+                          {formatWithdrawalDate(item.created_at || item.updated_at)}
+                        </Text>
                       </View>
-                      <Text style={getAmountStyle(t)}>{amountText}</Text>
+                      <View style={[styles.statusBadge, { backgroundColor: `${status.color}1A` }]}>
+                        <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+                      </View>
                     </View>
-                    {idx !== transactions.length - 1 && <View style={styles.divider} />}
+                    {index < withdrawals.length - 1 && <View style={styles.divider} />}
                   </View>
                 );
               })}
@@ -181,75 +184,58 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   list: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: SPACING.m,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   left: {
     flex: 1,
-    paddingRight: 12,
+    marginRight: SPACING.s,
   },
-  rowTitle: {
+  amountText: {
     ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#1C1C1E',
+    fontSize: 15,
+    color: COLORS.text,
+    marginBottom: 2,
   },
-  rowSub: {
-    ...TYPE.body,
+  metaText: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
     fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  statusText: {
+    ...TYPE.caption,
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5EA',
-  },
-  amount: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#1C1C1E',
-  },
-  amountIncoming: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#34C759',
-  },
-  amountCommission: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#FF3B30',
-  },
-  amountWithdrawal: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#FF9500',
-  },
-  amountRejected: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#FF3B30',
-  },
-  rejectedText: {
-    color: '#FF3B30',
+    backgroundColor: COLORS.border,
   },
   emptyState: {
-    padding: SPACING.l,
+    padding: SPACING.xl,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.s,
   },
   emptyTitle: {
     ...TYPE.section,
     color: COLORS.text,
+    textAlign: 'center',
   },
   emptySub: {
     ...TYPE.body,
-    color: '#8E8E93',
+    fontSize: 13,
+    color: COLORS.subtle,
     textAlign: 'center',
-    marginTop: 6,
-    maxWidth: 280,
   },
 });

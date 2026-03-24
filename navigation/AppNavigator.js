@@ -43,6 +43,7 @@ import FinanceScreen from '../screens/FinanceScreen';
 import ActiveBookingScreen from '../screens/ActiveBookingScreen';
 import PastBookingsScreen from '../screens/PastBookingsScreen';
 import WithdrawScreen from '../screens/WithdrawScreen';
+import WithdrawalTransactionsScreen from '../screens/WithdrawalTransactionsScreen';
 import AllTransactionsScreen from '../screens/AllTransactionsScreen';
 import HostLearnMoreScreen from '../screens/HostLearnMoreScreen';
 import HostStatsScreen from '../screens/HostStatsScreen';
@@ -289,6 +290,11 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="Withdraw" 
           component={WithdrawScreen}
+        />
+
+        <Stack.Screen
+          name="WithdrawalTransactions"
+          component={WithdrawalTransactionsScreen}
         />
 
         <Stack.Screen 

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, ActivityIndicator, InteractionManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,8 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getPaymentMethods } from '../services/paymentService';
 import { formatPhoneNumber } from '../utils/phoneUtils';
-import { createWithdrawal } from '../services/withdrawalService';
+import { createWithdrawal, getHostWithdrawals } from '../services/withdrawalService';
+import StatusModal from '../ui/StatusModal';
 
 export default function WithdrawScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -17,8 +18,18 @@ export default function WithdrawScreen({ navigation, route }) {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [isLoadingMethods, setIsLoadingMethods] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recentWithdrawals, setRecentWithdrawals] = useState([]);
+  const [isLoadingWithdrawals, setIsLoadingWithdrawals] = useState(false);
+  const [statusModal, setStatusModal] = useState({
+    visible: false,
+    type: 'info',
+    title: '',
+    message: '',
+    onPrimary: null,
+  });
   const scrollViewRef = useRef(null);
   const amountInputRef = useRef(null);
+  const hasLoadedInitialDataRef = useRef(false);
 
   const formattedCurrency = (value) => `KSh ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 
@@ -105,10 +116,81 @@ export default function WithdrawScreen({ navigation, route }) {
     }
   };
 
+  const openStatusModal = ({ type = 'info', title, message, onPrimary = null }) => {
+    setStatusModal({
+      visible: true,
+      type,
+      title,
+      message,
+      onPrimary,
+    });
+  };
+
+  const closeStatusModal = () => {
+    const callback = statusModal.onPrimary;
+    setStatusModal((prev) => ({ ...prev, visible: false, onPrimary: null }));
+    if (typeof callback === 'function') callback();
+  };
+
+  const loadRecentWithdrawals = async () => {
+    setIsLoadingWithdrawals(true);
+    try {
+      const result = await getHostWithdrawals({ limit: 100, skip: 0 });
+      if (result.success) {
+        setRecentWithdrawals(result.withdrawals || []);
+      } else {
+        setRecentWithdrawals([]);
+      }
+    } catch (_) {
+      setRecentWithdrawals([]);
+    } finally {
+      setIsLoadingWithdrawals(false);
+    }
+  };
+
+  const getStatusDisplay = (status) => {
+    const normalized = (status || '').toLowerCase();
+    if (normalized === 'pending') return { label: 'Pending', color: '#FF9500' };
+    if (normalized === 'approved') return { label: 'Approved', color: '#007AFF' };
+    if (normalized === 'processed' || normalized === 'paid' || normalized === 'completed') {
+      return { label: 'Completed', color: '#34C759' };
+    }
+    if (normalized === 'rejected' || normalized === 'failed' || normalized === 'cancelled') {
+      return { label: 'Failed', color: '#FF3B30' };
+    }
+    return { label: status || 'Unknown', color: COLORS.subtle };
+  };
+
+  const formatWithdrawalDate = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const displayedWithdrawals = recentWithdrawals.slice(0, 3);
+
   // Load payment methods when screen is focused
   useFocusEffect(
     React.useCallback(() => {
-      loadPaymentMethods();
+      let isActive = true;
+      const task = InteractionManager.runAfterInteractions(async () => {
+        if (!isActive) return;
+
+        if (!hasLoadedInitialDataRef.current) {
+          await Promise.all([loadPaymentMethods(), loadRecentWithdrawals()]);
+          hasLoadedInitialDataRef.current = true;
+        } else {
+          await loadRecentWithdrawals();
+        }
+      });
+
+      return () => {
+        isActive = false;
+        if (task && typeof task.cancel === 'function') {
+          task.cancel();
+        }
+      };
     }, [])
   );
 
@@ -120,15 +202,27 @@ export default function WithdrawScreen({ navigation, route }) {
   const handleSubmit = async () => {
     const numericAmount = Number(amount.replace(/,/g, ''));
     if (!numericAmount || Number.isNaN(numericAmount) || numericAmount <= 0) {
-      Alert.alert('Invalid amount', 'Please enter a valid amount.');
+      openStatusModal({
+        type: 'error',
+        title: 'Invalid amount',
+        message: 'Please enter a valid amount.',
+      });
       return;
     }
     if (numericAmount > withdrawable) {
-      Alert.alert('Amount too high', 'Amount exceeds your withdrawable balance.');
+      openStatusModal({
+        type: 'error',
+        title: 'Amount too high',
+        message: 'Amount exceeds your withdrawable balance.',
+      });
       return;
     }
     if (!selectedMethod) {
-      Alert.alert('Select method', 'Please select a payment method.');
+      openStatusModal({
+        type: 'info',
+        title: 'Select method',
+        message: 'Please select a payment method.',
+      });
       return;
     }
 
@@ -141,7 +235,11 @@ export default function WithdrawScreen({ navigation, route }) {
       if (selectedMethod.paymentMethodType === 'mpesa') {
         const digits = (selectedMethod.mpesaNumber || amount).replace(/\D/g, '');
         if (!digits || digits.length < 9) {
-          Alert.alert('Invalid number', 'Please use a valid M-Pesa number.');
+          openStatusModal({
+            type: 'error',
+            title: 'Invalid number',
+            message: 'Please use a valid M-Pesa number.',
+          });
           setIsSubmitting(false);
           return;
         }
@@ -151,7 +249,11 @@ export default function WithdrawScreen({ navigation, route }) {
         payload.account_number = String(selectedMethod.accountNumber || '').trim();
         payload.account_name = (selectedMethod.accountName || selectedMethod.name || '').trim();
         if (!payload.bank_name || !payload.account_number) {
-          Alert.alert('Invalid method', 'This payment method is missing bank details.');
+          openStatusModal({
+            type: 'error',
+            title: 'Invalid method',
+            message: 'This payment method is missing bank details.',
+          });
           setIsSubmitting(false);
           return;
         }
@@ -159,14 +261,26 @@ export default function WithdrawScreen({ navigation, route }) {
 
       const result = await createWithdrawal(payload);
       if (result.success) {
-        Alert.alert('Withdrawal requested', 'Your withdrawal has been submitted and is pending processing.', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        setAmount('');
+        await loadRecentWithdrawals();
+        openStatusModal({
+          type: 'success',
+          title: 'Withdrawal requested',
+          message: 'Your withdrawal has been submitted and is pending processing.',
+        });
       } else {
-        Alert.alert('Withdrawal failed', result.error || 'Could not submit withdrawal. Please try again.');
+        openStatusModal({
+          type: 'error',
+          title: 'Withdrawal failed',
+          message: result.error || 'Could not submit withdrawal. Please try again.',
+        });
       }
     } catch (e) {
-      Alert.alert('Error', e?.message || 'Something went wrong. Please try again.');
+      openStatusModal({
+        type: 'error',
+        title: 'Error',
+        message: e?.message || 'Something went wrong. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -206,7 +320,9 @@ export default function WithdrawScreen({ navigation, route }) {
         >
           {/* Payment Methods */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Payment Method</Text>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitleNoMargin}>Select Payment Method</Text>
+            </View>
             {isLoadingMethods ? (
               <View style={styles.emptyStateCard}>
                 <ActivityIndicator size="small" color={COLORS.text} />
@@ -231,11 +347,14 @@ export default function WithdrawScreen({ navigation, route }) {
                         </Text>
                         <Text style={styles.methodDetails}>{method.details}</Text>
                       </View>
-                      {(selectedMethod?.id === method.id || selectedMethod === method) && (
-                        <View style={styles.checkmark}>
-                          <Ionicons name="checkmark-circle" size={20} color="#000000" />
-                        </View>
-                      )}
+                      <View style={[
+                        styles.selectorCircle,
+                        (selectedMethod?.id === method.id || selectedMethod === method) && styles.selectorCircleSelected,
+                      ]}>
+                        {(selectedMethod?.id === method.id || selectedMethod === method) ? (
+                          <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                        ) : null}
+                      </View>
                     </TouchableOpacity>
                     {index < paymentMethods.length - 1 && (
                       <View style={styles.divider} />
@@ -307,8 +426,73 @@ export default function WithdrawScreen({ navigation, route }) {
               </View>
             </View>
           )}
+
+          <View style={styles.transactionsSection}>
+            <View style={styles.transactionsHeaderRow}>
+              <Text style={styles.sectionTitleNoMargin}>Recent Withdrawal Requests</Text>
+              <TouchableOpacity
+                style={styles.seeAllButton}
+                onPress={() => {
+                  lightHaptic();
+                  navigation.navigate('WithdrawalTransactions');
+                }}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="chevron-forward" size={18} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+            {isLoadingWithdrawals ? (
+              <View style={styles.transactionCardEmpty}>
+                <ActivityIndicator size="small" color={COLORS.text} />
+                <Text style={styles.transactionEmptyText}>Loading recent requests...</Text>
+              </View>
+            ) : recentWithdrawals.length === 0 ? (
+              <View style={styles.transactionCardEmpty}>
+                <Ionicons name="time-outline" size={22} color={COLORS.subtle} />
+                <Text style={styles.transactionEmptyText}>No withdrawal requests yet.</Text>
+              </View>
+            ) : (
+              <View style={styles.transactionsCard}>
+                {displayedWithdrawals.map((item, index) => {
+                  const status = getStatusDisplay(item.status);
+                  return (
+                    <React.Fragment key={`${item.id || index}`}>
+                      <View style={styles.transactionItem}>
+                        <View style={styles.transactionLeft}>
+                          <Text style={styles.transactionAmount}>
+                            {formattedCurrency(Number(item.amount) || 0)}
+                          </Text>
+                          <Text style={styles.transactionMeta}>
+                            {formatWithdrawalDate(item.created_at || item.updated_at)}
+                          </Text>
+                        </View>
+                        <View style={[styles.statusBadge, { backgroundColor: `${status.color}1A` }]}>
+                          <Text style={[styles.statusBadgeText, { color: status.color }]}>
+                            {status.label}
+                          </Text>
+                        </View>
+                      </View>
+                      {index < displayedWithdrawals.length - 1 && (
+                        <View style={styles.divider} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </View>
+            )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <StatusModal
+        visible={statusModal.visible}
+        type={statusModal.type}
+        title={statusModal.title}
+        message={statusModal.message}
+        primaryLabel="OK"
+        onPrimary={closeStatusModal}
+        onRequestClose={closeStatusModal}
+      />
     </View>
   );
 }
@@ -347,11 +531,22 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: SPACING.l,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.m,
+  },
   sectionTitle: {
     ...TYPE.section,
     fontSize: 15,
     color: COLORS.text,
     marginBottom: SPACING.m,
+  },
+  sectionTitleNoMargin: {
+    ...TYPE.section,
+    fontSize: 15,
+    color: COLORS.text,
   },
   methodsCard: {
     backgroundColor: COLORS.surface,
@@ -393,13 +588,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.subtle,
   },
-  checkmark: {
-    position: 'absolute',
-    right: SPACING.m,
+  selectorCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: '#000000',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: SPACING.s,
+  },
+  selectorCircleSelected: {
+    backgroundColor: '#000000',
   },
   amountSection: {
     marginTop: SPACING.xl,
     marginBottom: SPACING.l,
+  },
+  transactionsSection: {
+    marginTop: SPACING.s,
+    marginBottom: SPACING.xl,
+  },
+  transactionsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.m,
+  },
+  seeAllButton: {
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   amountCard: {
     backgroundColor: COLORS.surface,
@@ -489,5 +710,60 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 15,
     color: '#FFFFFF',
+  },
+  transactionsCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  transactionCardEmpty: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+    padding: SPACING.l,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.s,
+  },
+  transactionEmptyText: {
+    ...TYPE.body,
+    fontSize: 13,
+    color: COLORS.subtle,
+    textAlign: 'center',
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: SPACING.m,
+  },
+  transactionLeft: {
+    flex: 1,
+    marginRight: SPACING.s,
+  },
+  transactionAmount: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  transactionMeta: {
+    ...TYPE.caption,
+    fontSize: 12,
+    color: COLORS.subtle,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  statusBadgeText: {
+    ...TYPE.caption,
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
   },
 });
