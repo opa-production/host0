@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,17 +12,19 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { toggleCarVisibility } from '../services/carService';
+import { toggleCarVisibility, getHostCars } from '../services/carService';
 
 export default function CarDetailsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
-  const { car } = route.params || {};
+  const { car: routeCar } = route.params || {};
+  const [currentCar, setCurrentCar] = useState(routeCar || null);
   
   // Use car data from route params or mock data for testing
-  const [isListed, setIsListed] = useState(car?.available ?? car?.is_visible ?? true);
+  const [isListed, setIsListed] = useState(routeCar?.available ?? routeCar?.is_visible ?? true);
   const [isToggling, setIsToggling] = useState(false);
 
   // Comprehensive mock data with all fields - merged with passed car data
@@ -68,14 +70,41 @@ export default function CarDetailsScreen({ navigation, route }) {
   // Merge passed car data with defaults, handling special field mappings
   const carData = {
     ...defaultMockData,
-    ...(car || {}),
+    ...(currentCar || {}),
     // Map 'image' to 'coverPhoto' if coverPhoto doesn't exist
-    coverPhoto: car?.coverPhoto || car?.image || defaultMockData.coverPhoto,
+    coverPhoto: currentCar?.coverPhoto || currentCar?.image || defaultMockData.coverPhoto,
     // Map 'location' to 'pickupLocation' if pickupLocation doesn't exist
-    pickupLocation: car?.pickupLocation || car?.location || defaultMockData.pickupLocation,
+    pickupLocation: currentCar?.pickupLocation || currentCar?.location || defaultMockData.pickupLocation,
     // Extract year from model if model contains year (e.g., "2023 G80") and year is not provided
-    year: car?.year || (car?.model && car.model.match(/^\d{4}/)?.[0]) || defaultMockData.year,
+    year: currentCar?.year || (currentCar?.model && currentCar.model.match(/^\d{4}/)?.[0]) || defaultMockData.year,
   };
+
+  const loadLatestCar = useCallback(async () => {
+    const targetCarId = routeCar?.carId || routeCar?.id || currentCar?.carId || currentCar?.id;
+    if (!targetCarId) return;
+    try {
+      const result = await getHostCars();
+      if (!result.success || !Array.isArray(result.cars)) return;
+      const updatedCar = result.cars.find((item) => {
+        const itemId = item?.carId || item?.id;
+        return String(itemId) === String(targetCarId);
+      });
+      if (updatedCar) {
+        setCurrentCar(updatedCar);
+        if (updatedCar.available !== undefined || updatedCar.is_visible !== undefined) {
+          setIsListed(updatedCar.available ?? updatedCar.is_visible ?? true);
+        }
+      }
+    } catch (_) {
+      // Keep current car data if refresh fails
+    }
+  }, [routeCar?.carId, routeCar?.id, currentCar?.carId, currentCar?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadLatestCar();
+    }, [loadLatestCar])
+  );
 
   const handleToggleListing = async (value) => {
     // Only allow toggle if car is verified
@@ -92,7 +121,7 @@ export default function CarDetailsScreen({ navigation, route }) {
     lightHaptic();
 
     try {
-      const carId = car?.carId || car?.id;
+      const carId = currentCar?.carId || currentCar?.id || routeCar?.carId || routeCar?.id;
       if (!carId) {
         Alert.alert('Error', 'Car ID not found');
         return;
@@ -103,6 +132,11 @@ export default function CarDetailsScreen({ navigation, route }) {
       if (result.success) {
         // Update local state with new visibility status
         setIsListed(result.isVisible);
+        setCurrentCar((prev) => ({
+          ...(prev || {}),
+          available: result.isVisible,
+          is_visible: result.isVisible,
+        }));
       } else {
         // Revert toggle on error
         setIsListed(!value);

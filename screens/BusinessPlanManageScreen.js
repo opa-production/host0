@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { getHostSubscription } from '../services/subscriptionService';
+import { getHostSubscription, clearMockSubscriptionPlan } from '../services/subscriptionService';
 import {
   getHidePremiumBadgePreference,
   setHidePremiumBadgePreference,
@@ -113,6 +113,27 @@ export default function BusinessPlanManageScreen({ navigation }) {
     lightHaptic();
     setHidePremiumBadge(value);
     await setHidePremiumBadgePreference(value);
+  };
+
+  const onClearDevPremium = () => {
+    lightHaptic();
+    Alert.alert(
+      'Clear premium (Dev)',
+      'This removes the local mock premium/starter plan on this device.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await clearMockSubscriptionPlan();
+            await setHidePremiumBadgePreference(false);
+            setHidePremiumBadge(false);
+            navigation.replace('SupaHost');
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -223,6 +244,18 @@ export default function BusinessPlanManageScreen({ navigation }) {
               </View>
               <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
             </TouchableOpacity>
+
+            {__DEV__ ? (
+              <>
+                <View style={styles.divider} />
+                <TouchableOpacity style={styles.inCardRow} onPress={onClearDevPremium} activeOpacity={0.75}>
+                  <View style={styles.inCardRowLeft}>
+                    <Ionicons name="close-circle-outline" size={22} color={COLORS.danger} />
+                    <Text style={styles.devDangerLabel}>Clear premium (Dev)</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            ) : null}
 
             <Text style={styles.hintInside}>
               Upgrade or switch anytime—you’ll confirm payment on the next screen.
@@ -362,6 +395,11 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 16,
     color: COLORS.text,
+  },
+  devDangerLabel: {
+    ...TYPE.bodyStrong,
+    fontSize: 16,
+    color: COLORS.danger,
   },
   hintInside: {
     ...TYPE.body,
