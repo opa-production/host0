@@ -58,14 +58,32 @@ export default function WithdrawScreen({ navigation, route }) {
         
         // Transform methods for display and for withdrawal API (payment_method_type, mpesa_number or bank)
         const transformedMethods = methods.map((method) => {
-          const methodType = (method.method_type || method.method_type_name || '').toLowerCase();
-          
-          if (methodType === 'mpesa' || method.mpesa_number) {
-            const mpesaNumber = (method.mpesa_number || '').replace(/\D/g, '');
+          const methodType = (
+            method.method_type ||
+            method.method_type_name ||
+            method.type ||
+            method.payment_type ||
+            ''
+          ).toLowerCase();
+
+          if (
+            methodType === 'mpesa' ||
+            method.mpesa_number ||
+            methodType === 'ardenapay' ||
+            methodType === 'ardena_pay' ||
+            methodType === 'ardena pay'
+          ) {
+            const mpesaNumber = (
+              method.mpesa_number ||
+              method.mobile_number ||
+              method.ardenapay_number ||
+              method.phone_number ||
+              ''
+            ).replace(/\D/g, '');
             return {
               id: method.id?.toString(),
               name: method.name || '',
-              details: method.mpesa_number ? formatPhoneNumber(method.mpesa_number) : 'M-Pesa',
+              details: mpesaNumber ? formatPhoneNumber(mpesaNumber) : 'M-Pesa',
               icon: require('../assets/images/mpesa.png'),
               isDefault: method.is_default || false,
               paymentMethodType: 'mpesa',

@@ -33,13 +33,30 @@ export default function GetBadgeScreen({ navigation }) {
         
         // Transform methods for display
         const transformedMethods = methods.map((method) => {
-          const methodType = method.method_type?.toLowerCase();
-          
-          if (methodType === 'mpesa' || method.mpesa_number) {
+          const methodType = (
+            method.method_type ||
+            method.type ||
+            method.payment_type ||
+            ''
+          ).toLowerCase();
+
+          if (
+            methodType === 'mpesa' ||
+            method.mpesa_number ||
+            methodType === 'ardenapay' ||
+            methodType === 'ardena_pay' ||
+            methodType === 'ardena pay'
+          ) {
+            const phone =
+              method.mpesa_number ||
+              method.mobile_number ||
+              method.ardenapay_number ||
+              method.phone_number ||
+              '';
             return {
               id: method.id?.toString(),
               name: method.name || 'M-Pesa',
-              details: method.mpesa_number ? formatPhoneNumber(method.mpesa_number) : 'M-Pesa',
+              details: phone ? formatPhoneNumber(phone) : 'M-Pesa',
               icon: require('../assets/images/mpesa.png'),
               isDefault: method.is_default || false,
               type: 'mpesa',

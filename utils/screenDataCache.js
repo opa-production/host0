@@ -20,6 +20,12 @@ export const notificationsScreenCache = {
   loadedOnce: false,
 };
 
+/** Transformed rows for Add Payment Method screen — avoids refetch + full-screen loading on every focus. */
+export const addPaymentMethodScreenCache = {
+  savedMethods: [],
+  loadedOnce: false,
+};
+
 /** Map<bookingId string, { mappedBooking, clientAvatar }> — survives stack pop so reopening the same booking avoids a full refetch. */
 export const activeBookingScreenCache = new Map();
 
@@ -33,5 +39,7 @@ export function resetScreenDataCaches() {
   messagesScreenCache.loadedOnce = false;
   notificationsScreenCache.notifications = [];
   notificationsScreenCache.loadedOnce = false;
+  addPaymentMethodScreenCache.savedMethods = [];
+  addPaymentMethodScreenCache.loadedOnce = false;
   activeBookingScreenCache.clear();
 }

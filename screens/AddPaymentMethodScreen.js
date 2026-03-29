@@ -1,18 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Switch } from 'react-native';
+import React, { useState, useCallback, useRef } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Switch,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import { addMpesaPaymentMethod, addCardPaymentMethod, getPaymentMethods, deletePaymentMethod } from '../services/paymentService';
+import {
+  addMpesaPaymentMethod,
+  addCardPaymentMethod,
+  getPaymentMethods,
+  deletePaymentMethod,
+} from '../services/paymentService';
 import { formatPhoneNumber } from '../utils/phoneUtils';
 import StatusModal from '../ui/StatusModal';
+import { addPaymentMethodScreenCache } from '../utils/screenDataCache';
 
 export default function AddPaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [selectedType, setSelectedType] = useState(null); // 'mpesa', 'visa', or 'mastercard'
-  const [savedMethods, setSavedMethods] = useState([]);
+  const [savedMethods, setSavedMethods] = useState(() =>
+    addPaymentMethodScreenCache.savedMethods.length > 0
+      ? addPaymentMethodScreenCache.savedMethods.map((m) => ({ ...m }))
+      : []
+  );
 
   // M-Pesa form state
   const [mpesaForm, setMpesaForm] = useState({
@@ -33,7 +56,11 @@ export default function AddPaymentMethodScreen({ navigation }) {
   });
   const [cardErrors, setCardErrors] = useState({});
   const [isSubmittingCard, setIsSubmittingCard] = useState(false);
-  const [isLoadingMethods, setIsLoadingMethods] = useState(false);
+  const [isLoadingMethods, setIsLoadingMethods] = useState(
+    () =>
+      !addPaymentMethodScreenCache.loadedOnce && addPaymentMethodScreenCache.savedMethods.length === 0
+  );
+  const fetchGenRef = useRef(0);
   const [statusModal, setStatusModal] = useState({
     visible: false,
     type: 'success',
@@ -204,7 +231,6 @@ export default function AddPaymentMethodScreen({ navigation }) {
       // Clean the mobile number (remove all non-digits)
       const cleanedNumber = mpesaForm.mobileNumber.replace(/\D/g, '');
 
-      // Call the API to add M-Pesa payment method
       const result = await addMpesaPaymentMethod(
         mpesaForm.name.trim(),
         cleanedNumber,
@@ -218,7 +244,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
         setSelectedType(null);
         
         // Reload payment methods before showing success
-        await loadPaymentMethods();
+        await loadPaymentMethods({ silent: true });
         
         // Success modal
         setStatusModal({
@@ -249,24 +275,31 @@ export default function AddPaymentMethodScreen({ navigation }) {
     }
   };
 
-  // Load payment methods from API
-  const loadPaymentMethods = async () => {
-    setIsLoadingMethods(true);
+  // Load payment methods from API (silent = background refresh; keeps last list visible)
+  const loadPaymentMethods = useCallback(async ({ silent = false } = {}) => {
+    const gen = ++fetchGenRef.current;
+    const hadCache = addPaymentMethodScreenCache.savedMethods.length > 0;
+    const showLoader =
+      !silent && !addPaymentMethodScreenCache.loadedOnce && !hadCache;
+
+    if (showLoader) {
+      setIsLoadingMethods(true);
+    }
+
     try {
       const result = await getPaymentMethods();
-      console.log('Payment methods API result:', JSON.stringify(result, null, 2));
-      
+
+      if (gen !== fetchGenRef.current) {
+        return;
+      }
+
       if (result.success) {
-        // Handle different possible response structures
         let methods = [];
-        
-        // API returns: [{ payment_methods: [...] }] or { payment_methods: [...] }
+
         if (Array.isArray(result.data)) {
-          // Check if first item has payment_methods property
           if (result.data[0] && Array.isArray(result.data[0].payment_methods)) {
             methods = result.data[0].payment_methods;
           } else {
-            // Otherwise, treat the array itself as methods
             methods = result.data;
           }
         } else if (result.data && Array.isArray(result.data.payment_methods)) {
@@ -274,90 +307,100 @@ export default function AddPaymentMethodScreen({ navigation }) {
         } else if (result.data && Array.isArray(result.data.items)) {
           methods = result.data.items;
         } else if (result.data && typeof result.data === 'object') {
-          // If it's an object, try to find an array property
           const keys = Object.keys(result.data);
-          const arrayKey = keys.find(key => Array.isArray(result.data[key]));
+          const arrayKey = keys.find((key) => Array.isArray(result.data[key]));
           if (arrayKey) {
             methods = result.data[arrayKey];
           }
         }
-        
-        console.log('Extracted methods array:', JSON.stringify(methods, null, 2));
-        
+
         const transformedMethods = methods.map((method, index) => {
-          console.log(`Processing method ${index}:`, JSON.stringify(method, null, 2));
-          
-          // API uses method_type: 'mpesa' or 'visa'/'mastercard'
-          const methodType = method.method_type?.toLowerCase() || method.type?.toLowerCase() || method.payment_type?.toLowerCase();
-          
-          // Check for M-Pesa payment method
-          if (methodType === 'mpesa' || method.mpesa_number) {
-            const transformed = {
-              id: method.id, // Keep original numeric ID for API calls
-              idString: method.id?.toString() || `mpesa-${index}-${Date.now()}`, // String ID for React keys
+          const methodType =
+            method.method_type?.toLowerCase() ||
+            method.type?.toLowerCase() ||
+            method.payment_type?.toLowerCase();
+
+          if (
+            methodType === 'mpesa' ||
+            method.mpesa_number ||
+            methodType === 'ardenapay' ||
+            methodType === 'ardena_pay' ||
+            methodType === 'ardena pay'
+          ) {
+            return {
+              id: method.id,
+              idString: method.id?.toString() || `mpesa-${index}-${Date.now()}`,
               type: 'mpesa',
               name: method.name || '',
-              mobileNumber: method.mpesa_number || method.mobile_number || '',
+              mobileNumber:
+                method.mpesa_number ||
+                method.mobile_number ||
+                method.ardenapay_number ||
+                method.phone_number ||
+                '',
               logo: require('../assets/images/mpesa.png'),
               isDefault: method.is_default || false,
             };
-            console.log('Transformed M-Pesa method:', transformed);
-            return transformed;
           }
-          
-          // Check for Card payment method (visa or mastercard)
+
           if (methodType === 'visa' || methodType === 'mastercard' || method.card_type || method.card_last_four) {
-            // Use card_last_four from API if available, otherwise extract from card_number
-            const lastFour = method.card_last_four || 
-                           (method.card_number && method.card_number.length >= 4 ? method.card_number.slice(-4) : '****') ||
-                           '****';
-            
+            const lastFour =
+              method.card_last_four ||
+              (method.card_number && method.card_number.length >= 4 ? method.card_number.slice(-4) : '****') ||
+              '****';
             const cardType = method.card_type?.toLowerCase() || methodType || 'visa';
-            
-            const transformed = {
-              id: method.id, // Keep original numeric ID for API calls
-              idString: method.id?.toString() || `card-${index}-${Date.now()}`, // String ID for React keys
+            return {
+              id: method.id,
+              idString: method.id?.toString() || `card-${index}-${Date.now()}`,
               type: cardType,
               name: method.name || '',
-              lastFour: lastFour,
+              lastFour,
               expiry: method.expiry_date || method.expiry || '',
-              logo: (cardType === 'visa')
-                ? require('../assets/images/visa.png')
-                : require('../assets/images/mastercard.png'),
+              logo:
+                cardType === 'visa'
+                  ? require('../assets/images/visa.png')
+                  : require('../assets/images/mastercard.png'),
               isDefault: method.is_default || false,
             };
-            console.log('Transformed Card method:', transformed);
-            return transformed;
           }
-          
-          // If we can't identify the type, return as-is but log it
+
           console.warn('Unknown payment method type:', method);
           return {
             id: method.id?.toString() || `unknown-${index}-${Date.now()}`,
             ...method,
-            logo: require('../assets/images/mpesa.png'), // Default logo
+            logo: require('../assets/images/mpesa.png'),
           };
         });
-        
-        console.log('Final transformed methods:', JSON.stringify(transformedMethods, null, 2));
+
+        addPaymentMethodScreenCache.savedMethods = transformedMethods;
+        addPaymentMethodScreenCache.loadedOnce = true;
         setSavedMethods(transformedMethods);
-        console.log('Saved methods count:', transformedMethods.length);
       } else {
+        if (!addPaymentMethodScreenCache.loadedOnce && !hadCache) {
+          setSavedMethods([]);
+        }
         console.error('Failed to load payment methods:', result.error);
-        // Don't show error to user, just log it
       }
     } catch (error) {
+      if (gen !== fetchGenRef.current) {
+        return;
+      }
       console.error('Error loading payment methods:', error);
+      if (!addPaymentMethodScreenCache.loadedOnce && !hadCache) {
+        setSavedMethods([]);
+      }
     } finally {
-      setIsLoadingMethods(false);
+      if (gen === fetchGenRef.current) {
+        setIsLoadingMethods(false);
+      }
     }
-  };
+  }, []);
 
-  // Load payment methods when screen is focused
   useFocusEffect(
-    React.useCallback(() => {
-      loadPaymentMethods();
-    }, [])
+    useCallback(() => {
+      const silent = addPaymentMethodScreenCache.loadedOnce;
+      loadPaymentMethods({ silent });
+    }, [loadPaymentMethods])
   );
 
   // Handle card submission
@@ -390,7 +433,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
         setSelectedType(null);
         
         // Reload payment methods before showing success
-        await loadPaymentMethods();
+        await loadPaymentMethods({ silent: true });
         
         // Success modal
         setStatusModal({
@@ -436,7 +479,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
         try {
           const result = await deletePaymentMethod(id);
           if (result.success) {
-            await loadPaymentMethods();
+            await loadPaymentMethods({ silent: true });
             setStatusModal((prev) => ({ ...prev, visible: false }));
           } else {
             setStatusModal({
@@ -493,64 +536,74 @@ export default function AddPaymentMethodScreen({ navigation }) {
 
         {/* Payment Type Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Payment Method</Text>
+          <Text style={styles.sectionTitle}>Select payment method</Text>
+          <Text style={styles.sectionHint}>Tap a method to select it, then fill in your details below.</Text>
           <View style={styles.paymentMethodsCard}>
             <TouchableOpacity
               style={styles.paymentMethodItem}
-              onPress={selectMpesa}
+              onPress={() => {
+                lightHaptic();
+                selectMpesa();
+              }}
               activeOpacity={0.7}
             >
-              <Image 
-                source={require('../assets/images/mpesa.png')} 
-                style={styles.paymentTypeLogoSmall}
-                resizeMode="contain"
-              />
-              <Text style={styles.paymentTypeLabel}>M-Pesa</Text>
-              {selectedType === 'mpesa' && (
-                <View style={styles.checkmark}>
-                  <Ionicons name="checkmark-circle" size={20} color="#000000" />
-                </View>
-              )}
+              <View style={styles.paymentMethodLeft}>
+                <Image
+                  source={require('../assets/images/mpesa.png')}
+                  style={styles.paymentPickerLogo}
+                  resizeMode="contain"
+                />
+                <Text style={styles.paymentMethodLabel}>M-Pesa</Text>
+              </View>
+              <View style={[styles.radioOuter, selectedType === 'mpesa' && styles.radioOuterSelected]}>
+                {selectedType === 'mpesa' ? <View style={styles.radioInner} /> : null}
+              </View>
             </TouchableOpacity>
 
             <View style={styles.divider} />
 
             <TouchableOpacity
               style={styles.paymentMethodItem}
-              onPress={selectVisa}
+              onPress={() => {
+                lightHaptic();
+                selectVisa();
+              }}
               activeOpacity={0.7}
             >
-              <Image 
-                source={require('../assets/images/visa.png')} 
-                style={styles.paymentTypeLogoSmall}
-                resizeMode="contain"
-              />
-              <Text style={styles.paymentTypeLabel}>Visa</Text>
-              {selectedType === 'visa' && (
-                <View style={styles.checkmark}>
-                  <Ionicons name="checkmark-circle" size={20} color="#000000" />
-                </View>
-              )}
+              <View style={styles.paymentMethodLeft}>
+                <Image
+                  source={require('../assets/images/visa.png')}
+                  style={styles.paymentPickerLogo}
+                  resizeMode="contain"
+                />
+                <Text style={styles.paymentMethodLabel}>Visa</Text>
+              </View>
+              <View style={[styles.radioOuter, selectedType === 'visa' && styles.radioOuterSelected]}>
+                {selectedType === 'visa' ? <View style={styles.radioInner} /> : null}
+              </View>
             </TouchableOpacity>
 
             <View style={styles.divider} />
 
             <TouchableOpacity
               style={styles.paymentMethodItem}
-              onPress={selectMastercard}
+              onPress={() => {
+                lightHaptic();
+                selectMastercard();
+              }}
               activeOpacity={0.7}
             >
-              <Image 
-                source={require('../assets/images/mastercard.png')} 
-                style={styles.paymentTypeLogoSmall}
-                resizeMode="contain"
-              />
-              <Text style={styles.paymentTypeLabel}>Mastercard</Text>
-              {selectedType === 'mastercard' && (
-                <View style={styles.checkmark}>
-                  <Ionicons name="checkmark-circle" size={20} color="#000000" />
-                </View>
-              )}
+              <View style={styles.paymentMethodLeft}>
+                <Image
+                  source={require('../assets/images/mastercard.png')}
+                  style={styles.paymentPickerLogo}
+                  resizeMode="contain"
+                />
+                <Text style={styles.paymentMethodLabel}>Mastercard</Text>
+              </View>
+              <View style={[styles.radioOuter, selectedType === 'mastercard' && styles.radioOuterSelected]}>
+                {selectedType === 'mastercard' ? <View style={styles.radioInner} /> : null}
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -800,7 +853,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
         )}
 
         {/* Saved Payment Methods */}
-        {isLoadingMethods ? (
+        {isLoadingMethods && savedMethods.length === 0 ? (
           <View style={styles.section}>
             <ActivityIndicator size="small" color={COLORS.text} />
           </View>
@@ -816,9 +869,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
                     resizeMode="contain"
                   />
                   <View style={styles.savedCardInfo}>
-                    <Text style={styles.savedCardName}>
-                      {method.type === 'mpesa' ? method.name : method.name}
-                    </Text>
+                    <Text style={styles.savedCardName}>{method.name}</Text>
                     {method.type === 'mpesa' ? (
                       <Text style={styles.savedCardDetails}>
                         {method.mobileNumber ? formatPhoneNumber(method.mobileNumber) : 'M-Pesa'}
@@ -849,12 +900,12 @@ export default function AddPaymentMethodScreen({ navigation }) {
         ) : null}
 
         {/* Empty State */}
-        {!selectedType && savedMethods.length === 0 && (
+        {!selectedType && savedMethods.length === 0 && !isLoadingMethods && (
           <View style={styles.emptyState}>
             <Ionicons name="card-outline" size={64} color="#cccccc" />
             <Text style={styles.emptyStateText}>No payment methods added</Text>
             <Text style={styles.emptyStateSubtext}>
-              Select a payment method above to get started
+              Select a provider above to get started
             </Text>
           </View>
         )}
@@ -918,7 +969,14 @@ const styles = StyleSheet.create({
     ...TYPE.section,
     fontSize: 15,
     color: '#1C1C1E',
+    marginBottom: 6,
+  },
+  sectionHint: {
+    ...TYPE.caption,
+    fontSize: 12,
+    color: COLORS.subtle,
     marginBottom: 10,
+    lineHeight: 16,
   },
   paymentMethodsCard: {
     backgroundColor: COLORS.surface,
@@ -930,30 +988,50 @@ const styles = StyleSheet.create({
   paymentMethodItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingVertical: 14,
     paddingHorizontal: SPACING.m,
-    minHeight: 56,
-    position: 'relative',
+    minHeight: 62,
+  },
+  paymentMethodLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  paymentPickerLogo: {
+    width: 40,
+    height: 26,
+    marginRight: 12,
+  },
+  paymentMethodLabel: {
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: COLORS.text,
   },
   divider: {
-    height: 1,
-    backgroundColor: COLORS.text,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.borderStrong,
     marginHorizontal: SPACING.m,
   },
-  checkmark: {
-    position: 'absolute',
-    right: SPACING.m,
-  },
-  paymentTypeLabel: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#1C1C1E',
-    marginLeft: 12,
-  },
-  paymentTypeLogoSmall: {
-    width: 48,
+  radioOuter: {
+    width: 20,
     height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: COLORS.borderVisible,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  radioOuterSelected: {
+    borderColor: COLORS.text,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.text,
   },
   formCard: {
     backgroundColor: COLORS.surface,

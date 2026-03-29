@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 
-// Local dev URL when running Metro yourself (not in Expo Go). Change IP for physical devices.
+
 const LOCAL_DEV_API_BASE_URL = 'http://192.168.88.249:8001';
 const PRODUCTION_API_BASE_URL = 'https://api.ardena.xyz';
 
