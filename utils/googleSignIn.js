@@ -12,7 +12,7 @@ try {
     offlineAccess: false,
   });
 } catch (e) {
-  // Native module not available (e.g. Expo Go)
+  
 }
 
 export { GoogleSignin, statusCodes };
