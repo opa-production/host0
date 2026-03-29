@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostCars, toggleCarVisibility, deleteHostCar } from '../services/carService';
+import StatusModal from '../ui/StatusModal';
 import { getCarDriveSettings, updateCarDriveSettings } from '../services/driveSettingsService';
 import { useHost } from '../utils/HostContext';
 
@@ -21,6 +22,17 @@ export default function HostScreen({ navigation }) {
   const [driveSettingsCarId, setDriveSettingsCarId] = useState(null);
   const [driveSettingsValue, setDriveSettingsValue] = useState(null);
   const [isSavingDriveSettings, setIsSavingDriveSettings] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    visible: false,
+    carId: null,
+    carName: '',
+  });
+  const [deleteCarBusy, setDeleteCarBusy] = useState(false);
+  const [deleteCarFeedback, setDeleteCarFeedback] = useState({
+    visible: false,
+    title: '',
+    message: '',
+  });
 
   const loadCars = async (isRefresh = false) => {
     if (isRefresh) {
@@ -283,51 +295,66 @@ export default function HostScreen({ navigation }) {
     }
   };
 
+  const closeDeleteConfirm = () => {
+    if (deleteCarBusy) return;
+    setDeleteConfirm({ visible: false, carId: null, carName: '' });
+  };
+
   const handleDeleteCar = (item, carName) => {
     lightHaptic();
     const carId = item.carId ?? item.id;
     if (!carId) {
-      Alert.alert('Error', 'Car ID not found.');
+      setDeleteCarFeedback({
+        visible: true,
+        title: 'Something went wrong',
+        message: 'Car ID not found.',
+      });
       return;
     }
-    Alert.alert(
-      'Delete Car',
-      `Are you sure you want to delete ${carName}? This action cannot be undone.`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const result = await deleteHostCar(carId);
-              if (result.success) {
-                setCars((prev) => prev.filter((c) => (c.carId ?? c.id) !== carId));
-                lightHaptic();
-              } else {
-                if (result.error && (result.error.includes('Session expired') || result.error.includes('Please login again'))) {
-                  await logout();
-                  navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
-                  return;
-                }
-                Alert.alert('Error', result.error || 'Failed to delete car. Please try again.');
-              }
-            } catch (error) {
-              console.error('Error deleting car:', error);
-              if (error.message && (error.message.includes('Session expired') || error.message.includes('Please login again'))) {
-                await logout();
-                navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
-                return;
-              }
-              Alert.alert('Error', 'Failed to delete car. Please try again.');
-            }
-          },
-        },
-      ]
-    );
+    setDeleteConfirm({ visible: true, carId, carName });
+  };
+
+  const confirmDeleteCar = async () => {
+    const carId = deleteConfirm.carId;
+    if (!carId || deleteCarBusy) return;
+    setDeleteCarBusy(true);
+    try {
+      const result = await deleteHostCar(carId);
+      if (result.success) {
+        setCars((prev) => prev.filter((c) => (c.carId ?? c.id) !== carId));
+        lightHaptic();
+        setDeleteConfirm({ visible: false, carId: null, carName: '' });
+      } else {
+        if (result.error && (result.error.includes('Session expired') || result.error.includes('Please login again'))) {
+          setDeleteConfirm({ visible: false, carId: null, carName: '' });
+          await logout();
+          navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+          return;
+        }
+        setDeleteConfirm({ visible: false, carId: null, carName: '' });
+        setDeleteCarFeedback({
+          visible: true,
+          title: 'Could not delete',
+          message: result.error || 'Failed to delete car. Please try again.',
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting car:', error);
+      if (error.message && (error.message.includes('Session expired') || error.message.includes('Please login again'))) {
+        setDeleteConfirm({ visible: false, carId: null, carName: '' });
+        await logout();
+        navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+        return;
+      }
+      setDeleteConfirm({ visible: false, carId: null, carName: '' });
+      setDeleteCarFeedback({
+        visible: true,
+        title: 'Could not delete',
+        message: 'Something went wrong. Please try again.',
+      });
+    } finally {
+      setDeleteCarBusy(false);
+    }
   };
 
   const handleToggleVisibility = async (item, value) => {
@@ -670,6 +697,33 @@ export default function HostScreen({ navigation }) {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <StatusModal
+        visible={deleteConfirm.visible}
+        type="info"
+        title="Delete this car?"
+        message={
+          deleteConfirm.carName
+            ? `Remove “${deleteConfirm.carName}” from your garage? This can’t be undone.`
+            : 'This can’t be undone.'
+        }
+        secondaryLabel="Cancel"
+        onSecondary={closeDeleteConfirm}
+        primaryLabel={deleteCarBusy ? 'Deleting…' : 'Delete'}
+        primaryTone="destructive"
+        onPrimary={confirmDeleteCar}
+        onRequestClose={closeDeleteConfirm}
+      />
+
+      <StatusModal
+        visible={deleteCarFeedback.visible}
+        type="error"
+        title={deleteCarFeedback.title}
+        message={deleteCarFeedback.message}
+        primaryLabel="OK"
+        onPrimary={() => setDeleteCarFeedback((s) => ({ ...s, visible: false }))}
+        onRequestClose={() => setDeleteCarFeedback((s) => ({ ...s, visible: false }))}
+      />
     </View>
   );
 }

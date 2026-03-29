@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -6,50 +6,66 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostNotifications, markNotificationAsRead } from '../services/notificationService';
+import { notificationsScreenCache } from '../utils/screenDataCache';
 
 export default function NotificationsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [notifications, setNotifications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [notifications, setNotifications] = useState(() => [
+    ...(notificationsScreenCache.notifications || []),
+  ]);
+  const [isLoading, setIsLoading] = useState(
+    () => !notificationsScreenCache.loadedOnce && (notificationsScreenCache.notifications || []).length === 0
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const fetchGenerationRef = useRef(0);
 
-  const loadNotifications = async (isRefresh = false) => {
-    if (isRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    setError(null);
+  const loadNotifications = useCallback(async ({ silent = false, isPullRefresh = false } = {}) => {
+    const gen = ++fetchGenerationRef.current;
+    const cachedCount = (notificationsScreenCache.notifications || []).length;
+    const showFullLoader =
+      !silent && !isPullRefresh && !notificationsScreenCache.loadedOnce && cachedCount === 0;
+
+    if (isPullRefresh) setIsRefreshing(true);
+    if (showFullLoader) setIsLoading(true);
+    if (!silent) setError(null);
 
     try {
       const result = await getHostNotifications();
+      if (gen !== fetchGenerationRef.current) return;
+
       if (result.success) {
-        setNotifications(result.notifications || []);
+        const list = result.notifications || [];
+        notificationsScreenCache.notifications = list;
+        notificationsScreenCache.loadedOnce = true;
+        setNotifications(list);
+        setError(null);
       } else {
-        setError(result.error || 'Failed to load notifications');
-        setNotifications([]);
+        if (!notificationsScreenCache.loadedOnce) {
+          setError(result.error || 'Failed to load notifications');
+          setNotifications([]);
+        }
       }
     } catch (err) {
       console.error('Error loading notifications:', err);
-      setError('An unexpected error occurred');
-      setNotifications([]);
+      if (gen !== fetchGenerationRef.current) return;
+      if (!notificationsScreenCache.loadedOnce) {
+        setError('An unexpected error occurred');
+        setNotifications([]);
+      }
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      if (gen === fetchGenerationRef.current) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     }
-  };
-
-  // Load notifications on mount
-  useEffect(() => {
-    loadNotifications();
   }, []);
 
-  // Reload when screen is focused
   useFocusEffect(
     useCallback(() => {
-      loadNotifications();
-    }, [])
+      const silent = notificationsScreenCache.loadedOnce;
+      loadNotifications({ silent });
+    }, [loadNotifications])
   );
 
   const handleNotificationPress = async (notification) => {
@@ -59,12 +75,13 @@ export default function NotificationsScreen({ navigation }) {
       try {
         const result = await markNotificationAsRead(notification.id);
         if (result.success) {
-          // Update local state to mark as read
-          setNotifications(prevNotifications =>
-            prevNotifications.map(n =>
+          setNotifications((prevNotifications) => {
+            const next = prevNotifications.map((n) =>
               n.id === notification.id ? { ...n, isRead: true } : n
-            )
-          );
+            );
+            notificationsScreenCache.notifications = next;
+            return next;
+          });
         } else {
           console.error('Failed to mark notification as read:', result.error);
           // Don't show error to user, just log it
@@ -102,7 +119,7 @@ export default function NotificationsScreen({ navigation }) {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={() => loadNotifications(true)}
+            onRefresh={() => loadNotifications({ isPullRefresh: true })}
             tintColor={COLORS.text}
           />
         }
@@ -115,13 +132,13 @@ export default function NotificationsScreen({ navigation }) {
         ) : error ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <Ionicons name="alert-circle-outline" size={26} color="#FF3B30" />
+              <Ionicons name="alert-circle-outline" size={40} color="#FF3B30" />
             </View>
             <Text style={styles.emptyStateTitle}>Error loading notifications</Text>
             <Text style={styles.emptyStateMessage}>{error}</Text>
             <TouchableOpacity
               style={styles.retryButton}
-              onPress={() => loadNotifications()}
+              onPress={() => loadNotifications({ silent: false })}
               activeOpacity={0.7}
             >
               <Text style={styles.retryButtonText}>Try Again</Text>
@@ -130,7 +147,7 @@ export default function NotificationsScreen({ navigation }) {
         ) : notifications.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <Ionicons name="notifications-outline" size={26} color={COLORS.subtle} />
+              <Ionicons name="notifications-outline" size={40} color={COLORS.subtle} />
             </View>
             <Text style={styles.emptyStateTitle}>No notifications</Text>
             <Text style={styles.emptyStateMessage}>
@@ -273,19 +290,8 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   emptyIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
   emptyStateTitle: {
     ...TYPE.title,

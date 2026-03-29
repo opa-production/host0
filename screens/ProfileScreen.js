@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Alert, Animated } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -12,6 +12,7 @@ import { logoutHost } from '../services/authService';
 import { getKycStatus } from '../services/kycService';
 import { getHostSubscription } from '../services/subscriptionService';
 import { getHidePremiumBadgePreference } from '../utils/userStorage';
+import StatusModal from '../ui/StatusModal';
 
 export default function ProfileScreen({ navigation }) {
   const { host, logout, refreshProfile, updateHost } = useHost();
@@ -22,6 +23,12 @@ export default function ProfileScreen({ navigation }) {
   /** e.g. "30d left" — rendered in orange next to label */
   const [businessPlanDaysText, setBusinessPlanDaysText] = useState(null);
   const [showPremiumBadge, setShowPremiumBadge] = useState(false);
+  const [uploadFeedbackModal, setUploadFeedbackModal] = useState({
+    visible: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
   const lastProfileRefreshRef = useRef(0);
   const PROFILE_REFRESH_THROTTLE_MS = 60 * 1000; // 1 minute
 
@@ -128,7 +135,12 @@ export default function ProfileScreen({ navigation }) {
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permission.status !== 'granted') {
-      Alert.alert('Permission needed', 'We need access to your photos to update your profile image.');
+      setUploadFeedbackModal({
+        visible: true,
+        type: 'info',
+        title: 'Photos access',
+        message: 'Allow photo access in Settings to update your profile picture.',
+      });
       return;
     }
 
@@ -144,7 +156,12 @@ export default function ProfileScreen({ navigation }) {
       
       try {
         if (!host?.id) {
-          Alert.alert('Error', 'Unable to upload. Please try logging in again.');
+          setUploadFeedbackModal({
+            visible: true,
+            type: 'error',
+            title: 'Something went wrong',
+            message: 'Unable to upload. Please sign in again and try once more.',
+          });
           return;
         }
 
@@ -160,13 +177,28 @@ export default function ProfileScreen({ navigation }) {
           // Update local context immediately with new avatar URL
           await updateHost({ avatar_url: uploadResult.url });
           console.log('📸 [ProfileScreen] Updated host context with avatar_url:', uploadResult.url);
-          Alert.alert('Success', 'Profile picture updated successfully!');
+          setUploadFeedbackModal({
+            visible: true,
+            type: 'success',
+            title: 'Photo updated',
+            message: 'Your profile picture was updated.',
+          });
         } else {
-          Alert.alert('Upload Failed', uploadResult.error || 'Failed to upload profile picture');
+          setUploadFeedbackModal({
+            visible: true,
+            type: 'error',
+            title: 'Upload failed',
+            message: uploadResult.error || 'Could not upload your profile picture. Try again.',
+          });
         }
       } catch (error) {
         console.error('Error uploading profile picture:', error);
-        Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
+        setUploadFeedbackModal({
+          visible: true,
+          type: 'error',
+          title: 'Upload failed',
+          message: 'Something went wrong. Please try again.',
+        });
       }
     }
   };
@@ -406,6 +438,16 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
       )}
+
+      <StatusModal
+        visible={uploadFeedbackModal.visible}
+        type={uploadFeedbackModal.type}
+        title={uploadFeedbackModal.title}
+        message={uploadFeedbackModal.message}
+        primaryLabel="OK"
+        onPrimary={() => setUploadFeedbackModal((s) => ({ ...s, visible: false }))}
+        onRequestClose={() => setUploadFeedbackModal((s) => ({ ...s, visible: false }))}
+      />
     </View>
   );
 }

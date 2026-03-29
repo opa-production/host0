@@ -15,6 +15,11 @@ export const messagesScreenCache = {
   loadedOnce: false,
 };
 
+export const notificationsScreenCache = {
+  notifications: [],
+  loadedOnce: false,
+};
+
 /** Map<bookingId string, { mappedBooking, clientAvatar }> — survives stack pop so reopening the same booking avoids a full refetch. */
 export const activeBookingScreenCache = new Map();
 
@@ -26,5 +31,7 @@ export function resetScreenDataCaches() {
   messagesScreenCache.clientConversations = [];
   messagesScreenCache.unreadCount = 0;
   messagesScreenCache.loadedOnce = false;
+  notificationsScreenCache.notifications = [];
+  notificationsScreenCache.loadedOnce = false;
   activeBookingScreenCache.clear();
 }

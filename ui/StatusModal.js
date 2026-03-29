@@ -16,6 +16,7 @@ export default function StatusModal({
   message,
   children,
   primaryLabel = 'OK',
+  primaryTone = 'default',
   onPrimary,
   secondaryLabel,
   onSecondary,
@@ -50,7 +51,10 @@ export default function StatusModal({
               </TouchableOpacity>
             )}
             <TouchableOpacity
-              style={[styles.button, styles.primaryButton]}
+              style={[
+                styles.button,
+                primaryTone === 'destructive' ? styles.primaryButtonDestructive : styles.primaryButton,
+              ]}
               onPress={onPrimary}
               activeOpacity={0.9}
             >
@@ -113,6 +117,9 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: COLORS.text,
+  },
+  primaryButtonDestructive: {
+    backgroundColor: '#FF3B30',
   },
   primaryText: {
     ...TYPE.bodyStrong,
