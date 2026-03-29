@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resetScreenDataCaches } from './screenDataCache';
 
 const USER_ID_KEY = '@user_id';
 const USER_TOKEN_KEY = '@user_token';
@@ -145,6 +146,8 @@ export const setOnboardingCompleted = async (completed = true) => {
  */
 export const clearUserData = async () => {
   try {
+    resetScreenDataCaches();
+
     const userId = await getUserId();
     if (userId) {
       await AsyncStorage.removeItem(`${HIDE_PREMIUM_BADGE_PREFIX}_${userId}`);

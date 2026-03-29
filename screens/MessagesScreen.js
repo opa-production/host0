@@ -9,6 +9,7 @@ import { getHostNotifications } from '../services/notificationService';
 import { getSupportConversation } from '../services/supportService';
 import { getHostConversations } from '../services/messageService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
+import { messagesScreenCache } from '../utils/screenDataCache';
 
 function SkeletonPulse({ style }) {
   const opacity = useRef(new Animated.Value(0.35)).current;
@@ -88,27 +89,21 @@ const skeletonStyles = StyleSheet.create({
 
 export default function MessagesScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [supportConversation, setSupportConversation] = useState(null);
-  const [isLoadingSupport, setIsLoadingSupport] = useState(true);
-  const [clientConversations, setClientConversations] = useState([]);
-  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(() => messagesScreenCache.unreadCount || 0);
+  const [supportConversation, setSupportConversation] = useState(
+    () => messagesScreenCache.supportConversation
+  );
+  const [isLoadingSupport, setIsLoadingSupport] = useState(() => !messagesScreenCache.loadedOnce);
+  const [clientConversations, setClientConversations] = useState(() =>
+    messagesScreenCache.loadedOnce
+      ? [...(messagesScreenCache.clientConversations || [])]
+      : []
+  );
+  const [isLoadingConversations, setIsLoadingConversations] = useState(
+    () => !messagesScreenCache.loadedOnce
+  );
   const [refreshing, setRefreshing] = useState(false);
-
-  const checkUnreadNotifications = async () => {
-    try {
-      const result = await getHostNotifications();
-      if (result.success && result.notifications) {
-        const unread = result.notifications.filter(n => !n.isRead).length;
-        setUnreadCount(unread);
-      } else {
-        setUnreadCount(0);
-      }
-    } catch (error) {
-      console.error('Error checking unread notifications:', error);
-      setUnreadCount(0);
-    }
-  };
+  const fetchGenerationRef = useRef(0);
 
   const parseUTC = (raw) => {
     const s = String(raw);
@@ -141,130 +136,152 @@ export default function MessagesScreen({ navigation }) {
     }
   };
 
-  const loadClientConversations = async () => {
-    setIsLoadingConversations(true);
-    try {
-      const result = await getHostConversations();
-      if (result.success && result.conversations) {
-        // Map API response to UI format
-        const mapped = result.conversations.map((conv) => {
-          const lastMessage = conv.messages && conv.messages.length > 0 
-            ? conv.messages[conv.messages.length - 1] 
-            : null;
-          
-          return {
-            id: conv.id,
-            clientId: conv.client_id,
-            clientName: conv.client_name || 'Client',
-            clientEmail: conv.client_email,
-            clientAvatarUrl: conv.client_avatar_url,
-            lastMessage: lastMessage?.message || null,
-            timestamp: lastMessage ? formatTimestamp(lastMessage.created_at) : formatTimestamp(conv.last_message_at),
-            createdAt: lastMessage?.created_at || conv.last_message_at,
-            hasUnread: !conv.is_read_by_host,
-            unreadCount: conv.messages?.filter(m => !m.is_read && m.sender_type === 'client').length || 0,
-          };
-        });
-        
-        // Fetch client avatars from Supabase when not provided by API
-        const mappedConversations = await Promise.all(
-          mapped.map(async (conv) => {
-            if (conv.clientAvatarUrl) return conv;
-            if (!conv.clientId) return conv;
-            const avatarUrl = await fetchClientAvatarFromSupabase(conv.clientId);
-            return { ...conv, clientAvatarUrl: avatarUrl || null };
-          })
-        );
-        
-        // Sort by last message time (most recent first)
-        mappedConversations.sort((a, b) => {
-          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return timeB - timeA;
-        });
-        
-        setClientConversations(mappedConversations);
-        setUnreadCount(result.unreadCount || 0);
-      } else {
-        setClientConversations([]);
-      }
-    } catch (error) {
-      console.error('Error loading client conversations:', error);
-      setClientConversations([]);
-    } finally {
-      setIsLoadingConversations(false);
-    }
-  };
+  const refreshMessagesData = useCallback(
+    async ({ silent = false, isPullRefresh = false } = {}) => {
+      const gen = ++fetchGenerationRef.current;
+      const showSectionSkeleton =
+        !silent && !isPullRefresh && !messagesScreenCache.loadedOnce;
 
-  const loadSupportConversation = async () => {
-    setIsLoadingSupport(true);
-    try {
-      const result = await getSupportConversation();
-      if (result.success && result.messages) {
-        // Get the last message for preview
-        const messages = result.messages || [];
-        if (messages.length > 0) {
-          const lastMessage = messages[messages.length - 1];
-          setSupportConversation({
-            id: 'support',
-            title: 'Customer Support',
-            lastMessage: lastMessage.text,
-            timestamp: formatTimestamp(lastMessage.createdAt) || lastMessage.ts || 'Just now',
-            createdAt: lastMessage.createdAt,
-            hasUnread: false, // Can be enhanced later if API provides unread status
-          });
+      if (isPullRefresh) setRefreshing(true);
+      if (showSectionSkeleton) {
+        setIsLoadingSupport(true);
+        setIsLoadingConversations(true);
+      }
+
+      const hadCachedConversations =
+        (messagesScreenCache.clientConversations?.length || 0) > 0;
+
+      try {
+        const [notifRes, supResult, convResult] = await Promise.all([
+          getHostNotifications(),
+          getSupportConversation(),
+          getHostConversations(),
+        ]);
+
+        if (gen !== fetchGenerationRef.current) return;
+
+        if (notifRes.success && notifRes.notifications) {
+          const unread = notifRes.notifications.filter((n) => !n.isRead).length;
+          messagesScreenCache.unreadCount = unread;
+          setUnreadCount(unread);
         } else {
-          // No messages yet, but conversation exists
-          setSupportConversation({
-            id: 'support',
-            title: 'Customer Support',
-            lastMessage: null,
-            timestamp: null,
-            createdAt: null,
-            hasUnread: false,
-          });
+          messagesScreenCache.unreadCount = 0;
+          setUnreadCount(0);
         }
-      } else {
-        setSupportConversation(null);
+
+        let nextSupport = messagesScreenCache.supportConversation;
+        if (supResult.success && supResult.messages) {
+          const messages = supResult.messages || [];
+          if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            nextSupport = {
+              id: 'support',
+              title: 'Customer Support',
+              lastMessage: lastMessage.text,
+              timestamp:
+                formatTimestamp(lastMessage.createdAt) || lastMessage.ts || 'Just now',
+              createdAt: lastMessage.createdAt,
+              hasUnread: false,
+            };
+          } else {
+            nextSupport = {
+              id: 'support',
+              title: 'Customer Support',
+              lastMessage: null,
+              timestamp: null,
+              createdAt: null,
+              hasUnread: false,
+            };
+          }
+        } else if (!messagesScreenCache.loadedOnce) {
+          nextSupport = null;
+        }
+
+        messagesScreenCache.supportConversation = nextSupport;
+        setSupportConversation(nextSupport);
+
+        if (convResult.success && convResult.conversations) {
+          const mapped = convResult.conversations.map((conv) => {
+            const lastMessage =
+              conv.messages && conv.messages.length > 0
+                ? conv.messages[conv.messages.length - 1]
+                : null;
+
+            return {
+              id: conv.id,
+              clientId: conv.client_id,
+              clientName: conv.client_name || 'Client',
+              clientEmail: conv.client_email,
+              clientAvatarUrl: conv.client_avatar_url,
+              lastMessage: lastMessage?.message || null,
+              timestamp: lastMessage
+                ? formatTimestamp(lastMessage.created_at)
+                : formatTimestamp(conv.last_message_at),
+              createdAt: lastMessage?.created_at || conv.last_message_at,
+              hasUnread: !conv.is_read_by_host,
+              unreadCount:
+                conv.messages?.filter((m) => !m.is_read && m.sender_type === 'client').length ||
+                0,
+            };
+          });
+
+          const mappedConversations = await Promise.all(
+            mapped.map(async (conv) => {
+              if (conv.clientAvatarUrl) return conv;
+              if (!conv.clientId) return conv;
+              const avatarUrl = await fetchClientAvatarFromSupabase(conv.clientId);
+              return { ...conv, clientAvatarUrl: avatarUrl || null };
+            })
+          );
+
+          mappedConversations.sort((a, b) => {
+            const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return timeB - timeA;
+          });
+
+          if (gen !== fetchGenerationRef.current) return;
+
+          messagesScreenCache.clientConversations = mappedConversations;
+          setClientConversations(mappedConversations);
+          const uc = convResult.unreadCount || 0;
+          messagesScreenCache.unreadCount = uc;
+          setUnreadCount(uc);
+        } else {
+          if (!hadCachedConversations && !messagesScreenCache.loadedOnce) {
+            messagesScreenCache.clientConversations = [];
+            setClientConversations([]);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading messages screen data:', error);
+        if (gen !== fetchGenerationRef.current) return;
+        if (!hadCachedConversations && !messagesScreenCache.loadedOnce) {
+          messagesScreenCache.clientConversations = [];
+          setClientConversations([]);
+        }
+      } finally {
+        if (gen === fetchGenerationRef.current) {
+          messagesScreenCache.loadedOnce = true;
+          setIsLoadingSupport(false);
+          setIsLoadingConversations(false);
+          setRefreshing(false);
+        }
       }
-    } catch (error) {
-      console.error('Error loading support conversation:', error);
-      setSupportConversation(null);
-    } finally {
-      setIsLoadingSupport(false);
-    }
-  };
+    },
+    []
+  );
 
-  // Check unread count on mount
-  useEffect(() => {
-    checkUnreadNotifications();
-    loadSupportConversation();
-    loadClientConversations();
-  }, []);
-
-  // Refresh when screen is focused (e.g., when returning from notifications or customer support screen)
   useFocusEffect(
     useCallback(() => {
-      checkUnreadNotifications();
-      loadSupportConversation();
-      loadClientConversations();
-    }, [])
+      const silent = messagesScreenCache.loadedOnce;
+      refreshMessagesData({ silent });
+    }, [refreshMessagesData])
   );
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await Promise.all([
-        checkUnreadNotifications(),
-        loadSupportConversation(),
-        loadClientConversations(),
-      ]);
-    } catch (error) {
-      console.error('Error refreshing messages:', error);
-    } finally {
-      setRefreshing(false);
-    }
-  }, []);
+    await refreshMessagesData({ silent: true, isPullRefresh: true });
+  }, [refreshMessagesData]);
 
   return (
     <View style={styles.container}>

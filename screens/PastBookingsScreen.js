@@ -69,6 +69,13 @@ export default function PastBookingsScreen({ navigation }) {
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const bookingsRef = useRef([]);
+  const fetchGenerationRef = useRef(0);
+  const hasFetchedOnceRef = useRef(false);
+
+  useEffect(() => {
+    bookingsRef.current = bookings;
+  }, [bookings]);
   const [deleteModal, setDeleteModal] = useState({ visible: false, bookingId: null });
   const [errorModal, setErrorModal] = useState({ visible: false, message: '' });
 
@@ -96,27 +103,35 @@ export default function PastBookingsScreen({ navigation }) {
     }
   };
 
-  const loadBookings = async ({ showFullScreenLoader = true } = {}) => {
-    if (showFullScreenLoader) {
+  const loadBookings = useCallback(async ({ pullToRefresh = false, showFullScreenLoader } = {}) => {
+    const hadCached = bookingsRef.current.length > 0;
+    const useFullLoader =
+      showFullScreenLoader !== undefined
+        ? showFullScreenLoader
+        : !hasFetchedOnceRef.current && !hadCached;
+
+    const gen = ++fetchGenerationRef.current;
+
+    if (pullToRefresh) {
+      setRefreshing(true);
+    } else if (useFullLoader) {
       setIsLoading(true);
     }
+
     try {
       const result = await getHostBookings();
-      if (result.success && result.bookings) {
-        // Filter for completed/dropped-off bookings only
-        const completedBookings = result.bookings.filter(isBookingCompleted);
+      if (gen !== fetchGenerationRef.current) return;
 
-        // Fetch car images for each booking
+      if (result.success && result.bookings) {
+        const completedBookings = result.bookings.filter(isBookingCompleted);
         const userId = await getUserId();
         const bookingsWithImages = await Promise.all(
           completedBookings.map(async (booking) => {
             let coverImage = null;
-            
-            // First, try to use car_image_urls from API
+
             if (booking.car_image_urls && booking.car_image_urls.length > 0) {
               coverImage = booking.car_image_urls[0];
             } else if (booking.car_id && userId) {
-              // Fallback: fetch from Supabase (same as my cars page)
               const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
               coverImage = imageResult.coverPhoto;
             }
@@ -149,33 +164,34 @@ export default function PastBookingsScreen({ navigation }) {
             };
           })
         );
-        
+
+        if (gen !== fetchGenerationRef.current) return;
         setBookings(bookingsWithImages);
       } else {
-        setBookings([]);
+        if (gen !== fetchGenerationRef.current) return;
+        if (!hadCached) setBookings([]);
       }
     } catch (error) {
       console.error('Error loading past bookings:', error);
-      setBookings([]);
+      if (gen !== fetchGenerationRef.current) return;
+      if (!hadCached) setBookings([]);
     } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+      if (gen === fetchGenerationRef.current) {
+        hasFetchedOnceRef.current = true;
+        setIsLoading(false);
+        setRefreshing(false);
+      }
     }
-  };
+  }, []);
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    loadBookings({ showFullScreenLoader: false });
-  }, []);
-
-  useEffect(() => {
-    loadBookings();
-  }, []);
+    loadBookings({ pullToRefresh: true, showFullScreenLoader: false });
+  }, [loadBookings]);
 
   useFocusEffect(
     useCallback(() => {
       loadBookings();
-    }, [])
+    }, [loadBookings])
   );
 
   const confirmDeleteBooking = (bookingId) => {

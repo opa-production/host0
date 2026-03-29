@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,8 +8,6 @@ import {
   Image,
   FlatList,
   Dimensions,
-  Switch,
-  ActivityIndicator,
   Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,48 +16,78 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostCars } from '../services/carService';
+import { myListingsScreenCache } from '../utils/screenDataCache';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function MyListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
-  const [cars, setCars] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [cars, setCars] = useState(() =>
+    myListingsScreenCache.cars ? [...myListingsScreenCache.cars] : []
+  );
+  const [isLoading, setIsLoading] = useState(() => !myListingsScreenCache.fetchedOnce);
+  const [refreshing, setRefreshing] = useState(false);
+  const carsRef = useRef(cars);
+  const fetchGenerationRef = useRef(0);
 
-  const loadCars = async () => {
-    console.log('📱 [MyListingsScreen] loadCars called');
-    setIsLoading(true);
+  useEffect(() => {
+    carsRef.current = cars;
+  }, [cars]);
+
+  const loadCars = useCallback(async ({ pullToRefresh = false, showFullScreenLoader } = {}) => {
+    const cachedLen = Array.isArray(myListingsScreenCache.cars)
+      ? myListingsScreenCache.cars.length
+      : 0;
+    const rowCount = Math.max(carsRef.current.length, cachedLen);
+    const hadCached = rowCount > 0 || myListingsScreenCache.fetchedOnce;
+
+    const useFullLoader =
+      showFullScreenLoader !== undefined
+        ? showFullScreenLoader
+        : !myListingsScreenCache.fetchedOnce && rowCount === 0;
+
+    const gen = ++fetchGenerationRef.current;
+
+    if (pullToRefresh) {
+      setRefreshing(true);
+    } else if (useFullLoader) {
+      setIsLoading(true);
+    }
+
     try {
-      console.log('📱 [MyListingsScreen] Calling getHostCars...');
       const result = await getHostCars();
-      console.log('📱 [MyListingsScreen] getHostCars result:', result);
+      if (gen !== fetchGenerationRef.current) return;
+
       if (result.success && result.cars) {
-        console.log('📱 [MyListingsScreen] Setting cars:', result.cars.length);
+        myListingsScreenCache.cars = result.cars;
         setCars(result.cars);
       } else {
-        console.error('📱 [MyListingsScreen] Failed to load cars:', result.error);
-        setCars([]);
+        if (!hadCached) {
+          myListingsScreenCache.cars = [];
+          setCars([]);
+        }
       }
     } catch (error) {
       console.error('📱 [MyListingsScreen] Error loading cars:', error);
-      setCars([]);
+      if (gen !== fetchGenerationRef.current) return;
+      if (!hadCached) {
+        myListingsScreenCache.cars = [];
+        setCars([]);
+      }
     } finally {
-      setIsLoading(false);
+      if (gen === fetchGenerationRef.current) {
+        myListingsScreenCache.fetchedOnce = true;
+        setIsLoading(false);
+        setRefreshing(false);
+      }
     }
-  };
-
-  // Load cars on mount and when screen is focused
-  useEffect(() => {
-    console.log('📱 [MyListingsScreen] Component mounted, loading cars...');
-    loadCars();
   }, []);
 
   useFocusEffect(
-    React.useCallback(() => {
-      console.log('📱 [MyListingsScreen] Screen focused, loading cars...');
+    useCallback(() => {
       loadCars();
-    }, [])
+    }, [loadCars])
   );
 
   const allListings = cars;
@@ -311,8 +339,8 @@ export default function MyListingsScreen({ navigation }) {
           keyExtractor={(item) => item.id?.toString() || `car-${item.carId || Date.now()}`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.listContent, { paddingTop: SPACING.m }]}
-          refreshing={isLoading}
-          onRefresh={loadCars}
+          refreshing={refreshing}
+          onRefresh={() => loadCars({ pullToRefresh: true, showFullScreenLoader: false })}
         />
       ) : (
         <View style={styles.emptyState}>

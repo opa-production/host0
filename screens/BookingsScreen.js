@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -16,6 +16,13 @@ export default function BookingsScreen({ navigation }) {
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const bookingsRef = useRef([]);
+  const fetchGenerationRef = useRef(0);
+  const hasFetchedOnceRef = useRef(false);
+
+  useEffect(() => {
+    bookingsRef.current = bookings;
+  }, [bookings]);
   const [deleteModal, setDeleteModal] = useState({ visible: false, bookingId: null });
   const [errorModal, setErrorModal] = useState({ visible: false, message: '' });
 
@@ -79,21 +86,32 @@ export default function BookingsScreen({ navigation }) {
     />
   );
 
-  const loadBookings = async () => {
-    setIsLoading(true);
+  const loadBookings = useCallback(async ({ pullToRefresh = false, showFullScreenLoader } = {}) => {
+    const hadCached = bookingsRef.current.length > 0;
+    const useFullLoader =
+      showFullScreenLoader !== undefined
+        ? showFullScreenLoader
+        : !hasFetchedOnceRef.current && !hadCached;
+
+    const gen = ++fetchGenerationRef.current;
+
+    if (pullToRefresh) {
+      setRefreshing(true);
+    } else if (useFullLoader) {
+      setIsLoading(true);
+    }
+
     try {
       const result = await getHostBookings();
-      if (result.success && result.bookings) {
-        // Only show active/upcoming bookings here; completed/dropped-off go to Past Bookings only
-        const activeBookings = result.bookings.filter((b) => !isBookingCompleted(b));
+      if (gen !== fetchGenerationRef.current) return;
 
-        // Fetch car images for each booking
+      if (result.success && result.bookings) {
+        const activeBookings = result.bookings.filter((b) => !isBookingCompleted(b));
         const userId = await getUserId();
         const mappedBookings = await Promise.all(
           activeBookings.map(async (booking) => {
             let carImageUrls = booking.car_image_urls || [];
-            
-            // If no images from API, fetch from Supabase (same as my cars page)
+
             if (carImageUrls.length === 0 && booking.car_id && userId) {
               const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
               if (imageResult.images && imageResult.images.length > 0) {
@@ -150,33 +168,34 @@ export default function BookingsScreen({ navigation }) {
             };
           })
         );
-        
+
+        if (gen !== fetchGenerationRef.current) return;
         setBookings(mappedBookings);
       } else {
-        setBookings([]);
+        if (gen !== fetchGenerationRef.current) return;
+        if (!hadCached) setBookings([]);
       }
     } catch (error) {
       console.error('Error loading bookings:', error);
-      setBookings([]);
+      if (gen !== fetchGenerationRef.current) return;
+      if (!hadCached) setBookings([]);
     } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+      if (gen === fetchGenerationRef.current) {
+        hasFetchedOnceRef.current = true;
+        setIsLoading(false);
+        setRefreshing(false);
+      }
     }
-  };
+  }, []);
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    loadBookings();
-  }, []);
-
-  useEffect(() => {
-    loadBookings();
-  }, []);
+    loadBookings({ pullToRefresh: true, showFullScreenLoader: false });
+  }, [loadBookings]);
 
   useFocusEffect(
     useCallback(() => {
       loadBookings();
-    }, [])
+    }, [loadBookings])
   );
 
   const handleBookingPress = async (booking) => {

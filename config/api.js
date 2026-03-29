@@ -1,10 +1,14 @@
+import Constants from 'expo-constants';
 
+// Local dev URL when running Metro yourself (not in Expo Go). Change IP for physical devices.
+const LOCAL_DEV_API_BASE_URL = 'http://192.168.88.249:8001';
+const PRODUCTION_API_BASE_URL = 'https://api.ardena.xyz';
 
-// Default to localhost for development
-// Change this to your computer's IP address when testing on physical devices
-export const API_BASE_URL = __DEV__ 
-  ? 'http://192.168.88.249:8001'  // Local development server (your computer's IP)
-  : 'https://api.ardena.xyz';
+// Expo Go runs with __DEV__ true but often cannot use a LAN backend; use production there.
+const isExpoGo = Constants.appOwnership === 'expo';
+
+export const API_BASE_URL =
+  __DEV__ && !isExpoGo ? LOCAL_DEV_API_BASE_URL : PRODUCTION_API_BASE_URL;
 
 
 export const VERIFF_VERIFICATION_URL = '';
