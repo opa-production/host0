@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ardena Host",
     "slug": "ardenahost",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "ardenahost",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ardenahost.app",
-      "buildNumber": "9"
+      "buildNumber": "10"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +26,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.ardenahost.app",
-      "versionCode": 9,
+      "versionCode": 10,
       "permissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
