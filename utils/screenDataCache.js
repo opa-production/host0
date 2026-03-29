@@ -15,6 +15,9 @@ export const messagesScreenCache = {
   loadedOnce: false,
 };
 
+/** Map<bookingId string, { mappedBooking, clientAvatar }> — survives stack pop so reopening the same booking avoids a full refetch. */
+export const activeBookingScreenCache = new Map();
+
 /** Call on logout so the next user never sees the previous session's lists. */
 export function resetScreenDataCaches() {
   myListingsScreenCache.cars = null;
@@ -23,4 +26,5 @@ export function resetScreenDataCaches() {
   messagesScreenCache.clientConversations = [];
   messagesScreenCache.unreadCount = 0;
   messagesScreenCache.loadedOnce = false;
+  activeBookingScreenCache.clear();
 }

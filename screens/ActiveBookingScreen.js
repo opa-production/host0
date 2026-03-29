@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS, PLATFORM_FEE_PERCENTAGE } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
@@ -13,6 +12,7 @@ import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getUserId } from '../utils/userStorage';
 import { getBookingExtensions, approveExtension, rejectExtension } from '../services/extensionService';
+import { activeBookingScreenCache } from '../utils/screenDataCache';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -203,13 +203,27 @@ export default function ActiveBookingScreen({ navigation, route }) {
     }
   }, [booking?.startDateRaw, booking?.endDateRaw, booking?.status]);
 
-  const loadBookingDetails = async () => {
+  const loadBookingDetails = async (opts = {}) => {
+    const bypassCache = opts.bypassCache === true;
+    const silent = opts.silent === true;
+
     if (!bookingId) {
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    const cacheKey = String(bookingId);
+    if (!bypassCache && activeBookingScreenCache.has(cacheKey)) {
+      const entry = activeBookingScreenCache.get(cacheKey);
+      setBooking(entry.mappedBooking);
+      setClientAvatar(entry.clientAvatar ?? null);
+      setIsLoading(false);
+      return;
+    }
+
+    if (!silent) {
+      setIsLoading(true);
+    }
     try {
       const result = await getBookingDetails(bookingId);
       if (result.success && result.booking) {
@@ -324,30 +338,32 @@ export default function ActiveBookingScreen({ navigation, route }) {
           cancellationReason: bookingData.cancellation_reason,
           createdAt: bookingData.created_at,
         };
-        
+
+        activeBookingScreenCache.set(cacheKey, {
+          mappedBooking,
+          clientAvatar: clientAvatarUrl ?? null,
+        });
         setBooking(mappedBooking);
       } else {
         setBooking(null);
+        activeBookingScreenCache.delete(cacheKey);
       }
     } catch (error) {
       console.error('Error loading booking details:', error);
-      setBooking(null);
+      if (!silent) {
+        setBooking(null);
+        activeBookingScreenCache.delete(cacheKey);
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     loadBookingDetails();
   }, [bookingId]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (bookingId) {
-        loadBookingDetails();
-      }
-    }, [bookingId])
-  );
 
   const handleConfirmPickup = async () => {
     if (!bookingId || isConfirmingPickup) return;
@@ -379,7 +395,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
       const result = await confirmPickup(bookingId);
       if (result.success) {
         // Reload booking details to get updated status
-        await loadBookingDetails();
+        await loadBookingDetails({ bypassCache: true });
       } else {
         console.error('Failed to confirm pickup:', result.error);
         setStatusModal({
@@ -432,7 +448,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
       const result = await confirmDropoff(bookingId);
       if (result.success) {
         // Reload booking details to get updated status
-        await loadBookingDetails();
+        await loadBookingDetails({ bypassCache: true });
       } else {
         console.error('Failed to confirm dropoff:', result.error);
         setStatusModal({
@@ -568,6 +584,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
               if (result.success) {
                 Alert.alert('Approved', 'Extension approved. The client can now pay for the extra days.');
                 await loadExtensions();
+                await loadBookingDetails({ bypassCache: true, silent: true });
               } else {
                 Alert.alert('Error', result.error || 'Could not approve extension.');
               }
@@ -598,6 +615,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
         setRejectReasonId(null);
         setRejectReasonText('');
         await loadExtensions();
+        await loadBookingDetails({ bypassCache: true, silent: true });
       } else {
         Alert.alert('Error', result.error || 'Could not reject extension.');
       }
@@ -727,11 +745,18 @@ export default function ActiveBookingScreen({ navigation, route }) {
         {/* Countdown Section */}
         {countdown && (
           <View style={styles.countdownCard}>
-            <View style={styles.countdownContent}>
-              <Text style={styles.countdownLabel}>{countdown.label}</Text>
-              {countdown.isOverdue ? (
-                <Text style={styles.countdownOverdue}>{countdown.label}</Text>
-              ) : (
+            <View style={styles.countdownRow}>
+              <View style={styles.countdownLeft}>
+                {countdown.isOverdue ? (
+                  <Text style={styles.countdownOverdue}>{countdown.label}</Text>
+                ) : (
+                  <>
+                    <Text style={styles.countdownLabel}>{countdown.label}</Text>
+                    <Text style={styles.countdownSubtle}>Updates every minute</Text>
+                  </>
+                )}
+              </View>
+              {countdown.isOverdue ? null : (
                 <View style={styles.countdownTime}>
                   {countdown.days > 0 && (
                     <View style={styles.countdownUnit}>
@@ -1376,50 +1401,64 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   countdownCard: {
-    backgroundColor: COLORS.text,
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
-    padding: SPACING.m,
+    paddingVertical: SPACING.s,
+    paddingHorizontal: SPACING.m,
     marginHorizontal: SPACING.l,
-    marginBottom: 16,
-    marginTop: 16,
+    marginBottom: SPACING.s,
+    marginTop: SPACING.s,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderVisible,
   },
-  countdownContent: {
+  countdownRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SPACING.m,
+  },
+  countdownLeft: {
+    flex: 1,
+    minWidth: 0,
   },
   countdownLabel: {
-    ...TYPE.body,
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 8,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: COLORS.muted,
+    fontFamily: 'Nunito-SemiBold',
+  },
+  countdownSubtle: {
+    ...TYPE.caption,
+    fontSize: 11,
+    color: COLORS.subtle,
+    marginTop: 2,
   },
   countdownTime: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 16,
+    gap: 10,
   },
   countdownUnit: {
     alignItems: 'center',
+    minWidth: 28,
   },
   countdownValue: {
-    ...TYPE.largeTitle,
-    fontSize: 32,
-    color: '#FFFFFF',
+    fontSize: 20,
+    lineHeight: 24,
+    color: COLORS.text,
     fontFamily: 'Nunito-Bold',
-    lineHeight: 38,
   },
   countdownUnitLabel: {
-    ...TYPE.body,
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginTop: 2,
-    fontFamily: 'Nunito-Regular',
+    ...TYPE.micro,
+    fontSize: 11,
+    color: COLORS.muted,
+    marginTop: 1,
   },
   countdownOverdue: {
-    ...TYPE.title,
-    fontSize: 18,
-    color: '#FF3B30',
-    fontFamily: 'Nunito-Bold',
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: COLORS.danger,
+    marginTop: 2,
   },
   vehicleNameRow: {
     marginBottom: 12,
