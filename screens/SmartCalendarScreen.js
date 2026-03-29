@@ -352,7 +352,7 @@ export default function SmartCalendarScreen({ navigation }) {
   const loadCars = async () => {
     setIsLoadingCars(true);
     try {
-      const result = await getHostCars();
+      const result = await getHostCars({ summary: true });
       if (result.success && result.cars) {
         setCars(result.cars);
         // Auto-select first car if available

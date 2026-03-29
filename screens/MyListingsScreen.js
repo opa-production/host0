@@ -384,8 +384,9 @@ const styles = StyleSheet.create({
   listCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
+    backgroundColor: COLORS.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderVisible,
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,

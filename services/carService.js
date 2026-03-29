@@ -1058,12 +1058,14 @@ export const getCarVerificationStatus = async (carId) => {
 
 /**
  * Get all cars for the authenticated host
+ * @param {{ summary?: boolean }} [options] - If summary=true, skips bookings, Supabase images, and per-car drive/status API calls (for pickers, calendar).
  * @returns {Promise<Object>} Result with success status and cars array or error
  */
-export const getHostCars = async () => {
+export const getHostCars = async (options = {}) => {
   const url = getApiUrl(API_ENDPOINTS.HOST_CARS);
   const startTime = Date.now();
-  console.log('🚗 [GET HOST CARS API] Fetching host cars...');
+  const summary = options.summary === true;
+  console.log('🚗 [GET HOST CARS API] Fetching host cars...', summary ? '(summary)' : '');
   console.log('🚗 [GET HOST CARS API] Endpoint URL:', url);
   
   try {
@@ -1134,6 +1136,74 @@ export const getHostCars = async () => {
       totalTime: `${totalTime}ms`,
     });
     console.log('🚗 [GET HOST CARS API] Full response:', JSON.stringify(carsArray, null, 2));
+
+    if (summary) {
+      const mappedCars = carsArray.map((car, idx) => {
+        const rawId = car.id ?? car.car_id;
+        const coverImageFromApi = car.cover_image || car.cover_photo_url;
+        let imageUrlsFromApi = [];
+        if (car.car_images) {
+          if (typeof car.car_images === 'string') {
+            try {
+              imageUrlsFromApi = JSON.parse(car.car_images);
+            } catch (_) {
+              imageUrlsFromApi = [];
+            }
+          } else if (Array.isArray(car.car_images)) {
+            imageUrlsFromApi = car.car_images;
+          }
+        }
+        if (imageUrlsFromApi.length === 0 && car.image_urls) {
+          imageUrlsFromApi = Array.isArray(car.image_urls) ? car.image_urls : [car.image_urls];
+        }
+        const coverPhoto =
+          coverImageFromApi || (imageUrlsFromApi.length > 0 ? imageUrlsFromApi[0] : null);
+        const verificationFromApi = car.verification_status || car.verificationStatus;
+        let status = 'awaiting_verification';
+        if (verificationFromApi) {
+          const v = String(verificationFromApi).toLowerCase();
+          if (v === 'verified') status = 'verified';
+          else if (v === 'denied') status = 'denied';
+          else if (v === 'awaiting' || v === 'awaiting_verification') status = 'awaiting_verification';
+        } else if (car.status) {
+          status = car.status;
+        } else if (car.is_complete && coverPhoto) {
+          status = 'awaiting_verification';
+        } else if (!car.is_complete) {
+          status = 'incomplete';
+        }
+
+        return {
+          id: rawId != null ? String(rawId) : `car-${idx}`,
+          carId: rawId,
+          name: car.name || '',
+          model: car.model || '',
+          year: car.year != null ? String(car.year) : '',
+          coverPhoto,
+          image: coverPhoto,
+          hasImages: !!coverPhoto,
+          is_complete: car.is_complete || false,
+          is_hidden: car.is_hidden !== undefined ? car.is_hidden : false,
+          is_visible:
+            car.is_hidden !== undefined
+              ? !car.is_hidden
+              : car.is_visible !== undefined
+                ? car.is_visible
+                : true,
+          status,
+          totalTrips: Number(car.total_trips ?? car.trips_count ?? car.trips ?? 0) || 0,
+          rating:
+            car.average_rating != null
+              ? Number(car.average_rating)
+              : car.rating != null
+                ? Number(car.rating)
+                : null,
+          drive_setting: car.drive_setting || null,
+          allowed_drive_types: Array.isArray(car.allowed_drive_types) ? car.allowed_drive_types : [],
+        };
+      });
+      return { success: true, cars: mappedCars };
+    }
 
     // Build trips-per-car map from completed bookings so My Cars can show real trip counts
     const tripsByCarId = {};

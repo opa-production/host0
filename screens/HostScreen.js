@@ -700,8 +700,9 @@ const styles = StyleSheet.create({
   },
   carCard: {
     position: 'relative',
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
+    backgroundColor: COLORS.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderVisible,
     borderRadius: 12,
     marginBottom: 16,
   },

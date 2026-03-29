@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { COLORS, TYPE, SPACING, RADIUS, PLATFORM_FEE_PERCENTAGE } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import StatusModal from '../ui/StatusModal';
 import { getBookingDetails, confirmPickup, confirmDropoff, getClientDisplayName, getBookingStatusDisplayText } from '../services/bookingService';
@@ -54,6 +54,54 @@ export default function ActiveBookingScreen({ navigation, route }) {
     if (!amount && amount !== 0) return 'N/A';
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return `KSh ${numAmount.toLocaleString()}`;
+  };
+
+  /** Coerce API money fields (number, string with commas / "KSh") to a finite number or null if absent. */
+  const parseMoney = (v) => {
+    if (v == null || v === '') return null;
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    const s = String(v).replace(/,/g, '').replace(/[^\d.-]/g, '');
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const deriveCommissionAndPayout = (b) => {
+    const totalPriceNum = parseMoney(b?.total_price) ?? 0;
+
+    let commissionAmount =
+      parseMoney(b?.commission_amount) ??
+      parseMoney(b?.platform_commission) ??
+      parseMoney(b?.commission) ??
+      parseMoney(b?.platform_fee);
+
+    let commissionRate =
+      parseMoney(b?.commission_rate) ?? parseMoney(b?.platform_commission_rate);
+    if (commissionRate != null && commissionRate > 1) {
+      commissionRate = commissionRate / 100;
+    }
+
+    if (commissionAmount == null && commissionRate != null && totalPriceNum > 0) {
+      commissionAmount = Math.round(totalPriceNum * commissionRate * 100) / 100;
+    }
+    if (commissionAmount == null && totalPriceNum > 0) {
+      commissionAmount = Math.round(totalPriceNum * PLATFORM_FEE_PERCENTAGE * 100) / 100;
+    }
+    if (commissionAmount == null) commissionAmount = 0;
+
+    let payoutAmount =
+      parseMoney(b?.host_payout) ??
+      parseMoney(b?.net_payout) ??
+      parseMoney(b?.payout_amount) ??
+      parseMoney(b?.host_earnings) ??
+      parseMoney(b?.net_amount) ??
+      parseMoney(b?.payout);
+
+    if (payoutAmount == null && totalPriceNum > 0) {
+      payoutAmount = Math.max(0, totalPriceNum - commissionAmount);
+    }
+    if (payoutAmount == null) payoutAmount = totalPriceNum;
+
+    return { commissionAmount, payoutAmount };
   };
 
   const getStatusColor = (status) => {
@@ -213,6 +261,8 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
         setClientAvatar(clientAvatarUrl);
 
+        const { commissionAmount, payoutAmount } = deriveCommissionAndPayout(bookingData);
+
         const baseRenter = {
           name: getClientDisplayName(bookingData),
           email: bookingData.client_email || '',
@@ -261,8 +311,8 @@ export default function ActiveBookingScreen({ navigation, route }) {
             dailyRate: bookingData.daily_rate || 0,
             basePrice: bookingData.base_price || 0,
             total: formatCurrency(bookingData.total_price),
-            commission: formatCurrency(0), // Not in API response
-            payout: formatCurrency(bookingData.total_price), // Assuming total is payout for now
+            commission: formatCurrency(commissionAmount),
+            payout: formatCurrency(payoutAmount),
           },
           status: bookingData.status,
           specialRequirements: bookingData.special_requirements,

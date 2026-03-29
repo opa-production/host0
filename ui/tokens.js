@@ -8,7 +8,16 @@ export const COLORS = {
   borderStrong: '#E5E5E5',
   /** Use for outline “cards” on COLORS.bg — hairline + borderStrong disappears on gray */
   borderVisible: '#C7C7CC',
+  /** Primary brand (UI blue) */
   brand: '#007AFF',
+  /**
+   * Secondary palette — use when you wire brand moments ( CTAs, heat, positive states ).
+   * Not the default primary; COLORS.brand stays the main app blue.
+   */
+  accentOrange: '#FF6A00',
+  /** Soft surface tint for accent orange (chips, banners) */
+  accentOrangeMuted: '#FFF0E6',
+  success: '#34C759',
   danger: '#FF2D55',
   /** Subscription / renewal countdown accent */
   countdownOrange: '#EA580C',
