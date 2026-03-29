@@ -917,35 +917,7 @@ export const getHostProfile = async () => {
   }
 };
 
-// ==================== SECONDARY FEATURES (STUB IMPLEMENTATIONS) ====================
-
 /**
  * Upload host profile picture (alias for avatar)
  */
 export const uploadHostProfilePicture = uploadHostAvatar;
-
-/**
- * Upload legal compliance document (STUB)
- */
-export const uploadDocument = async (file, userId, documentType) => {
-  console.warn('uploadDocument: Using direct Supabase upload - implement backend endpoint');
-  // TODO: Create backend endpoint /api/v1/host/upload/legal-document
-  return { success: false, error: 'Not yet implemented - create backend endpoint' };
-};
-
-/**
- * Upload multiple legal documents (STUB)
- */
-export const uploadMultipleDocuments = async (files, userId, documentType) => {
-  console.warn('uploadMultipleDocuments: Using direct Supabase upload - implement backend endpoint');
-  // TODO: Create backend endpoint /api/v1/host/upload/legal-documents
-  return [];
-};
-
-/**
- * Get document URL (STUB)
- */
-export const getDocumentUrl = (filePath) => {
-  console.warn('getDocumentUrl: Direct Supabase access - implement backend endpoint');
-  return null;
-};

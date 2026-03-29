@@ -21,8 +21,6 @@ import BookingsScreen from '../screens/BookingsScreen';
 import HostScreen from '../screens/HostScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import LegalComplianceScreen from '../screens/LegalComplianceScreen';
-
 // Settings and Related Screens
 import SettingsScreen from '../screens/SettingsScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
@@ -48,7 +46,6 @@ import AllTransactionsScreen from '../screens/AllTransactionsScreen';
 import HostLearnMoreScreen from '../screens/HostLearnMoreScreen';
 import HostStatsScreen from '../screens/HostStatsScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
-import ArdenaClientDownloadScreen from '../screens/ArdenaClientDownloadScreen';
 import SupaHostScreen from '../screens/SupaHostScreen';
 import BusinessPlanCheckoutScreen from '../screens/BusinessPlanCheckoutScreen';
 import BusinessPlanManageScreen from '../screens/BusinessPlanManageScreen';
@@ -311,33 +308,10 @@ export default function AppNavigator() {
           component={HostStatsScreen}
         />
 
-        <Stack.Screen 
-          name="LegalCompliance" 
-          component={LegalComplianceScreen}
-          options={{
-            headerShown: true,
-            headerTitle: 'Legal Compliance',
-            headerBackTitle: 'Back',
-            headerTitleStyle: {
-              fontFamily: 'Nunito-Bold',
-              fontSize: 18,
-            },
-            headerBackTitleStyle: {
-              fontFamily: 'Nunito-Regular',
-            },
-          }}
-        />
-
         {/* Feedback Screen */}
         <Stack.Screen 
           name="Feedback" 
           component={FeedbackScreen}
-        />
-
-        {/* Ardena Client Download Screen */}
-        <Stack.Screen 
-          name="ArdenaClientDownload" 
-          component={ArdenaClientDownloadScreen}
         />
 
         {/* SupaHost / Ardena for Business */}
