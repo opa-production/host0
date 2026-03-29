@@ -392,15 +392,6 @@ export default function ProfileScreen({ navigation }) {
 
             <TouchableOpacity 
               style={styles.linkItem}
-              onPress={() => { lightHaptic(); navigation.navigate('ArdenaClientDownload'); }}
-            >
-              <Ionicons name="download-outline" size={22} color="#666666" style={styles.linkIcon} />
-              <Text style={styles.linkText}>Download Ardena Client</Text>
-              <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.linkItem}
               onPress={() => { lightHaptic(); navigation.navigate('Feedback'); }}
             >
               <Ionicons name="chatbox-ellipses-outline" size={22} color="#666666" style={styles.linkIcon} />

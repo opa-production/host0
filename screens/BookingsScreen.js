@@ -5,8 +5,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
-import StatusModal from '../ui/StatusModal';
-import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText, deleteBooking } from '../services/bookingService';
+import {
+  getHostBookings,
+  getClientDisplayName,
+  isBookingCompleted,
+  isBookingCancelled,
+  getBookingStatusDisplayText,
+} from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
 import { getBookingExtensions } from '../services/extensionService';
@@ -23,9 +28,6 @@ export default function BookingsScreen({ navigation }) {
   useEffect(() => {
     bookingsRef.current = bookings;
   }, [bookings]);
-  const [deleteModal, setDeleteModal] = useState({ visible: false, bookingId: null });
-  const [errorModal, setErrorModal] = useState({ visible: false, message: '' });
-
   const formatDate = (dateString) => {
     if (!dateString) return '';
     try {
@@ -58,6 +60,7 @@ export default function BookingsScreen({ navigation }) {
     if (isBookingCompleted(statusLower)) return '#34C759'; // Completed (car dropped off)
     switch (statusLower) {
       case 'confirmed':
+        return '#34C759';
       case 'active':
         return '#007AFF';
       case 'pending':
@@ -106,7 +109,9 @@ export default function BookingsScreen({ navigation }) {
       if (gen !== fetchGenerationRef.current) return;
 
       if (result.success && result.bookings) {
-        const activeBookings = result.bookings.filter((b) => !isBookingCompleted(b));
+        const activeBookings = result.bookings.filter(
+          (b) => !isBookingCompleted(b) && !isBookingCancelled(b)
+        );
         const userId = await getUserId();
         const mappedBookings = await Promise.all(
           activeBookings.map(async (booking) => {
@@ -200,8 +205,8 @@ export default function BookingsScreen({ navigation }) {
 
   const handleBookingPress = async (booking) => {
     lightHaptic();
-    // Route completed/dropped-off bookings to past booking detail screen
-    if (isBookingCompleted(booking)) {
+    // Route completed, dropped-off, or cancelled bookings to past detail
+    if (isBookingCompleted(booking) || isBookingCancelled(booking)) {
       // Format booking data for past booking detail screen
       const pastBookingData = {
         id: booking.id,
@@ -238,45 +243,6 @@ export default function BookingsScreen({ navigation }) {
     } else {
       navigation.navigate('ActiveBooking', {
         bookingId: booking.bookingId || booking.id,
-      });
-    }
-  };
-
-  const confirmDeleteBooking = (booking) => {
-    const statusLower = (booking.status || '').toLowerCase();
-    if (statusLower !== 'cancelled') {
-      return;
-    }
-    const id = booking.bookingId || booking.id;
-    if (!id) return;
-    setDeleteModal({ visible: true, bookingId: id });
-  };
-
-  const handleDeleteConfirmed = async () => {
-    const bookingId = deleteModal.bookingId;
-    if (!bookingId) {
-      setDeleteModal({ visible: false, bookingId: null });
-      return;
-    }
-    try {
-      const result = await deleteBooking(bookingId);
-      if (result.success) {
-        setBookings((prev) =>
-          prev.filter((b) => (b.bookingId || b.id) !== bookingId)
-        );
-        setDeleteModal({ visible: false, bookingId: null });
-      } else {
-        setDeleteModal({ visible: false, bookingId: null });
-        setErrorModal({
-          visible: true,
-          message: result.error || 'Failed to delete booking. Please try again.',
-        });
-      }
-    } catch (e) {
-      setDeleteModal({ visible: false, bookingId: null });
-      setErrorModal({
-        visible: true,
-        message: e?.message || 'Failed to delete booking. Please try again.',
       });
     }
   };
@@ -432,19 +398,6 @@ export default function BookingsScreen({ navigation }) {
                       </View>
                     )}
                   </TouchableOpacity>
-
-                  {(booking.status || '').toLowerCase() === 'cancelled' && (
-                    <TouchableOpacity
-                      style={styles.deleteIconButton}
-                      onPress={() => {
-                        lightHaptic();
-                        confirmDeleteBooking(booking);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="trash-outline" size={18} color="#FF3B30" />
-                    </TouchableOpacity>
-                  )}
                 </View>
               );
             })}
@@ -457,28 +410,6 @@ export default function BookingsScreen({ navigation }) {
           </View>
         )}
       </ScrollView>
-      {/* Delete confirm modal for cancelled bookings */}
-      <StatusModal
-        visible={deleteModal.visible}
-        type="info"
-        title="Delete booking"
-        message="Are you sure you want to delete this cancelled booking?"
-        primaryLabel="Delete"
-        secondaryLabel="Cancel"
-        onPrimary={handleDeleteConfirmed}
-        onSecondary={() => setDeleteModal({ visible: false, bookingId: null })}
-        onRequestClose={() => setDeleteModal({ visible: false, bookingId: null })}
-      />
-
-      {/* Error modal */}
-      <StatusModal
-        visible={errorModal.visible}
-        type="error"
-        title="Unable to delete"
-        message={errorModal.message}
-        primaryLabel="OK"
-        onPrimary={() => setErrorModal({ visible: false, message: '' })}
-      />
     </View>
   );
 }
@@ -768,12 +699,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.text,
     fontFamily: 'Nunito-SemiBold',
-  },
-  deleteIconButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    padding: 4,
   },
   emptyState: {
     flex: 1,

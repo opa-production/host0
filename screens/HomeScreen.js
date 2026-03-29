@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { useHost } from '../utils/HostContext';
-import { getHostBookings } from '../services/bookingService';
+import { getHostBookings, isBookingCancelled } from '../services/bookingService';
 import { getHostEarningsSummary } from '../services/earningsService';
 import { getHostWithdrawals } from '../services/withdrawalService';
 import { getHostSubscription } from '../services/subscriptionService';
@@ -76,7 +76,10 @@ export default function HomeScreen({ navigation }) {
 
     bookings.forEach((booking) => {
       const status = booking.status?.toLowerCase() || '';
-      
+      if (isBookingCancelled(booking)) {
+        return;
+      }
+
       // Active Rentals: bookings with status = 'active'
       if (status === 'active') {
         activeRentals++;

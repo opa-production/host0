@@ -3,6 +3,7 @@
  * Handles booking-related API calls
  */
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
+import { PLATFORM_FEE_PERCENTAGE } from '../ui/tokens';
 import { getUserToken } from '../utils/userStorage';
 import { handleTokenExpiration } from '../utils/logoutHandler';
 
@@ -29,6 +30,18 @@ export const getClientDisplayName = (booking) => {
 /** Statuses that mean the booking is done (car dropped off). Shown in Past Bookings only; "completed" is the canonical status. */
 const COMPLETED_STATUSES = ['completed', 'dropped_off', 'dropped off'];
 
+/** Cancelled bookings belong in Past Bookings only, not on the active Bookings tab. */
+const CANCELLED_STATUSES = [
+  'cancelled',
+  'canceled',
+  'cancelled_by_host',
+  'cancelled_by_client',
+  'cancelled_by_renter',
+  'cancelled by host',
+  'cancelled by client',
+  'cancelled by renter',
+];
+
 /**
  * Returns true if the booking is completed (car has been dropped off).
  * Used to exclude these from the main Bookings list and include them only in Past Bookings.
@@ -42,6 +55,19 @@ export const isBookingCompleted = (booking) => {
 };
 
 /**
+ * @param {Object|string} booking - Booking object or status string
+ * @returns {boolean}
+ */
+export const isBookingCancelled = (booking) => {
+  const status = typeof booking === 'string' ? booking : (booking?.status ?? '');
+  const normalized = (status || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  if (!normalized) return false;
+  return CANCELLED_STATUSES.some(
+    (s) => normalized === s || normalized === s.replace(/_/g, ' ')
+  );
+};
+
+/**
  * Display label for booking status. "Completed" is shown for any done/dropped-off booking.
  * @param {string} status - Raw status from API
  * @returns {string} User-facing label (e.g. "Completed", "Active", "Pending")
@@ -49,14 +75,89 @@ export const isBookingCompleted = (booking) => {
 export const getBookingStatusDisplayText = (status) => {
   const s = (status || '').toLowerCase().trim();
   if (isBookingCompleted(s)) return 'Completed';
+  if (isBookingCancelled(s)) return 'Cancelled';
   switch (s) {
     case 'confirmed':
     case 'active': return s.charAt(0).toUpperCase() + s.slice(1);
     case 'pending':
     case 'upcoming': return s === 'upcoming' ? 'Upcoming' : 'Pending';
-    case 'cancelled': return 'Cancelled';
     default: return status ? (status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()) : 'Unknown';
   }
+};
+
+/**
+ * Coerce API money fields (number, string with commas / "KSh") to a finite number or null if absent.
+ * @param {unknown} v
+ * @returns {number|null}
+ */
+export const parseBookingMoney = (v) => {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  const s = String(v).replace(/,/g, '').replace(/[^\d.-]/g, '');
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : null;
+};
+
+/**
+ * Host-facing gross, commission, and payout from a booking list or detail object (matches ActiveBookingScreen logic).
+ * @param {Object|null|undefined} booking
+ * @returns {{ totalPrice: number, commissionAmount: number, payoutAmount: number }}
+ */
+export const deriveHostBookingFinancials = (booking) => {
+  const b = booking || {};
+  const totalPrice = parseBookingMoney(b.total_price) ?? 0;
+
+  let commissionAmount =
+    parseBookingMoney(b.commission_amount) ??
+    parseBookingMoney(b.platform_commission) ??
+    parseBookingMoney(b.commission) ??
+    parseBookingMoney(b.platform_fee);
+
+  let commissionRate =
+    parseBookingMoney(b.commission_rate) ?? parseBookingMoney(b.platform_commission_rate);
+  if (commissionRate != null && commissionRate > 1) {
+    commissionRate = commissionRate / 100;
+  }
+
+  if (commissionAmount == null && commissionRate != null && totalPrice > 0) {
+    commissionAmount = Math.round(totalPrice * commissionRate * 100) / 100;
+  }
+  if (commissionAmount == null && totalPrice > 0) {
+    commissionAmount = Math.round(totalPrice * PLATFORM_FEE_PERCENTAGE * 100) / 100;
+  }
+  if (commissionAmount == null) commissionAmount = 0;
+
+  let payoutAmount =
+    parseBookingMoney(b.host_payout) ??
+    parseBookingMoney(b.net_payout) ??
+    parseBookingMoney(b.payout_amount) ??
+    parseBookingMoney(b.host_earnings) ??
+    parseBookingMoney(b.net_amount) ??
+    parseBookingMoney(b.payout);
+
+  if (payoutAmount == null && totalPrice > 0) {
+    payoutAmount = Math.max(0, totalPrice - commissionAmount);
+  }
+  if (payoutAmount == null) payoutAmount = totalPrice;
+
+  return { totalPrice, commissionAmount, payoutAmount };
+};
+
+/**
+ * Host-facing totals for UI lists and detail. Cancelled bookings have no earnings;
+ * do not show inferred commission/payout from a quote that was never completed.
+ * @param {Object|null|undefined} booking
+ * @returns {{ totalPrice: number, commissionAmount: number, payoutAmount: number, hasEarnings: boolean }}
+ */
+export const getHostBookingMoneyForDisplay = (booking) => {
+  if (!booking || typeof booking !== 'object') {
+    return { totalPrice: 0, commissionAmount: 0, payoutAmount: 0, hasEarnings: false };
+  }
+  if (isBookingCancelled(booking)) {
+    return { totalPrice: 0, commissionAmount: 0, payoutAmount: 0, hasEarnings: false };
+  }
+  const { totalPrice, commissionAmount, payoutAmount } = deriveHostBookingFinancials(booking);
+  return { totalPrice, commissionAmount, payoutAmount, hasEarnings: true };
 };
 
 /**

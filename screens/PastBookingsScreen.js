@@ -6,7 +6,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import StatusModal from '../ui/StatusModal';
-import { getHostBookings, getClientDisplayName, isBookingCompleted, getBookingStatusDisplayText, deleteBooking } from '../services/bookingService';
+import {
+  getHostBookings,
+  getClientDisplayName,
+  isBookingCompleted,
+  isBookingCancelled,
+  getBookingStatusDisplayText,
+  getHostBookingMoneyForDisplay,
+  deleteBooking,
+} from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
 
@@ -81,6 +89,7 @@ export default function PastBookingsScreen({ navigation }) {
 
   const getStatusColor = (status) => {
     if (isBookingCompleted(status)) return '#34C759'; // Completed (car dropped off)
+    if (isBookingCancelled(status)) return '#FF3B30';
     switch ((status || '').toLowerCase()) {
       case 'active':
         return '#007AFF';
@@ -123,7 +132,9 @@ export default function PastBookingsScreen({ navigation }) {
       if (gen !== fetchGenerationRef.current) return;
 
       if (result.success && result.bookings) {
-        const completedBookings = result.bookings.filter(isBookingCompleted);
+        const completedBookings = result.bookings.filter(
+          (b) => isBookingCompleted(b) || isBookingCancelled(b)
+        );
         const userId = await getUserId();
         const bookingsWithImages = await Promise.all(
           completedBookings.map(async (booking) => {
@@ -136,10 +147,15 @@ export default function PastBookingsScreen({ navigation }) {
               coverImage = imageResult.coverPhoto;
             }
 
+            const money = getHostBookingMoneyForDisplay(booking);
+            const clientId = booking.client_id ?? null;
+
             return {
               id: booking.id,
               bookingId: booking.booking_id,
               carId: booking.car_id,
+              client_id: clientId,
+              clientId,
               vehicleName: booking.car_name || 'Unknown Car',
               carModel: booking.car_model || '',
               vehicleImage: coverImage,
@@ -147,9 +163,27 @@ export default function PastBookingsScreen({ navigation }) {
               startDate: formatDate(booking.start_date),
               endDate: formatDate(booking.end_date),
               status: booking.status,
-              totalAmount: booking.total_price || 0,
-              totalPaid: booking.total_price || 0,
-              payout: booking.total_price || 0,
+              totalAmount: money.hasEarnings ? money.totalPrice : 0,
+              totalPaid: money.hasEarnings ? money.totalPrice : 0,
+              payout: money.hasEarnings ? money.payoutAmount : 0,
+              commission: money.hasEarnings ? money.commissionAmount : 0,
+              total_price: booking.total_price,
+              commission_amount: booking.commission_amount,
+              platform_commission: booking.platform_commission,
+              commission_rate: booking.commission_rate,
+              platform_commission_rate: booking.platform_commission_rate,
+              host_payout: booking.host_payout,
+              net_payout: booking.net_payout,
+              payout_amount: booking.payout_amount,
+              host_earnings: booking.host_earnings,
+              net_amount: booking.net_amount,
+              daily_rate: booking.daily_rate,
+              base_price: booking.base_price,
+              damage_waiver_enabled: booking.damage_waiver_enabled,
+              damage_waiver_fee: booking.damage_waiver_fee,
+              rental_days: booking.rental_days,
+              pickup_location: booking.pickup_location,
+              return_location: booking.return_location,
               startTime: booking.pickup_time || '',
               endTime: booking.return_time || '',
               duration: booking.rental_days ? `${booking.rental_days} ${booking.rental_days === 1 ? 'day' : 'days'}` : '',
@@ -263,7 +297,7 @@ export default function PastBookingsScreen({ navigation }) {
           <View style={styles.emptyState}>
             <Ionicons name="calendar-outline" size={64} color="#C7C7CC" />
             <Text style={styles.emptyStateTitle}>No past bookings</Text>
-            <Text style={styles.emptyStateText}>Your completed bookings will appear here</Text>
+            <Text style={styles.emptyStateText}>Completed and cancelled bookings will appear here</Text>
           </View>
         ) : (
           <View style={styles.grid}>
@@ -324,10 +358,19 @@ export default function PastBookingsScreen({ navigation }) {
                             </Text>
                           </View>
                         </View>
-                        {b.totalPaid && (
+                        {isBookingCancelled(b.status) ? (
                           <View style={styles.amountRow}>
-                            <Text style={styles.amountLabel}>Amount Earned</Text>
-                            <Text style={styles.amountValue}>KSh {typeof b.totalPaid === 'string' ? b.totalPaid.replace(/[^\d]/g, '') : b.totalPaid.toLocaleString()}</Text>
+                            <Text style={[styles.amountLabel, { color: COLORS.subtle }]}>Earnings</Text>
+                            <Text style={[styles.amountValue, { color: COLORS.subtle, fontFamily: 'Nunito-Regular' }]}>
+                              No payout (cancelled)
+                            </Text>
+                          </View>
+                        ) : (
+                          <View style={styles.amountRow}>
+                            <Text style={styles.amountLabel}>Amount earned</Text>
+                            <Text style={styles.amountValue}>
+                              KSh {(typeof b.payout === 'number' ? b.payout : Number(b.payout) || 0).toLocaleString()}
+                            </Text>
                           </View>
                         )}
                       </View>

@@ -7,7 +7,15 @@ import { lightHaptic } from '../ui/haptics';
 import StatusModal from '../ui/StatusModal';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
-import { getBookingDetails, getClientDisplayName, getBookingStatusDisplayText, getHostBookings, isBookingCompleted } from '../services/bookingService';
+import {
+  getBookingDetails,
+  getClientDisplayName,
+  getBookingStatusDisplayText,
+  getHostBookings,
+  isBookingCompleted,
+  isBookingCancelled,
+  getHostBookingMoneyForDisplay,
+} from '../services/bookingService';
 import { getHostClientProfile } from '../services/clientProfileService';
 import { getClientRatings, submitHostClientRating } from '../services/ratingService';
 import { downloadBookingReceipt } from '../services/receiptService';
@@ -15,8 +23,11 @@ import { getUserId } from '../utils/userStorage';
 
 const getStatusColor = (status) => {
   const statusLower = status?.toLowerCase() || '';
-  if (statusLower === 'completed' || statusLower === 'dropped_off' || statusLower === 'dropped off') {
+  if (isBookingCompleted(statusLower)) {
     return '#34C759';
+  }
+  if (isBookingCancelled(statusLower)) {
+    return '#FF3B30';
   }
   switch (statusLower) {
     case 'confirmed':
@@ -25,8 +36,6 @@ const getStatusColor = (status) => {
     case 'pending':
     case 'upcoming':
       return '#FF9500';
-    case 'cancelled':
-      return '#FF3B30';
     default:
       return '#8E8E93';
   }
@@ -163,28 +172,33 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     return () => { cancelled = true; };
   }, [detailBooking?.client_id, routeBooking?.clientId, routeBooking?.client_id]);
 
-  // Convert payout to number if it's a string
-  let payout = 0;
-  if (routeBooking.payout !== undefined) {
-    if (typeof routeBooking.payout === 'string') {
-      const numStr = routeBooking.payout.replace(/[^\d]/g, '');
-      payout = parseInt(numStr, 10) || 0;
-    } else {
-      payout = routeBooking.payout || 0;
-    }
-  }
-  
-  // Convert totalPaid to number if it's a string
-  let totalPaid = 0;
-  if (routeBooking.totalPaid !== undefined) {
-    if (typeof routeBooking.totalPaid === 'string') {
-      const numStr = routeBooking.totalPaid.replace(/[^\d]/g, '');
-      totalPaid = parseInt(numStr, 10) || 0;
-    } else {
-      totalPaid = routeBooking.totalPaid || 0;
-    }
-  }
-  
+  const statusResolved = (detailBooking?.status ?? routeBooking?.status ?? '').trim();
+  const cancelled = isBookingCancelled(statusResolved);
+
+  const financialBooking =
+    detailBooking ||
+    ({
+      status: routeBooking.status,
+      total_price: routeBooking.total_price ?? routeBooking.totalPaid,
+      commission_amount: routeBooking.commission_amount,
+      platform_commission: routeBooking.platform_commission,
+      commission: routeBooking.commission,
+      platform_fee: routeBooking.platform_fee,
+      commission_rate: routeBooking.commission_rate,
+      platform_commission_rate: routeBooking.platform_commission_rate,
+      host_payout: routeBooking.host_payout,
+      net_payout: routeBooking.net_payout,
+      payout_amount: routeBooking.payout_amount,
+      host_earnings: routeBooking.host_earnings,
+      net_amount: routeBooking.net_amount,
+    });
+
+  const displayMoney = getHostBookingMoneyForDisplay(financialBooking);
+
+  const payout = displayMoney.hasEarnings ? displayMoney.payoutAmount : 0;
+  const totalPaid = displayMoney.hasEarnings ? displayMoney.totalPrice : 0;
+  const commissionFromApi = displayMoney.hasEarnings ? displayMoney.commissionAmount : 0;
+
   const mergedVehicleName = [
     routeBooking.vehicleName || detailBooking?.car_name || '',
     routeBooking.carModel || detailBooking?.car_model || '',
@@ -205,7 +219,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     status: routeBooking.status || '',
     payout,
     totalPaid,
-    commission: routeBooking.commission || 0,
+    commission: commissionFromApi,
     dailyRate: routeBooking.dailyRate || 0,
     carRating: detailBooking?.car_rating ?? detailBooking?.car_avg_rating ?? null,
     carTrips:
@@ -311,14 +325,8 @@ export default function PastBookingDetailScreen({ navigation, route }) {
     return amount.toLocaleString();
   };
 
-  // Fallbacks/mocks for price & commission when API does not provide them
-  const totalPriceForDisplay = detailBooking?.total_price ?? totalPaid ?? 0;
-  const commissionRaw =
-    detailBooking?.commission_amount ??
-    booking.commission ??
-    Math.round((totalPriceForDisplay || 0) * 0.15);
-  const payoutForDisplay =
-    payout || Math.max((totalPriceForDisplay || 0) - (commissionRaw || 0), 0);
+  const dailyRateDisplay = detailBooking?.daily_rate ?? routeBooking.daily_rate ?? routeBooking.dailyRate;
+  const basePriceDisplay = detailBooking?.base_price ?? routeBooking.base_price ?? routeBooking.basePrice;
 
   return (
     <View style={styles.container}>
@@ -571,80 +579,92 @@ export default function PastBookingDetailScreen({ navigation, route }) {
           </View>
         </View>
 
-            {/* Price & payout */}
+            {/* Price & payout — no earnings breakdown for cancelled trips */}
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Price & payout</Text>
 
-              <View style={styles.rowBetween}>
-                <Text style={styles.rowLabel}>Daily rate</Text>
-                <Text style={styles.rowValueMuted}>
-                  KSh {formatCurrency(detailBooking?.daily_rate ?? routeBooking.dailyRate ?? 3500)}
+              {cancelled ? (
+                <Text style={styles.cancelledMoneyNote}>
+                  This booking was cancelled before the trip completed. There is no guest payment, platform commission, or host payout for this booking.
                 </Text>
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.rowBetween}>
-                <Text style={styles.rowLabel}>Base price</Text>
-                <Text style={styles.rowValueMuted}>
-                  KSh {formatCurrency(detailBooking?.base_price ?? routeBooking.base_price ?? 7000)}
-                </Text>
-              </View>
-
-              {detailBooking?.damage_waiver_enabled && (
+              ) : (
                 <>
-                  <View style={styles.divider} />
                   <View style={styles.rowBetween}>
-                    <Text style={styles.rowLabel}>Damage waiver</Text>
-                    <Text style={styles.rowValue}>
-                      KSh {formatCurrency(detailBooking?.damage_waiver_fee ?? 500)}
+                    <Text style={styles.rowLabel}>Daily rate</Text>
+                    <Text style={styles.rowValueMuted}>
+                      {dailyRateDisplay != null && dailyRateDisplay !== ''
+                        ? `KSh ${formatCurrency(dailyRateDisplay)}`
+                        : '—'}
                     </Text>
                   </View>
+
+                  <View style={styles.divider} />
+
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.rowLabel}>Base price</Text>
+                    <Text style={styles.rowValueMuted}>
+                      {basePriceDisplay != null && basePriceDisplay !== ''
+                        ? `KSh ${formatCurrency(basePriceDisplay)}`
+                        : '—'}
+                    </Text>
+                  </View>
+
+                  {detailBooking?.damage_waiver_enabled && (
+                    <>
+                      <View style={styles.divider} />
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.rowLabel}>Damage waiver</Text>
+                        <Text style={styles.rowValue}>
+                          KSh {formatCurrency(detailBooking?.damage_waiver_fee ?? 0)}
+                        </Text>
+                      </View>
+                    </>
+                  )}
+
+                  <View style={styles.divider} />
+                  <View style={styles.rowBetween}>
+                    <Text style={[styles.rowLabel, styles.rowStrong]}>Total paid</Text>
+                    <Text style={[styles.rowValueOrange, styles.rowStrong]}>
+                      KSh {formatCurrency(displayMoney.totalPrice)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.divider} />
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.rowLabel}>Platform commission</Text>
+                    <Text style={styles.rowValueRed}>KSh {formatCurrency(displayMoney.commissionAmount)}</Text>
+                  </View>
+
+                  <View style={styles.divider} />
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.rowLabel}>Your payout</Text>
+                    <Text style={styles.rowValueGreen}>KSh {formatCurrency(displayMoney.payoutAmount)}</Text>
+                  </View>
+
+                  <View style={styles.divider} />
+
+                  <TouchableOpacity
+                    style={styles.receiptLink}
+                    onPress={async () => {
+                      if (!bookingId || isDownloadingReceipt || cancelled) return;
+                      setIsDownloadingReceipt(true);
+                      const result = await downloadBookingReceipt(bookingId);
+                      setIsDownloadingReceipt(false);
+                      if (!result.success) {
+                        Alert.alert('Receipt', result.error || 'Could not download receipt.');
+                      }
+                    }}
+                    activeOpacity={0.7}
+                    disabled={isDownloadingReceipt || cancelled}
+                  >
+                    <Ionicons name="document-text-outline" size={18} color={COLORS.brand} />
+                    <Text style={styles.receiptLinkText}>
+                      {isDownloadingReceipt ? 'Opening…' : 'View receipt'}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
+                  </TouchableOpacity>
                 </>
               )}
-
-              <View style={styles.divider} />
-              <View style={styles.rowBetween}>
-                <Text style={[styles.rowLabel, styles.rowStrong]}>Total paid</Text>
-                <Text style={[styles.rowValueOrange, styles.rowStrong]}>
-                  KSh {formatCurrency(totalPriceForDisplay || 7500)}
-                </Text>
-              </View>
-
-              <View style={styles.divider} />
-              <View style={styles.rowBetween}>
-                <Text style={styles.rowLabel}>Platform commission</Text>
-                <Text style={styles.rowValueRed}>KSh {formatCurrency(commissionRaw || 1125)}</Text>
-              </View>
-
-              <View style={styles.divider} />
-              <View style={styles.rowBetween}>
-                <Text style={styles.rowLabel}>Your payout</Text>
-                <Text style={styles.rowValueGreen}>KSh {formatCurrency(payoutForDisplay || 6375)}</Text>
-              </View>
-
-              <View style={styles.divider} />
-
-              <TouchableOpacity
-                style={styles.receiptLink}
-                onPress={async () => {
-                  if (!bookingId || isDownloadingReceipt) return;
-                  setIsDownloadingReceipt(true);
-                  const result = await downloadBookingReceipt(bookingId);
-                  setIsDownloadingReceipt(false);
-                  if (!result.success) {
-                    Alert.alert('Receipt', result.error || 'Could not download receipt.');
-                  }
-                }}
-                activeOpacity={0.7}
-                disabled={isDownloadingReceipt}
-              >
-                <Ionicons name="document-text-outline" size={18} color={COLORS.brand} />
-                <Text style={styles.receiptLinkText}>
-                  {isDownloadingReceipt ? 'Opening…' : 'View receipt'}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
-              </TouchableOpacity>
             </View>
 
             {/* Additional booking details */}
@@ -1072,6 +1092,12 @@ const styles = StyleSheet.create({
   rowValueOrange: {
     ...TYPE.bodyStrong,
     color: '#FF9500',
+  },
+  cancelledMoneyNote: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    lineHeight: 20,
   },
   receiptLink: {
     flexDirection: 'row',
