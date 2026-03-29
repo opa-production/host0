@@ -14,7 +14,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING } from '../../ui/tokens';
+import { COLORS, RADIUS } from '../../ui/tokens';
+import {
+  hostVehicleFormShared as HV,
+  hostVehiclePlaceholderColor,
+  hostVehicleInputRuleColor,
+} from './formFieldStyles';
 
 const BODY_TYPES = [
   'Sedan', 'SUV', 'Hatchback', 'Coupe', 'Convertible', 'Wagon', 'Pickup Truck', 'Van', 'Minivan', 'Sports Car', 'Luxury', 'Other'
@@ -38,22 +43,21 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext, isSu
     );
   };
 
-  const Dropdown = ({ label, value, options, visible, onSelect, onToggle, showSeparator = true }) => (
+  const Dropdown = ({ label, value, options, visible, onSelect, onToggle }) => (
     <View>
-      <View style={styles.inputSection}>
-        <Text style={styles.label}>{label} *</Text>
+      <View style={HV.inputSection}>
+        <Text style={HV.fieldLabel}>{label} *</Text>
         <TouchableOpacity
-          style={styles.dropdown}
+          style={HV.dropdownRow}
           onPress={onToggle}
-          activeOpacity={1}
+          activeOpacity={0.7}
         >
           <Text style={[styles.dropdownText, !value && styles.placeholder]}>
             {value || `Select ${label}`}
           </Text>
-          <Ionicons name="chevron-down" size={20} color="#666666" />
+          <Ionicons name="chevron-down" size={20} color={COLORS.subtle} />
         </TouchableOpacity>
       </View>
-      {showSeparator && <View style={styles.separator} />}
 
       <Modal
         visible={visible}
@@ -100,42 +104,40 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext, isSu
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardView}
+      style={HV.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 200 }]}
+        style={HV.scroll}
+        contentContainerStyle={[HV.scrollContent, { paddingBottom: insets.bottom + 200 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-      <View style={styles.card}>
+        <View style={HV.formOutline}>
         {/* Car Name */}
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Car Name *</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Car name *</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="e.g., BMW M3"
             value={formData.name}
             onChangeText={(text) => updateFormData({ name: text })}
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-        <View style={styles.separator} />
 
         {/* Model */}
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Model *</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Model *</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="e.g., G80"
             value={formData.model}
             onChangeText={(text) => updateFormData({ model: text })}
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-        <View style={styles.separator} />
 
         {/* Body Type */}
         <Dropdown
@@ -158,109 +160,52 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext, isSu
         />
 
         {/* Description */}
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Description *</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Description *</Text>
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={HV.fieldArea}
             placeholder="Describe your car, its features, condition, etc."
             value={formData.description}
             onChangeText={(text) => updateFormData({ description: text })}
             multiline
             numberOfLines={6}
             textAlignVertical="top"
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-      </View>
 
-      {/* Next Button */}
-      <TouchableOpacity
-        style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
-        onPress={onNext}
-        disabled={!canProceed() || isSubmitting}
-        activeOpacity={0.9}
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="#ffffff" />
-        ) : (
-          <Text style={styles.nextButtonText}>Next</Text>
-        )}
-      </TouchableOpacity>
+        <View style={HV.formActions}>
+          <TouchableOpacity
+            style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
+            onPress={onNext}
+            disabled={!canProceed() || isSubmitting}
+            activeOpacity={0.9}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.nextButtonText}>Next</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  content: {
-    padding: SPACING.l,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    marginBottom: 24,
-    overflow: 'hidden',
-  },
-  inputSection: {
-    padding: SPACING.m,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#CCCCCC',
-    marginHorizontal: SPACING.m,
-  },
-  label: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  hint: {
-    fontSize: 13,
-    fontFamily: 'Nunito-Regular',
-    color: '#8E8E93',
-    marginBottom: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.text,
-    backgroundColor: '#F9F9F9',
-  },
-  textArea: {
-    height: 120,
-    paddingTop: 16,
-  },
-  dropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: '#F9F9F9',
-  },
   dropdownText: {
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 20,
     fontFamily: 'Nunito-Regular',
     color: COLORS.text,
     flex: 1,
   },
   placeholder: {
-    color: '#999999',
+    color: hostVehiclePlaceholderColor,
+    fontSize: 15,
+    fontFamily: 'Nunito-Regular',
   },
   modalOverlay: {
     flex: 1,
@@ -270,7 +215,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
+    borderRadius: RADIUS.card,
     width: '80%',
     maxHeight: '60%',
     overflow: 'hidden',
@@ -280,8 +225,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderStrong,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: hostVehicleInputRuleColor,
   },
   modalTitle: {
     fontSize: 18,
@@ -293,8 +238,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: hostVehicleInputRuleColor,
   },
   modalItemText: {
     fontSize: 16,

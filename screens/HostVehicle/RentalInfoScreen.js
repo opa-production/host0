@@ -15,6 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { COLORS, SPACING, RADIUS } from '../../ui/tokens';
+import {
+  hostVehicleFormShared as HV,
+  hostVehiclePlaceholderColor,
+  hostVehicleInputRuleColor,
+} from './formFieldStyles';
 
 const COMMON_RULES = [
   'No smoking',
@@ -90,102 +95,97 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardView}
+      style={HV.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 200 }]}
+        style={HV.scroll}
+        contentContainerStyle={[HV.scrollContent, { paddingBottom: insets.bottom + 200 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-      <View style={styles.card}>
+        <View style={HV.formOutline}>
         {/* Pricing Section */}
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Price per Day (KSh) *</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Price per day (KSh) *</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="0"
             value={formData.pricePerDay}
             onChangeText={(text) => updateFormData({ pricePerDay: text })}
             keyboardType="numeric"
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-        <View style={styles.separator} />
 
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Price per Week (KSh) *</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Price per week (KSh) *</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="0"
             value={formData.pricePerWeek}
             onChangeText={(text) => updateFormData({ pricePerWeek: text })}
             keyboardType="numeric"
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-        <View style={styles.separator} />
 
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Price per Month (KSh) *</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Price per month (KSh) *</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="0"
             value={formData.pricePerMonth}
             onChangeText={(text) => updateFormData({ pricePerMonth: text })}
             keyboardType="numeric"
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-        <View style={styles.separator} />
 
         {/* Rental Terms */}
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Minimum Rental Days *</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Minimum rental days *</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="1"
             value={formData.minimumRentalDays}
             onChangeText={(text) => updateFormData({ minimumRentalDays: text })}
             keyboardType="numeric"
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-        <View style={styles.separator} />
 
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Maximum Rental Days</Text>
-          <Text style={styles.hint}>Optional - Leave blank for no maximum</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Maximum rental days</Text>
+          <Text style={styles.hint}>Optional — leave blank for no maximum</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="e.g., 30"
             value={formData.maxRentalDays}
             onChangeText={(text) => updateFormData({ maxRentalDays: text })}
             keyboardType="numeric"
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-        <View style={styles.separator} />
 
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Pickup Location</Text>
-          <Text style={styles.hint}>Optional - Will be set in the next step</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Pickup location</Text>
+          <Text style={styles.hint}>Optional — exact spot can follow in the next step</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="e.g., Nakuru, Kenya"
             value={formData.pickupLocation}
             onChangeText={(text) => updateFormData({ pickupLocation: text })}
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
           <TouchableOpacity
             style={styles.locationButton}
             onPress={handleUseCurrentLocation}
             activeOpacity={0.7}
           >
-            <Ionicons name="location" size={20} color="#007AFF" />
-            <Text style={styles.locationButtonText}>Use Current Location</Text>
+            <Ionicons name="location" size={20} color={COLORS.brand} />
+            <Text style={styles.locationButtonText}>Use current location</Text>
           </TouchableOpacity>
           {formData.pickupLat && formData.pickupLong && (
             <Text style={styles.hint}>
@@ -193,23 +193,21 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             </Text>
           )}
         </View>
-        <View style={styles.separator} />
 
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Age Restriction *</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Age restriction *</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="e.g., 25 years and above"
             value={formData.ageRestriction}
             onChangeText={(text) => updateFormData({ ageRestriction: text })}
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-        <View style={styles.separator} />
 
         {/* Car Rules */}
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Car Rules</Text>
+        <View style={[HV.inputSection, styles.rulesBlock]}>
+          <Text style={HV.fieldLabel}>Car rules</Text>
           <Text style={styles.hint}>Select rules that apply to your vehicle</Text>
           
           {/* Common Rules */}
@@ -266,7 +264,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
                 placeholder="Enter custom rule"
                 value={customRuleText}
                 onChangeText={setCustomRuleText}
-                placeholderTextColor="#999999"
+                placeholderTextColor={hostVehiclePlaceholderColor}
                 autoFocus
               />
               <View style={styles.customRuleActions}>
@@ -292,88 +290,42 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             </View>
           )}
         </View>
-      </View>
 
-      {/* Navigation Buttons */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          activeOpacity={0.9}
-        >
-          <Ionicons name="arrow-back" size={20} color={COLORS.text} />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
+        <View style={[HV.formActions, styles.buttonRow]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            activeOpacity={0.9}
+          >
+            <Ionicons name="arrow-back" size={20} color={COLORS.text} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
-          onPress={onNext}
-          disabled={!canProceed() || isSubmitting}
-          activeOpacity={0.9}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text style={styles.nextButtonText}>Next</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
+            onPress={onNext}
+            disabled={!canProceed() || isSubmitting}
+            activeOpacity={0.9}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.nextButtonText}>Next</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  content: {
-    padding: SPACING.l,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    marginBottom: 24,
-    overflow: 'hidden',
-  },
-  inputSection: {
-    padding: SPACING.m,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#CCCCCC',
-    marginHorizontal: SPACING.m,
-  },
-  label: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: COLORS.text,
-    marginBottom: 8,
-  },
   hint: {
     fontSize: 13,
     fontFamily: 'Nunito-Regular',
-    color: '#8E8E93',
-    marginBottom: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.text,
-    backgroundColor: '#F9F9F9',
-  },
-  textArea: {
-    height: 100,
-    paddingTop: 16,
+    color: COLORS.muted,
+    marginBottom: 10,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -416,19 +368,19 @@ const styles = StyleSheet.create({
   locationButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 8,
+    justifyContent: 'flex-start',
+    paddingTop: 14,
+    paddingBottom: 12,
+    marginTop: 4,
     gap: 8,
-    backgroundColor: COLORS.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: hostVehicleInputRuleColor,
+    backgroundColor: 'transparent',
   },
   locationButtonText: {
     fontSize: 14,
     fontFamily: 'Nunito-SemiBold',
-    color: '#007AFF',
+    color: COLORS.brand,
   },
   inputError: {
     borderColor: COLORS.danger,
@@ -440,37 +392,31 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   rulesContainer: {
-    marginTop: 12,
-    gap: 12,
+    marginTop: 8,
   },
   ruleCheckbox: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    backgroundColor: COLORS.surface,
+    paddingVertical: 14,
     gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: hostVehicleInputRuleColor,
+    backgroundColor: 'transparent',
   },
-  ruleCheckboxSelected: {
-    borderColor: '#000000',
-    backgroundColor: COLORS.surface,
-  },
+  ruleCheckboxSelected: {},
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: COLORS.borderStrong,
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: hostVehicleInputRuleColor,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: 'transparent',
   },
   checkboxSelected: {
-    borderColor: '#000000',
-    backgroundColor: '#000000',
+    borderColor: COLORS.text,
+    backgroundColor: COLORS.text,
   },
   ruleText: {
     flex: 1,
@@ -485,13 +431,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    backgroundColor: COLORS.surface,
-    marginTop: 8,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: hostVehicleInputRuleColor,
+    marginTop: 0,
   },
   customRuleText: {
     flex: 1,
@@ -502,34 +445,31 @@ const styles = StyleSheet.create({
   addRuleButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 12,
+    justifyContent: 'flex-start',
+    paddingVertical: 14,
+    marginTop: 4,
     gap: 8,
-    backgroundColor: COLORS.surface,
+    backgroundColor: 'transparent',
   },
   addRuleButtonText: {
     fontSize: 14,
     fontFamily: 'Nunito-SemiBold',
-    color: '#007AFF',
+    color: COLORS.brand,
   },
   customRuleInputContainer: {
     marginTop: 12,
     gap: 12,
   },
   customRuleInput: {
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: 'Nunito-Regular',
     color: COLORS.text,
-    backgroundColor: COLORS.surface,
+    marginTop: 8,
+    paddingTop: 4,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: hostVehicleInputRuleColor,
+    backgroundColor: 'transparent',
   },
   customRuleActions: {
     flexDirection: 'row',
@@ -539,9 +479,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: hostVehicleInputRuleColor,
+    borderRadius: RADIUS.card,
     padding: 14,
     backgroundColor: COLORS.surface,
   },
@@ -554,9 +494,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: RADIUS.card,
     padding: 14,
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.brand,
   },
   addRuleConfirmButtonDisabled: {
     backgroundColor: '#cccccc',

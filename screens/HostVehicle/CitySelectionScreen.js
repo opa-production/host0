@@ -97,7 +97,7 @@ export default function CitySelectionScreen({ onSelectCity, selectedCityId }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.surface,
   },
   content: {
     paddingHorizontal: SPACING.l,

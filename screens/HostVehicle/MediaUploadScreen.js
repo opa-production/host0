@@ -13,7 +13,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, SPACING } from '../../ui/tokens';
+import { COLORS, SPACING, RADIUS } from '../../ui/tokens';
+import {
+  hostVehicleFormShared as HV,
+  hostVehicleInputRuleColor,
+  hostVehicleFormOutlineColor,
+} from './formFieldStyles';
 import { uploadVehicleImages, uploadVehicleVideo } from '../../services/mediaService';
 
 export default function MediaUploadScreen({ formData, updateFormData, onNext, onBack, onSubmit, isSubmitting }) {
@@ -130,13 +135,14 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
+      style={HV.scroll}
+      contentContainerStyle={[HV.scrollContent, { paddingBottom: insets.bottom + 100 }]}
       showsVerticalScrollIndicator={false}
     >
+      <View style={HV.formOutline}>
       {/* Cover Photo */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Cover Photo *</Text>
+      <View style={HV.inputSection}>
+        <Text style={HV.fieldLabel}>Cover photo *</Text>
         <Text style={styles.hint}>This will be the main photo displayed in listings</Text>
         
         {formData.coverPhoto ? (
@@ -147,7 +153,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
               onPress={() => updateFormData({ coverPhoto: null })}
               activeOpacity={1}
             >
-              <Ionicons name="close-circle" size={28} color="#007AFF" />
+              <Ionicons name="close-circle" size={28} color={COLORS.brand} />
             </TouchableOpacity>
           </View>
         ) : (
@@ -156,16 +162,17 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
             onPress={pickCoverPhoto}
             activeOpacity={0.7}
           >
-            <Ionicons name="camera-outline" size={48} color="#666666" />
+            <Ionicons name="camera-outline" size={48} color={COLORS.subtle} />
             <Text style={styles.addCoverText}>Add Cover Photo</Text>
           </TouchableOpacity>
         )}
       </View>
+      <View style={HV.sectionDivider} />
 
       {/* Images */}
-      <View style={styles.section}>
+      <View style={HV.inputSection}>
         <View style={styles.labelRow}>
-          <Text style={styles.label}>Photos *</Text>
+          <Text style={HV.fieldLabel}>Photos *</Text>
           <Text style={styles.counter}>
             {formData.images.length}/12 (min 4)
           </Text>
@@ -181,7 +188,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
                 onPress={() => removeImage(index)}
                 activeOpacity={1}
               >
-                <Ionicons name="close-circle" size={24} color="#007AFF" />
+                <Ionicons name="close-circle" size={24} color={COLORS.brand} />
               </TouchableOpacity>
             </View>
           ))}
@@ -192,22 +199,23 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
               onPress={pickImages}
               activeOpacity={0.7}
             >
-              <Ionicons name="add" size={32} color="#666666" />
+              <Ionicons name="add" size={32} color={COLORS.subtle} />
               <Text style={styles.addImageText}>Add Photo</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
+      <View style={HV.sectionDivider} />
 
       {/* Video */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Video</Text>
+      <View style={HV.inputSection}>
+        <Text style={HV.fieldLabel}>Video</Text>
         <Text style={styles.hint}>Optional (up to 30 seconds)</Text>
         
         {formData.video ? (
           <View style={styles.videoContainer}>
             <View style={styles.videoPlaceholder}>
-              <Ionicons name="videocam" size={48} color="#666666" />
+              <Ionicons name="videocam" size={48} color={COLORS.subtle} />
               <Text style={styles.videoText}>Video Selected</Text>
             </View>
             <TouchableOpacity
@@ -215,7 +223,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
               onPress={removeVideo}
               activeOpacity={1}
             >
-              <Ionicons name="trash-outline" size={20} color="#007AFF" />
+              <Ionicons name="trash-outline" size={20} color={COLORS.brand} />
               <Text style={styles.removeVideoText}>Remove</Text>
             </TouchableOpacity>
           </View>
@@ -225,66 +233,50 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
             onPress={pickVideo}
             activeOpacity={0.7}
           >
-            <Ionicons name="videocam-outline" size={32} color="#666666" />
+            <Ionicons name="videocam-outline" size={32} color={COLORS.subtle} />
             <Text style={styles.addVideoText}>Add Video</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Navigation Buttons */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          disabled={isUploading}
-          activeOpacity={0.9}
-        >
-          <Ionicons name="arrow-back" size={20} color={isUploading ? COLORS.subtle : COLORS.text} />
-          <Text style={[styles.backButtonText, isUploading && styles.buttonDisabledText]}>Back</Text>
-        </TouchableOpacity>
+        <View style={[HV.formActions, styles.buttonRow]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            disabled={isUploading}
+            activeOpacity={0.9}
+          >
+            <Ionicons name="arrow-back" size={20} color={isUploading ? COLORS.subtle : COLORS.text} />
+            <Text style={[styles.backButtonText, isUploading && styles.buttonDisabledText]}>Back</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.nextButton, (!canProceed() || isUploading) && styles.nextButtonDisabled]}
-          onPress={onSubmit || onNext}
-          disabled={!canProceed() || isUploading}
-          activeOpacity={0.9}
-        >
-          {isUploading ? (
-            <>
-              <ActivityIndicator size="small" color="#ffffff" style={styles.nextSpinner} />
-              <Text style={styles.nextButtonText}>Uploading…</Text>
-            </>
-          ) : (
-            <Text style={styles.nextButtonText}>Next</Text>
-          )}
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.nextButton, (!canProceed() || isUploading) && styles.nextButtonDisabled]}
+            onPress={onSubmit || onNext}
+            disabled={!canProceed() || isUploading}
+            activeOpacity={0.9}
+          >
+            {isUploading ? (
+              <>
+                <ActivityIndicator size="small" color="#ffffff" style={styles.nextSpinner} />
+                <Text style={styles.nextButtonText}>Uploading…</Text>
+              </>
+            ) : (
+              <Text style={styles.nextButtonText}>Next</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  content: {
-    padding: SPACING.l,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  label: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: COLORS.text,
-    marginBottom: 8,
-  },
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   counter: {
     fontSize: 14,
@@ -294,14 +286,14 @@ const styles = StyleSheet.create({
   hint: {
     fontSize: 13,
     fontFamily: 'Nunito-Regular',
-    color: '#8E8E93',
+    color: COLORS.muted,
     marginBottom: 12,
   },
   coverPhotoContainer: {
     position: 'relative',
     width: '100%',
     aspectRatio: 16 / 9,
-    borderRadius: 12,
+    borderRadius: RADIUS.card - 4,
     overflow: 'hidden',
     backgroundColor: COLORS.border,
   },
@@ -319,10 +311,10 @@ const styles = StyleSheet.create({
   addCoverButton: {
     width: '100%',
     aspectRatio: 16 / 9,
-    borderWidth: 2,
-    borderColor: COLORS.borderStrong,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: hostVehicleFormOutlineColor,
     borderStyle: 'dashed',
-    borderRadius: 12,
+    borderRadius: RADIUS.card - 4,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.bg,
@@ -346,7 +338,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
+    borderRadius: RADIUS.card - 4,
     backgroundColor: COLORS.border,
   },
   removeButton: {
@@ -359,13 +351,13 @@ const styles = StyleSheet.create({
   addImageButton: {
     width: '30%',
     aspectRatio: 1,
-    borderWidth: 2,
-    borderColor: COLORS.borderStrong,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: hostVehicleInputRuleColor,
     borderStyle: 'dashed',
-    borderRadius: 12,
+    borderRadius: RADIUS.card - 4,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.surface,
   },
   addImageText: {
     fontSize: 12,
@@ -374,11 +366,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   videoContainer: {
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: COLORS.bg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: hostVehicleInputRuleColor,
+    paddingTop: 16,
+    backgroundColor: 'transparent',
   },
   videoPlaceholder: {
     alignItems: 'center',
@@ -397,24 +388,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 12,
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderStrong,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: hostVehicleInputRuleColor,
   },
   removeVideoText: {
     fontSize: 14,
     fontFamily: 'Nunito-SemiBold',
-    color: '#007AFF',
+    color: COLORS.brand,
     marginLeft: 6,
   },
   addVideoButton: {
-    borderWidth: 2,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.borderStrong,
     borderStyle: 'dashed',
-    borderRadius: 12,
+    borderRadius: RADIUS.card - 4,
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.surface,
   },
   addVideoText: {
     fontSize: 14,
@@ -436,8 +427,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     gap: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: hostVehicleInputRuleColor,
   },
   backButtonText: {
     fontSize: 16,

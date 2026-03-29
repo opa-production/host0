@@ -167,7 +167,7 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.surface,
   },
   content: {
     padding: SPACING.l,

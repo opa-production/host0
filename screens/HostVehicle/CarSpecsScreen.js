@@ -13,6 +13,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../../ui/tokens';
+import {
+  hostVehicleFormShared as HV,
+  hostVehiclePlaceholderColor,
+  hostVehicleInputRuleColor,
+} from './formFieldStyles';
 
 const FUEL_TYPES = ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'];
 const TRANSMISSIONS = ['Manual', 'Automatic', 'CVT'];
@@ -53,22 +58,21 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
     );
   };
 
-  const Dropdown = ({ label, value, options, visible, onSelect, onToggle, showSeparator = true }) => (
+  const Dropdown = ({ label, value, options, visible, onSelect, onToggle }) => (
     <View>
-      <View style={styles.inputSection}>
-        <Text style={styles.label}>{label} *</Text>
+      <View style={HV.inputSection}>
+        <Text style={HV.fieldLabel}>{label} *</Text>
         <TouchableOpacity
-          style={styles.dropdown}
+          style={HV.dropdownRow}
           onPress={onToggle}
-          activeOpacity={1}
+          activeOpacity={0.7}
         >
           <Text style={[styles.dropdownText, !value && styles.placeholder]}>
             {value || `Select ${label}`}
           </Text>
-          <Ionicons name="chevron-down" size={20} color="#666666" />
+          <Ionicons name="chevron-down" size={20} color={COLORS.subtle} />
         </TouchableOpacity>
       </View>
-      {showSeparator && <View style={styles.separator} />}
 
       <Modal
         visible={visible}
@@ -115,11 +119,11 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
+      style={HV.scroll}
+      contentContainerStyle={[HV.scrollContent, { paddingBottom: insets.bottom + 100 }]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.card}>
+        <View style={HV.formOutline}>
         {/* Seats */}
         <Dropdown
           label="Seats Capacity"
@@ -161,23 +165,22 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
         />
 
         {/* Mileage */}
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Mileage</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Mileage</Text>
           <Text style={styles.hint}>Current odometer reading in kilometers</Text>
           <TextInput
-            style={styles.input}
+            style={HV.field}
             placeholder="e.g., 15000"
             value={formData.mileage}
             onChangeText={(text) => updateFormData({ mileage: text })}
             keyboardType="numeric"
-            placeholderTextColor="#999999"
+            placeholderTextColor={hostVehiclePlaceholderColor}
           />
         </View>
-        <View style={styles.separator} />
 
         {/* Features */}
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>Features</Text>
+        <View style={HV.inputSection}>
+          <Text style={HV.fieldLabel}>Features</Text>
           <Text style={styles.hint}>Select all that apply</Text>
           <View style={styles.featuresGrid}>
             {FEATURES.map((feature) => {
@@ -198,105 +201,60 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
                     {feature}
                   </Text>
                   {isSelected && (
-                    <Ionicons name="checkmark-circle" size={18} color="#007AFF" style={{ marginLeft: 6 }} />
+                    <Ionicons name="checkmark-circle" size={18} color={COLORS.brand} style={{ marginLeft: 6 }} />
                   )}
                 </TouchableOpacity>
               );
             })}
           </View>
         </View>
-      </View>
 
-      {/* Navigation Buttons */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          activeOpacity={0.9}
-        >
-          <Ionicons name="arrow-back" size={20} color={COLORS.text} />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
+        <View style={[HV.formActions, styles.buttonRow]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            activeOpacity={0.9}
+          >
+            <Ionicons name="arrow-back" size={20} color={COLORS.text} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
-          onPress={onNext}
-          disabled={!canProceed() || isSubmitting}
-          activeOpacity={0.9}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text style={styles.nextButtonText}>Next</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
+            onPress={onNext}
+            disabled={!canProceed() || isSubmitting}
+            activeOpacity={0.9}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.nextButtonText}>Next</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+        </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  content: {
-    padding: SPACING.l,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    marginBottom: 24,
-    overflow: 'hidden',
-  },
-  inputSection: {
-    padding: SPACING.m,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#CCCCCC',
-    marginHorizontal: SPACING.m,
-  },
-  label: {
-    fontSize: 16,
-    fontFamily: 'Nunito-SemiBold',
-    color: COLORS.text,
-    marginBottom: 8,
-  },
   hint: {
     fontSize: 13,
     fontFamily: 'Nunito-Regular',
-    color: '#8E8E93',
-    marginBottom: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.text,
-    backgroundColor: '#F9F9F9',
-  },
-  dropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: '#F9F9F9',
+    color: COLORS.muted,
+    marginBottom: 10,
   },
   dropdownText: {
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 20,
     fontFamily: 'Nunito-Regular',
     color: COLORS.text,
     flex: 1,
   },
   placeholder: {
-    color: '#999999',
+    color: hostVehiclePlaceholderColor,
+    fontSize: 15,
+    fontFamily: 'Nunito-Regular',
   },
   modalOverlay: {
     flex: 1,
@@ -316,8 +274,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderStrong,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: hostVehicleInputRuleColor,
   },
   modalTitle: {
     fontSize: 18,
@@ -329,8 +287,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: hostVehicleInputRuleColor,
   },
   modalItemText: {
     fontSize: 16,
@@ -345,16 +303,16 @@ const styles = StyleSheet.create({
   featureChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
-    backgroundColor: COLORS.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: RADIUS.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: hostVehicleInputRuleColor,
+    backgroundColor: 'transparent',
   },
   featureChipSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF15',
+    borderColor: COLORS.brand,
+    backgroundColor: 'transparent',
   },
   featureChipText: {
     fontSize: 14,

@@ -496,7 +496,7 @@ export default function HostVehicleScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
       
       {/* Header with Progress */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
@@ -539,12 +539,12 @@ export default function HostVehicleScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.surface,
   },
   header: {
     paddingHorizontal: SPACING.l,
     paddingBottom: 12,
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.surface,
   },
   headerRow: {
     flexDirection: 'row',
