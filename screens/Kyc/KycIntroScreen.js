@@ -72,7 +72,7 @@ export default function KycIntroScreen({ navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Identity verification</Text>
+        <Text style={styles.headerTitle}>ID verification</Text>
         <View style={styles.backButton} />
       </View>
 

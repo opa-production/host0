@@ -326,7 +326,7 @@ export default function ProfileScreen({ navigation }) {
             }}
           >
             <Ionicons name="scan-outline" size={22} color="#666666" style={styles.linkIcon} />
-            <Text style={styles.linkText}>KYC Verification</Text>
+            <Text style={styles.linkText}>ID verification</Text>
             {(kycStatus?.status || '').toLowerCase() === 'approved' || (kycStatus?.status || '').toLowerCase() === 'verified' ? (
               <View style={styles.verifiedBadge}>
                 <Ionicons name="checkmark-circle" size={18} color="#34C759" />
@@ -338,7 +338,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* All Links Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, styles.sectionAboveLogout]}>
           <View style={styles.sectionDivider} />
           <Text style={styles.sectionTitle}>More</Text>
           
@@ -403,8 +403,8 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionDivider} />
+        <View style={[styles.section, styles.logoutSection]}>
+          <View style={styles.logoutSectionDivider} />
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
             <Ionicons name="log-out-outline" size={22} color="#FF3B30" style={styles.logoutIcon} />
             <Text style={styles.logoutText}>Logout</Text>
@@ -554,6 +554,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.l,
     marginBottom: SPACING.l,
   },
+  /** Tighter gap before logout row */
+  sectionAboveLogout: {
+    marginBottom: SPACING.xs,
+  },
+  logoutSection: {
+    marginTop: 0,
+    marginBottom: SPACING.m,
+  },
+  logoutSectionDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E5EA',
+    marginBottom: SPACING.xs,
+  },
   linkGroup: {
     backgroundColor: 'transparent',
   },
@@ -628,7 +641,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   logoutIcon: {
     marginRight: 16,
