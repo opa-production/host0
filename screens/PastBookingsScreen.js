@@ -407,8 +407,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   gridCard: {
-    borderWidth: 1,
-    borderColor: COLORS.borderStrong,
+    backgroundColor: COLORS.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderVisible,
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
