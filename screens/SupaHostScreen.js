@@ -77,7 +77,7 @@ export default function SupaHostScreen({ navigation: nav }) {
     ? isCurrentPlan
       ? 'Current plan'
       : `Switch to ${plan.name}`
-    : 'Get started';
+    : 'Checkout';
 
   return (
     <View style={styles.container}>

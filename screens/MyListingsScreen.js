@@ -86,7 +86,14 @@ export default function MyListingsScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      loadCars();
+      if (Array.isArray(myListingsScreenCache.cars)) {
+        setCars([...myListingsScreenCache.cars]);
+      }
+      // Keep My Cars instant when returning to this screen/app.
+      // Only fetch automatically before first successful load.
+      if (!myListingsScreenCache.fetchedOnce) {
+        loadCars();
+      }
     }, [loadCars])
   );
 

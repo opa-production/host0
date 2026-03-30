@@ -6,7 +6,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { lightHaptic } from '../ui/haptics';
 import { COLORS } from '../ui/tokens';
 import { useHost } from '../utils/HostContext';
 import { getOnboardingCompleted } from '../utils/userStorage';
@@ -155,27 +154,22 @@ function MainTabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        listeners={{ tabPress: () => lightHaptic() }}
       />
       <Tab.Screen
         name="Bookings"
         component={BookingsScreen}
-        listeners={{ tabPress: () => lightHaptic() }}
       />
       <Tab.Screen
         name="My Cars"
         component={HostScreen}
-        listeners={{ tabPress: () => lightHaptic() }}
       />
       <Tab.Screen
         name="Messages"
         component={MessagesScreen}
-        listeners={{ tabPress: () => lightHaptic() }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        listeners={{ tabPress: () => lightHaptic() }}
       />
     </Tab.Navigator>
   );
