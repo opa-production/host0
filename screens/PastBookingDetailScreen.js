@@ -20,6 +20,10 @@ import { getHostClientProfile } from '../services/clientProfileService';
 import { getClientRatings, submitHostClientRating } from '../services/ratingService';
 import { downloadBookingReceipt } from '../services/receiptService';
 import { getUserId } from '../utils/userStorage';
+import {
+  getPastBookingDetailCached,
+  setPastBookingDetailCached,
+} from '../utils/screenDataCache';
 
 const getStatusColor = (status) => {
   const statusLower = status?.toLowerCase() || '';
@@ -69,16 +73,43 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
   // Fetch full booking details (same source as ActiveBookingScreen) to enrich past-booking UI.
   useEffect(() => {
+    let cancelled = false;
     const loadBookingEnhancements = async () => {
-      let resolvedVehicleImage =
-        typeof routeBooking.vehicleImage === 'string' ? routeBooking.vehicleImage : null;
+      let resolvedVehicleImage = typeof routeBooking.vehicleImage === 'string' ? routeBooking.vehicleImage : null;
       let resolvedClientAvatar = routeBooking.renter?.avatar || null;
 
-      const bookingId = routeBooking.bookingId || routeBooking.id;
-      if (bookingId) {
-        const detailResult = await getBookingDetails(bookingId);
+      const resolvedBookingId = routeBooking.bookingId || routeBooking.id;
+      const userId = await getUserId();
+      const cached = await getPastBookingDetailCached(userId, resolvedBookingId);
+      if (cancelled) return;
+
+      let nextDetailBooking = null;
+      let nextClientRatingSummary = null;
+      let nextClientProfile = null;
+      let nextCarTrips = null;
+
+      if (cached) {
+        nextDetailBooking = cached.detailBooking || null;
+        nextClientRatingSummary = cached.clientRatingSummary || null;
+        nextClientProfile = cached.clientProfile || null;
+        nextCarTrips = cached.carTrips ?? null;
+        resolvedVehicleImage = cached.vehicleImage || resolvedVehicleImage;
+        resolvedClientAvatar = cached.clientAvatar || resolvedClientAvatar;
+
+        setDetailBooking(nextDetailBooking);
+        setVehicleImage(resolvedVehicleImage);
+        setClientAvatar(resolvedClientAvatar);
+        setClientRatingSummary(nextClientRatingSummary);
+        setClientProfile(nextClientProfile);
+        setCarTrips(nextCarTrips);
+      }
+
+      if (resolvedBookingId) {
+        const detailResult = await getBookingDetails(resolvedBookingId);
+        if (cancelled) return;
         if (detailResult.success && detailResult.booking) {
           const b = detailResult.booking;
+          nextDetailBooking = b;
           setDetailBooking(b);
 
           if (!resolvedVehicleImage && Array.isArray(b.car_image_urls) && b.car_image_urls.length > 0) {
@@ -96,7 +127,6 @@ export default function PastBookingDetailScreen({ navigation, route }) {
           }
           resolvedClientAvatar = avatarFromApi || resolvedClientAvatar;
 
-          // Compute real trips count for this car from host bookings (completed trips)
           try {
             const bookingsResult = await getHostBookings();
             if (bookingsResult.success && Array.isArray(bookingsResult.bookings)) {
@@ -104,10 +134,33 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                 const sameCar = bk.car_id === b.car_id;
                 return sameCar && isBookingCompleted(bk);
               }).length;
+              nextCarTrips = tripsCount;
               setCarTrips(tripsCount);
             }
-          } catch (_) {
-            // Fallbacks will handle when this fails
+          } catch (_) {}
+
+          if (b.client_id) {
+            const ratingsResult = await getClientRatings(b.client_id);
+            if (ratingsResult.success) {
+              nextClientRatingSummary = {
+                average: ratingsResult.average ?? 0,
+                count: ratingsResult.count ?? 0,
+              };
+              setClientRatingSummary(nextClientRatingSummary);
+            } else {
+              setClientRatingSummary(null);
+            }
+
+            const profileResult = await getHostClientProfile(b.client_id);
+            if (profileResult.success && profileResult.profile) {
+              nextClientProfile = profileResult.profile;
+              setClientProfile(profileResult.profile);
+              if (profileResult.profile.avatar_url) {
+                resolvedClientAvatar = profileResult.profile.avatar_url;
+              }
+            } else {
+              setClientProfile(null);
+            }
           }
         }
       }
@@ -123,54 +176,25 @@ export default function PastBookingDetailScreen({ navigation, route }) {
         }
       }
 
+      if (cancelled) return;
       setVehicleImage(resolvedVehicleImage);
       setClientAvatar(resolvedClientAvatar);
+
+      await setPastBookingDetailCached(userId, resolvedBookingId, {
+        detailBooking: nextDetailBooking,
+        vehicleImage: resolvedVehicleImage,
+        clientAvatar: resolvedClientAvatar,
+        clientRatingSummary: nextClientRatingSummary,
+        clientProfile: nextClientProfile,
+        carTrips: nextCarTrips,
+      });
     };
 
     loadBookingEnhancements();
+    return () => {
+      cancelled = true;
+    };
   }, [routeBooking.vehicleImage, routeBooking.carId, routeBooking.bookingId, routeBooking.id]);
-
-  // Fetch client rating summary when we have a client id
-  useEffect(() => {
-    const clientIdToUse = detailBooking?.client_id ?? routeBooking?.clientId ?? routeBooking?.client_id ?? null;
-    if (!clientIdToUse) return;
-
-    let cancelled = false;
-    (async () => {
-      const result = await getClientRatings(clientIdToUse);
-      if (cancelled) return;
-      if (result.success) {
-        setClientRatingSummary({
-          average: result.average ?? 0,
-          count: result.count ?? 0,
-        });
-      } else {
-        setClientRatingSummary(null);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [detailBooking?.client_id, routeBooking?.clientId, routeBooking?.client_id]);
-
-  // Fetch client profile (trips_count, average_rating, full_name, avatar_url, email) from API
-  useEffect(() => {
-    const clientIdToUse = detailBooking?.client_id ?? routeBooking?.clientId ?? routeBooking?.client_id ?? null;
-    if (!clientIdToUse) return;
-
-    let cancelled = false;
-    (async () => {
-      const result = await getHostClientProfile(clientIdToUse);
-      if (cancelled) return;
-      if (result.success && result.profile) {
-        setClientProfile(result.profile);
-        if (result.profile.avatar_url) {
-          setClientAvatar(result.profile.avatar_url);
-        }
-      } else {
-        setClientProfile(null);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [detailBooking?.client_id, routeBooking?.clientId, routeBooking?.client_id]);
 
   const statusResolved = (detailBooking?.status ?? routeBooking?.status ?? '').trim();
   const cancelled = isBookingCancelled(statusResolved);

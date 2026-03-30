@@ -17,8 +17,13 @@ import {
 } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
+import {
+  getPastBookingsCached,
+  setPastBookingsCached,
+} from '../utils/screenDataCache';
 
 const SKELETON_CARD_COUNT = 4;
+const BACKGROUND_SYNC_INTERVAL_MS = 2 * 60 * 1000;
 
 function SkeletonBlock({ style }) {
   const opacity = useRef(new Animated.Value(0.35)).current;
@@ -80,6 +85,8 @@ export default function PastBookingsScreen({ navigation }) {
   const bookingsRef = useRef([]);
   const fetchGenerationRef = useRef(0);
   const hasFetchedOnceRef = useRef(false);
+  const hydratedRef = useRef(false);
+  const lastBackgroundSyncAtRef = useRef(0);
 
   useEffect(() => {
     bookingsRef.current = bookings;
@@ -135,15 +142,15 @@ export default function PastBookingsScreen({ navigation }) {
         const completedBookings = result.bookings.filter(
           (b) => isBookingCompleted(b) || isBookingCancelled(b)
         );
-        const userId = await getUserId();
+        const userIdForImages = await getUserId();
         const bookingsWithImages = await Promise.all(
           completedBookings.map(async (booking) => {
             let coverImage = null;
 
             if (booking.car_image_urls && booking.car_image_urls.length > 0) {
               coverImage = booking.car_image_urls[0];
-            } else if (booking.car_id && userId) {
-              const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
+            } else if (booking.car_id && userIdForImages) {
+              const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userIdForImages);
               coverImage = imageResult.coverPhoto;
             }
 
@@ -201,6 +208,9 @@ export default function PastBookingsScreen({ navigation }) {
 
         if (gen !== fetchGenerationRef.current) return;
         setBookings(bookingsWithImages);
+        bookingsRef.current = bookingsWithImages;
+        await setPastBookingsCached(userIdForImages, bookingsWithImages);
+        lastBackgroundSyncAtRef.current = Date.now();
       } else {
         if (gen !== fetchGenerationRef.current) return;
         if (!hadCached) setBookings([]);
@@ -224,9 +234,45 @@ export default function PastBookingsScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      loadBookings();
+      if (bookingsRef.current.length > 0) {
+        setBookings([...bookingsRef.current]);
+      }
+      if (!hydratedRef.current) return;
+      if (!hasFetchedOnceRef.current) {
+        loadBookings();
+        return;
+      }
+      const now = Date.now();
+      if (now - lastBackgroundSyncAtRef.current >= BACKGROUND_SYNC_INTERVAL_MS) {
+        loadBookings({ showFullScreenLoader: false });
+      }
     }, [loadBookings])
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const userId = await getUserId();
+      const cached = await getPastBookingsCached(userId);
+      if (cancelled) return;
+
+      if (Array.isArray(cached)) {
+        setBookings(cached);
+        bookingsRef.current = cached;
+        hasFetchedOnceRef.current = true;
+        setIsLoading(false);
+        lastBackgroundSyncAtRef.current = Date.now();
+      }
+      hydratedRef.current = true;
+      if (!hasFetchedOnceRef.current) {
+        loadBookings();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadBookings]);
 
   const confirmDeleteBooking = (bookingId) => {
     if (!bookingId) return;
@@ -242,7 +288,11 @@ export default function PastBookingsScreen({ navigation }) {
     try {
       const result = await deleteBooking(bookingId);
       if (result.success) {
-        setBookings((prev) => prev.filter((b) => (b.bookingId || b.id) !== bookingId));
+        const updatedBookings = bookingsRef.current.filter((b) => (b.bookingId || b.id) !== bookingId);
+        bookingsRef.current = updatedBookings;
+        setBookings(updatedBookings);
+        const userId = await getUserId();
+        await setPastBookingsCached(userId, updatedBookings);
         setDeleteModal({ visible: false, bookingId: null });
       } else {
         setDeleteModal({ visible: false, bookingId: null });
