@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, TYPE, SPACING } from '../ui/tokens';
 import { createCarBasics, updateCarSpecs, updateCarPricing, saveVehicleImageUrls } from '../services/carService';
 import { uploadVehicleImages, uploadVehicleVideo } from '../services/mediaService';
-import CitySelectionScreen from './HostVehicle/CitySelectionScreen';
+import CitySelectionScreen, { HOST_LISTING_CITIES } from './HostVehicle/CitySelectionScreen';
 import BasicInfoScreen from './HostVehicle/BasicInfoMediaScreen';
 import MediaUploadScreen from './HostVehicle/MediaUploadScreen';
 import CarSpecsScreen from './HostVehicle/CarSpecsScreen';
@@ -21,6 +21,11 @@ const LISTING_STEP_TITLES = [
   'Upload Media',
   'Review',
 ];
+
+const HOST_CITY_NAME_BY_ID = HOST_LISTING_CITIES.reduce((acc, city) => {
+  acc[city.id] = city.name;
+  return acc;
+}, {});
 
 export default function HostVehicleScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -101,6 +106,11 @@ export default function HostVehicleScreen({ navigation, route }) {
         Alert.alert('Incomplete Information', 'Please fill in all required fields before proceeding.');
         return;
       }
+      if (!formData.hostCityName && !formData.hostCityId) {
+        Alert.alert('Missing city', 'Please select an operating city first.');
+        setCurrentStep(0);
+        return;
+      }
 
       setIsSubmitting(true);
       
@@ -112,12 +122,17 @@ export default function HostVehicleScreen({ navigation, route }) {
           return;
         }
 
+        const selectedCityName =
+          formData.hostCityName ||
+          (formData.hostCityId ? HOST_CITY_NAME_BY_ID[formData.hostCityId] : null);
+
         const result = await createCarBasics({
           name: formData.name,
           model: formData.model,
           body_type: formData.body,
           year: formData.year,
           description: formData.description,
+          city: selectedCityName || undefined,
         });
 
         if (result.success && result.carId) {

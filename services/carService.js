@@ -16,6 +16,7 @@ import { getHostBookings, isBookingCompleted } from './bookingService';
  * @param {string} basicInfo.body_type - Body type (e.g., Sedan, SUV, Hatchback)
  * @param {string|number} basicInfo.year - Manufacturing year
  * @param {string} basicInfo.description - Long-form description of the car
+ * @param {string} [basicInfo.city] - Listing city selected by host (e.g., Nairobi)
  * @returns {Promise<Object>} Result with success status and car data or error
  */
 export const createCarBasics = async (basicInfo) => {
@@ -29,6 +30,7 @@ export const createCarBasics = async (basicInfo) => {
     body_type: basicInfo.body_type,
     year: basicInfo.year,
     description: basicInfo.description ? `${basicInfo.description.substring(0, 50)}...` : 'N/A',
+    city: basicInfo.city || 'N/A',
   });
   
   try {
@@ -56,6 +58,9 @@ export const createCarBasics = async (basicInfo) => {
     if (!basicInfo.description || !basicInfo.description.trim()) {
       throw new Error('Description is required');
     }
+    if (basicInfo.city != null && !String(basicInfo.city).trim()) {
+      throw new Error('City cannot be empty');
+    }
 
     // Convert year to number if it's a string
     const year = typeof basicInfo.year === 'string' ? parseInt(basicInfo.year, 10) : basicInfo.year;
@@ -67,6 +72,9 @@ export const createCarBasics = async (basicInfo) => {
       year: year,
       description: basicInfo.description.trim(),
     };
+    if (basicInfo.city) {
+      requestBody.city = String(basicInfo.city).trim();
+    }
 
     console.log('🚗 [CAR BASICS API] Sending POST request...');
     console.log('🚗 [CAR BASICS API] Request body:', JSON.stringify(requestBody, null, 2));
