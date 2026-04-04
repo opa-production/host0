@@ -8,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const myListingsScreenCache = {
   cars: null,
   fetchedOnce: false,
+  /** Last user this in-memory cache belongs to — must match current session or cache is ignored */
+  cachedUserId: null,
 };
 
 export const messagesScreenCache = {
@@ -39,9 +41,14 @@ export const pastBookingsScreenCache = {
   bookings: [],
   loadedOnce: false,
   lastUpdatedAt: 0,
+  cachedUserId: null,
 };
 
 export const pastBookingDetailScreenCache = new Map();
+
+function pastBookingDetailMemoryKey(userId, bookingId) {
+  return `${String(userId || 'local')}:${String(bookingId)}`;
+}
 
 function isFreshTimestamp(timestamp) {
   return Number.isFinite(timestamp) && timestamp > 0 && Date.now() - timestamp < THIRTY_DAYS_MS;
@@ -56,9 +63,11 @@ function pastBookingDetailStorageKey(userId, bookingId) {
 }
 
 export async function getPastBookingsCached(userId) {
+  const uid = String(userId || '');
   if (
     pastBookingsScreenCache.loadedOnce &&
-    isFreshTimestamp(pastBookingsScreenCache.lastUpdatedAt)
+    isFreshTimestamp(pastBookingsScreenCache.lastUpdatedAt) &&
+    String(pastBookingsScreenCache.cachedUserId || '') === uid
   ) {
     return pastBookingsScreenCache.bookings || [];
   }
@@ -75,6 +84,7 @@ export async function getPastBookingsCached(userId) {
       pastBookingsScreenCache.bookings = parsed.bookings;
       pastBookingsScreenCache.loadedOnce = true;
       pastBookingsScreenCache.lastUpdatedAt = Number(parsed.lastUpdatedAt);
+      pastBookingsScreenCache.cachedUserId = userId || null;
       return parsed.bookings;
     }
   } catch (error) {
@@ -92,6 +102,7 @@ export async function setPastBookingsCached(userId, bookings) {
   pastBookingsScreenCache.bookings = payload.bookings;
   pastBookingsScreenCache.loadedOnce = true;
   pastBookingsScreenCache.lastUpdatedAt = payload.lastUpdatedAt;
+  pastBookingsScreenCache.cachedUserId = userId || null;
 
   try {
     await AsyncStorage.setItem(pastBookingsStorageKey(userId), JSON.stringify(payload));
@@ -103,7 +114,8 @@ export async function setPastBookingsCached(userId, bookings) {
 export async function getPastBookingDetailCached(userId, bookingId) {
   if (!bookingId) return null;
   const key = String(bookingId);
-  const memoryEntry = pastBookingDetailScreenCache.get(key);
+  const memKey = pastBookingDetailMemoryKey(userId, key);
+  const memoryEntry = pastBookingDetailScreenCache.get(memKey);
   if (memoryEntry && isFreshTimestamp(Number(memoryEntry.lastUpdatedAt))) {
     return memoryEntry.data || null;
   }
@@ -113,7 +125,7 @@ export async function getPastBookingDetailCached(userId, bookingId) {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed && isFreshTimestamp(Number(parsed.lastUpdatedAt))) {
-      pastBookingDetailScreenCache.set(key, parsed);
+      pastBookingDetailScreenCache.set(memKey, parsed);
       return parsed.data || null;
     }
   } catch (error) {
@@ -126,11 +138,12 @@ export async function getPastBookingDetailCached(userId, bookingId) {
 export async function setPastBookingDetailCached(userId, bookingId, data) {
   if (!bookingId || !data) return;
   const key = String(bookingId);
+  const memKey = pastBookingDetailMemoryKey(userId, key);
   const payload = {
     data,
     lastUpdatedAt: Date.now(),
   };
-  pastBookingDetailScreenCache.set(key, payload);
+  pastBookingDetailScreenCache.set(memKey, payload);
 
   try {
     await AsyncStorage.setItem(pastBookingDetailStorageKey(userId, key), JSON.stringify(payload));
@@ -143,6 +156,7 @@ export async function setPastBookingDetailCached(userId, bookingId, data) {
 export function resetScreenDataCaches() {
   myListingsScreenCache.cars = null;
   myListingsScreenCache.fetchedOnce = false;
+  myListingsScreenCache.cachedUserId = null;
   messagesScreenCache.supportConversation = null;
   messagesScreenCache.clientConversations = [];
   messagesScreenCache.unreadCount = 0;
@@ -155,6 +169,7 @@ export function resetScreenDataCaches() {
   pastBookingsScreenCache.bookings = [];
   pastBookingsScreenCache.loadedOnce = false;
   pastBookingsScreenCache.lastUpdatedAt = 0;
+  pastBookingsScreenCache.cachedUserId = null;
   pastBookingDetailScreenCache.clear();
 
   (async () => {

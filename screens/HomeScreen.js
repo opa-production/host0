@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated, Dimensions, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -42,6 +42,9 @@ export default function HomeScreen({ navigation }) {
   const [pendingWithdrawalTotal, setPendingWithdrawalTotal] = useState(0);
 
   const [showPremiumBadge, setShowPremiumBadge] = useState(false);
+
+  const lastHomeFocusRefreshRef = useRef(0);
+  const HOME_FOCUS_REFRESH_MS = 45 * 1000;
 
   // Get user name from host profile
   const userName = host?.name || host?.full_name || 'Host';
@@ -187,14 +190,20 @@ export default function HomeScreen({ navigation }) {
     const fetchData = async () => {
       setIsLoading(true);
       await Promise.all([loadTodayActions(), loadEarningsSummary()]);
+      lastHomeFocusRefreshRef.current = Date.now();
       setIsLoading(false);
     };
     fetchData();
   }, []);
 
-  // Refresh wallet/earnings when Home tab is focused (e.g. returning from Finance)
+  // Refresh wallet/earnings when Home tab is focused — throttled so app resume / refocus does not refetch every time
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now();
+      if (now - lastHomeFocusRefreshRef.current < HOME_FOCUS_REFRESH_MS) {
+        return;
+      }
+      lastHomeFocusRefreshRef.current = now;
       loadEarningsSummary();
       refreshSubscriptionBadge();
     }, [refreshSubscriptionBadge])

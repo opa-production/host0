@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getCurrentHost } from '../services/authService';
 import { getUserToken, clearUserData, setUserProfile, getUserProfile, getUserId } from './userStorage';
+import { resetScreenDataCaches } from './screenDataCache';
 import { fetchHostAvatarFromSupabase } from '../services/mediaService';
 import { setLogoutHandler } from './logoutHandler';
 
@@ -170,6 +171,8 @@ export const HostProvider = ({ children }) => {
   }, []);
 
   const login = async (hostData) => {
+    /** Wipe in-memory list caches so a new session never briefly shows the previous host's data */
+    resetScreenDataCaches();
     setHost(hostData);
     setIsAuthenticated(true);
     // Store profile locally

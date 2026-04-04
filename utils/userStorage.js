@@ -156,6 +156,8 @@ export const clearUserData = async () => {
     await AsyncStorage.removeItem(USER_TOKEN_KEY);
     await AsyncStorage.removeItem(USER_PROFILE_KEY);
     await AsyncStorage.removeItem('@host_cars');
+    /** Dev mock subscription is global — clear so the next account never inherits plan UI */
+    await AsyncStorage.removeItem('@opahost_design_mock_subscription_plan');
   } catch (error) {
     console.error('Error clearing user data:', error);
   }

@@ -12,7 +12,8 @@ import { getCarDriveSettings, updateCarDriveSettings } from '../services/driveSe
 import { useHost } from '../utils/HostContext';
 
 export default function HostScreen({ navigation }) {
-  const { logout } = useHost();
+  const { logout, host } = useHost();
+  const hostSessionKey = host?.id ?? host?.user_id ?? null;
   const insets = useSafeAreaInsets();
   const [cars, setCars] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // Start with true for initial load
@@ -86,21 +87,22 @@ export default function HostScreen({ navigation }) {
     }
   };
 
-  // Load cars on mount
+  // Load / clear when signed-in host identity changes (new login must not keep previous host's list)
   useEffect(() => {
-    console.log('📱 [HostScreen] Component mounted, loading cars...');
+    if (!hostSessionKey) {
+      setCars([]);
+      setIsLoading(false);
+      return;
+    }
     loadCars(false);
-  }, []);
+  }, [hostSessionKey]);
 
-  // Reload when screen is focused (but don't show skeleton if we have cars)
+  // Retry when user returns to an empty tab (initial load is driven by hostSessionKey above)
   useFocusEffect(
     React.useCallback(() => {
-      // Only reload if we don't have cars yet (initial load)
-      if (cars.length === 0) {
-        console.log('📱 [HostScreen] Screen focused, no cars yet - loading...');
-        loadCars(false);
-      }
-    }, [cars.length])
+      if (!hostSessionKey || cars.length > 0 || isLoading) return;
+      loadCars(false);
+    }, [cars.length, hostSessionKey, isLoading])
   );
 
   const handleAddVehicle = () => {

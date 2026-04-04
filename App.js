@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -15,6 +15,7 @@ SplashScreen.preventAutoHideAsync();
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
+  const disconnectTimerRef = useRef(null);
 
   // Load Nunito fonts
   const [loaded, error] = useFonts({
@@ -23,22 +24,44 @@ export default function App() {
     'Nunito-Bold': require('./assets/fonts/Nunito-Bold.ttf'),
   });
 
-  // Network connectivity listener
+  // Network connectivity listener — debounce "offline" so brief blips when resuming the app do not unmount the whole navigator
   useEffect(() => {
-    // Check initial network state
-    const unsubscribe = NetInfo.addEventListener(state => {
+    const DISCONNECT_DELAY_MS = 2000;
+
+    const applyConnectivity = (connected) => {
+      if (connected) {
+        if (disconnectTimerRef.current) {
+          clearTimeout(disconnectTimerRef.current);
+          disconnectTimerRef.current = null;
+        }
+        setIsConnected(true);
+        return;
+      }
+      if (disconnectTimerRef.current) {
+        clearTimeout(disconnectTimerRef.current);
+      }
+      disconnectTimerRef.current = setTimeout(() => {
+        setIsConnected(false);
+        disconnectTimerRef.current = null;
+      }, DISCONNECT_DELAY_MS);
+    };
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
       const connected = state.isConnected && (state.isInternetReachable !== false);
-      setIsConnected(connected);
+      applyConnectivity(connected);
     });
 
-    // Also check immediately
-    NetInfo.fetch().then(state => {
+    NetInfo.fetch().then((state) => {
       const connected = state.isConnected && (state.isInternetReachable !== false);
-      setIsConnected(connected);
+      applyConnectivity(connected);
     });
 
     return () => {
       unsubscribe();
+      if (disconnectTimerRef.current) {
+        clearTimeout(disconnectTimerRef.current);
+        disconnectTimerRef.current = null;
+      }
     };
   }, []);
 

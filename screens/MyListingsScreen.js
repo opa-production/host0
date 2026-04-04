@@ -17,6 +17,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostCars } from '../services/carService';
 import { myListingsScreenCache } from '../utils/screenDataCache';
+import { getUserId } from '../utils/userStorage';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -60,11 +61,14 @@ export default function MyListingsScreen({ navigation }) {
       if (gen !== fetchGenerationRef.current) return;
 
       if (result.success && result.cars) {
+        const uid = await getUserId();
+        myListingsScreenCache.cachedUserId = uid;
         myListingsScreenCache.cars = result.cars;
         setCars(result.cars);
       } else {
         if (!hadCached) {
           myListingsScreenCache.cars = [];
+          myListingsScreenCache.cachedUserId = null;
           setCars([]);
         }
       }
@@ -73,6 +77,7 @@ export default function MyListingsScreen({ navigation }) {
       if (gen !== fetchGenerationRef.current) return;
       if (!hadCached) {
         myListingsScreenCache.cars = [];
+        myListingsScreenCache.cachedUserId = null;
         setCars([]);
       }
     } finally {
@@ -86,14 +91,33 @@ export default function MyListingsScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      if (Array.isArray(myListingsScreenCache.cars)) {
-        setCars([...myListingsScreenCache.cars]);
-      }
-      // Keep My Cars instant when returning to this screen/app.
-      // Only fetch automatically before first successful load.
-      if (!myListingsScreenCache.fetchedOnce) {
-        loadCars();
-      }
+      let cancelled = false;
+      (async () => {
+        const uid = await getUserId();
+        if (cancelled) return;
+        const cacheUid = myListingsScreenCache.cachedUserId;
+        const wrongUser =
+          cacheUid != null &&
+          uid != null &&
+          String(cacheUid) !== String(uid);
+        if (wrongUser) {
+          myListingsScreenCache.cars = null;
+          myListingsScreenCache.fetchedOnce = false;
+          myListingsScreenCache.cachedUserId = null;
+          setCars([]);
+          loadCars();
+          return;
+        }
+        if (Array.isArray(myListingsScreenCache.cars)) {
+          setCars([...myListingsScreenCache.cars]);
+        }
+        if (!myListingsScreenCache.fetchedOnce) {
+          loadCars();
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     }, [loadCars])
   );
 

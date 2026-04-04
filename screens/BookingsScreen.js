@@ -24,6 +24,8 @@ export default function BookingsScreen({ navigation }) {
   const bookingsRef = useRef([]);
   const fetchGenerationRef = useRef(0);
   const hasFetchedOnceRef = useRef(false);
+  const lastBookingsFocusFetchRef = useRef(0);
+  const BOOKINGS_FOCUS_THROTTLE_MS = 45 * 1000;
 
   useEffect(() => {
     bookingsRef.current = bookings;
@@ -199,6 +201,11 @@ export default function BookingsScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now();
+      if (now - lastBookingsFocusFetchRef.current < BOOKINGS_FOCUS_THROTTLE_MS) {
+        return;
+      }
+      lastBookingsFocusFetchRef.current = now;
       loadBookings();
     }, [loadBookings])
   );
