@@ -1147,6 +1147,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
               navigation.navigate('Chat', {
                 clientId: booking.clientId,
                 clientName: booking.renter?.name || 'Client',
+                clientAvatarUrl: clientAvatar || booking?.renter?.avatar || undefined,
               });
             }}
             activeOpacity={0.8}

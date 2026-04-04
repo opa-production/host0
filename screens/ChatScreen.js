@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,6 +12,7 @@ import {
   Keyboard,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getClientConversation, sendMessageToClient } from '../services/messageService';
+import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 
 export default function ChatScreen({ navigation, route }) {
   const clientId = route?.params?.clientId;
@@ -31,6 +33,7 @@ export default function ChatScreen({ navigation, route }) {
   const [draft, setDraft] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [clientAvatarUri, setClientAvatarUri] = useState(route?.params?.clientAvatarUrl || null);
 
   const listRef = useRef(null);
 
@@ -71,9 +74,28 @@ export default function ChatScreen({ navigation, route }) {
     setIsLoading(true);
     try {
       const result = await getClientConversation(clientId);
+      let avatar =
+        route?.params?.clientAvatarUrl ||
+        null;
+
       if (result.success && result.conversation) {
-        // Map API messages to UI format
-        const mappedMessages = (result.conversation.messages || []).map((msg) => ({
+        const c = result.conversation;
+        avatar =
+          avatar ||
+          c.client_avatar_url ||
+          c.client_avatar ||
+          c.client?.avatar_url ||
+          c.client?.profile_image_uri ||
+          c.participant?.avatar_url ||
+          null;
+        const clientMsg = (c.messages || []).find(
+          (m) => m.sender_type !== 'host' && m.sender_avatar_url
+        );
+        if (clientMsg?.sender_avatar_url) {
+          avatar = avatar || clientMsg.sender_avatar_url;
+        }
+
+        const mappedMessages = (c.messages || []).map((msg) => ({
           id: msg.id.toString(),
           fromMe: msg.sender_type === 'host',
           text: msg.message,
@@ -82,7 +104,7 @@ export default function ChatScreen({ navigation, route }) {
           isRead: msg.is_read,
           senderAvatarUrl: msg.sender_avatar_url,
         }));
-        
+
         setMessages(mappedMessages);
       } else {
         setMessages([]);
@@ -90,6 +112,14 @@ export default function ChatScreen({ navigation, route }) {
           console.error('Error loading conversation:', result.error);
         }
       }
+
+      if (!avatar && clientId) {
+        try {
+          const fromStorage = await fetchClientAvatarFromSupabase(clientId);
+          if (fromStorage) avatar = fromStorage;
+        } catch (_) {}
+      }
+      setClientAvatarUri(avatar || null);
     } catch (error) {
       console.error('Error loading conversation:', error);
       setMessages([]);
@@ -104,6 +134,10 @@ export default function ChatScreen({ navigation, route }) {
     });
     return () => sub.remove();
   }, []);
+
+  useEffect(() => {
+    setClientAvatarUri(route?.params?.clientAvatarUrl || null);
+  }, [clientId, route?.params?.clientAvatarUrl]);
 
   useEffect(() => {
     loadConversation();
@@ -206,6 +240,16 @@ export default function ChatScreen({ navigation, route }) {
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
 
+        <View style={styles.headerAvatarOuter}>
+          {clientAvatarUri ? (
+            <Image source={{ uri: clientAvatarUri }} style={styles.headerAvatar} resizeMode="cover" />
+          ) : (
+            <View style={styles.headerAvatarPlaceholder}>
+              <Ionicons name="person" size={22} color={COLORS.subtle} />
+            </View>
+          )}
+        </View>
+
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} numberOfLines={1}>
             {clientName || title}
@@ -233,21 +277,30 @@ export default function ChatScreen({ navigation, route }) {
             data={messages}
             keyExtractor={(m) => m.id}
             renderItem={renderItem}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              messages.length === 0 && styles.listContentEmpty,
+            ]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             onContentSizeChange={() => listRef.current?.scrollToEnd?.({ animated: false })}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Ionicons name="chatbubbles-outline" size={48} color={COLORS.subtle} />
-                <Text style={styles.emptyStateText}>No messages yet</Text>
-                <Text style={styles.emptyStateSubtext}>Start the conversation</Text>
+                <View style={styles.emptyIconWrap}>
+                  {clientAvatarUri ? (
+                    <Image source={{ uri: clientAvatarUri }} style={styles.emptyAvatar} resizeMode="cover" />
+                  ) : (
+                    <Ionicons name="chatbubbles-outline" size={40} color={COLORS.brand} />
+                  )}
+                </View>
+                <Text style={styles.emptyStateTitle}>No messages yet</Text>
+                <Text style={styles.emptyStateSub}>Send a message to start the conversation</Text>
               </View>
             }
           />
         )}
 
-        <View style={[styles.composerWrap, { paddingBottom: Math.max(insets.bottom, SPACING.s) }]}>
+        <View style={[styles.composerWrap, { paddingBottom: Math.max(insets.bottom, SPACING.m) }]}>
           <View style={styles.composer}>
             <TextInput
               style={styles.input}
@@ -256,10 +309,11 @@ export default function ChatScreen({ navigation, route }) {
               placeholder="Message"
               placeholderTextColor={COLORS.subtle}
               multiline
-              maxHeight={110}
-              returnKeyType="send"
+              maxHeight={120}
+              returnKeyType="default"
+              blurOnSubmit={false}
               onSubmitEditing={() => {
-                if (Platform.OS === 'ios') return; // multiline submit conflicts on iOS
+                if (Platform.OS === 'ios') return;
                 send();
               }}
             />
@@ -267,13 +321,14 @@ export default function ChatScreen({ navigation, route }) {
             <TouchableOpacity
               style={[styles.sendButton, (!draft.trim() || isSending) && styles.sendButtonDisabled]}
               onPress={send}
-              activeOpacity={0.85}
+              activeOpacity={0.7}
               disabled={!draft.trim() || isSending}
+              accessibilityLabel="Send message"
             >
               {isSending ? (
-                <ActivityIndicator size="small" color="#ffffff" />
+                <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Ionicons name="arrow-up" size={18} color={'#ffffff'} />
+                <Ionicons name="arrow-forward" size={22} color="#FFFFFF" />
               )}
             </TouchableOpacity>
           </View>
@@ -292,23 +347,44 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.l,
     paddingTop: SPACING.s,
-    paddingBottom: SPACING.s,
+    paddingBottom: SPACING.m,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
+    backgroundColor: COLORS.bg,
   },
   headerIcon: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerAvatarOuter: {
+    marginRight: 2,
+  },
+  headerAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.borderStrong,
+  },
+  headerAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.borderVisible,
+  },
   headerCenter: {
     flex: 1,
+    minWidth: 0,
   },
   headerRight: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
   },
   headerTitle: {
     ...TYPE.section,
@@ -321,7 +397,10 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: SPACING.l,
     paddingTop: SPACING.m,
-    paddingBottom: SPACING.m,
+    paddingBottom: SPACING.l,
+  },
+  listContentEmpty: {
+    flexGrow: 1,
   },
   row: {
     marginBottom: 10,
@@ -367,45 +446,43 @@ const styles = StyleSheet.create({
   },
   composerWrap: {
     paddingHorizontal: SPACING.l,
-    paddingBottom: SPACING.s,
-    paddingTop: SPACING.s,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.borderStrong,
+    paddingTop: SPACING.m,
     backgroundColor: COLORS.bg,
   },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 10,
-    backgroundColor: COLORS.surface,
-    borderRadius: 22,
-    paddingLeft: 16,
-    paddingRight: 6,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: RADIUS.lg,
+    paddingLeft: SPACING.m,
+    paddingRight: SPACING.s,
+    paddingVertical: SPACING.s,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    borderColor: COLORS.borderVisible,
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: 'Nunito-Regular',
     color: COLORS.text,
-    lineHeight: 20,
-    paddingTop: 8,
-    paddingBottom: 8,
-    minHeight: 36,
+    lineHeight: 24,
+    paddingTop: Platform.OS === 'ios' ? 12 : 10,
+    paddingBottom: Platform.OS === 'ios' ? 12 : 10,
+    minHeight: 48,
+    maxHeight: 120,
     textAlignVertical: 'center',
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.text,
+    backgroundColor: COLORS.brand,
   },
   sendButtonDisabled: {
-    opacity: 0.4,
+    opacity: 0.38,
   },
   loadingContainer: {
     flex: 1,
@@ -416,18 +493,39 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.l,
+    minHeight: 280,
   },
-  emptyStateText: {
-    ...TYPE.section,
-    fontSize: 16,
+  emptyIconWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.m,
+    overflow: 'hidden',
+  },
+  emptyAvatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontFamily: 'Nunito-Bold',
     color: COLORS.text,
-    marginTop: 16,
-    marginBottom: 4,
+    textAlign: 'center',
+    marginBottom: SPACING.s,
   },
-  emptyStateSubtext: {
-    ...TYPE.body,
-    fontSize: 14,
+  emptyStateSub: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontFamily: 'Nunito-Regular',
     color: COLORS.subtle,
+    textAlign: 'center',
+    maxWidth: 280,
   },
 });

@@ -371,6 +371,7 @@ export default function MessagesScreen({ navigation }) {
                   clientId: conv.clientId,
                   clientName: conv.clientName,
                   conversationId: conv.id,
+                  clientAvatarUrl: conv.clientAvatarUrl || undefined,
                 });
               }}
               activeOpacity={0.7}
