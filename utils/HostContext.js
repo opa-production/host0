@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getCurrentHost } from '../services/authService';
 import { getUserToken, clearUserData, setUserProfile, getUserProfile, getUserId } from './userStorage';
-import { resetScreenDataCaches } from './screenDataCache';
+import { markNewSession, resetScreenDataCaches } from './screenDataCache';
 import { fetchHostAvatarFromSupabase } from '../services/mediaService';
 import { setLogoutHandler } from './logoutHandler';
 
@@ -171,8 +171,12 @@ export const HostProvider = ({ children }) => {
   }, []);
 
   const login = async (hostData) => {
-    /** Wipe in-memory list caches so a new session never briefly shows the previous host's data */
-    resetScreenDataCaches();
+    /**
+     * Mark a new session: wipes all in-memory caches and arms the 60-second
+     * fresh-login window so subsequent sensitive API calls add Cache-Control:
+     * no-cache, bypassing backend Redis for the first round of requests.
+     */
+    markNewSession();
     setHost(hostData);
     setIsAuthenticated(true);
     // Store profile locally

@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostCars } from '../services/carService';
-import { myListingsScreenCache } from '../utils/screenDataCache';
+import { myListingsScreenCache, getSessionId } from '../utils/screenDataCache';
 import { getUserId } from '../utils/userStorage';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -24,10 +24,21 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 export default function MyListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
+
+  // Capture the session ID at mount time.  If the module cache belongs to a
+  // different session (e.g. just after a logout/login without a full remount)
+  // we start with an empty list and let the API provide authoritative data.
+  const mountSessionId = useRef(getSessionId());
+  const cacheIsValid =
+    mountSessionId.current !== null &&
+    mountSessionId.current === getSessionId() &&
+    myListingsScreenCache.fetchedOnce &&
+    myListingsScreenCache.cars !== null;
+
   const [cars, setCars] = useState(() =>
-    myListingsScreenCache.cars ? [...myListingsScreenCache.cars] : []
+    cacheIsValid ? [...myListingsScreenCache.cars] : []
   );
-  const [isLoading, setIsLoading] = useState(() => !myListingsScreenCache.fetchedOnce);
+  const [isLoading, setIsLoading] = useState(() => !cacheIsValid);
   const [refreshing, setRefreshing] = useState(false);
   const carsRef = useRef(cars);
   const fetchGenerationRef = useRef(0);
@@ -36,12 +47,15 @@ export default function MyListingsScreen({ navigation }) {
     carsRef.current = cars;
   }, [cars]);
 
-  const loadCars = useCallback(async ({ pullToRefresh = false, showFullScreenLoader } = {}) => {
+  const loadCars = useCallback(async ({ pullToRefresh = false, showFullScreenLoader, forceRefresh = false } = {}) => {
     const cachedLen = Array.isArray(myListingsScreenCache.cars)
       ? myListingsScreenCache.cars.length
       : 0;
     const rowCount = Math.max(carsRef.current.length, cachedLen);
     const hadCached = rowCount > 0 || myListingsScreenCache.fetchedOnce;
+
+    // Force refresh bypasses cache
+    const shouldBypassCache = pullToRefresh || forceRefresh;
 
     const useFullLoader =
       showFullScreenLoader !== undefined
@@ -64,9 +78,10 @@ export default function MyListingsScreen({ navigation }) {
         const uid = await getUserId();
         myListingsScreenCache.cachedUserId = uid;
         myListingsScreenCache.cars = result.cars;
+        mountSessionId.current = getSessionId(); // mark cache as belonging to this session
         setCars(result.cars);
       } else {
-        if (!hadCached) {
+        if (!hadCached || shouldBypassCache) {
           myListingsScreenCache.cars = [];
           myListingsScreenCache.cachedUserId = null;
           setCars([]);
@@ -75,7 +90,7 @@ export default function MyListingsScreen({ navigation }) {
     } catch (error) {
       console.error('📱 [MyListingsScreen] Error loading cars:', error);
       if (gen !== fetchGenerationRef.current) return;
-      if (!hadCached) {
+      if (!hadCached || shouldBypassCache) {
         myListingsScreenCache.cars = [];
         myListingsScreenCache.cachedUserId = null;
         setCars([]);
@@ -105,15 +120,12 @@ export default function MyListingsScreen({ navigation }) {
           myListingsScreenCache.fetchedOnce = false;
           myListingsScreenCache.cachedUserId = null;
           setCars([]);
-          loadCars();
+          loadCars({ forceRefresh: true });
           return;
         }
-        if (Array.isArray(myListingsScreenCache.cars)) {
-          setCars([...myListingsScreenCache.cars]);
-        }
-        if (!myListingsScreenCache.fetchedOnce) {
-          loadCars();
-        }
+        
+        // Always load fresh data on focus to ensure new cars appear
+        loadCars({ forceRefresh: true });
       })();
       return () => {
         cancelled = true;
@@ -371,7 +383,7 @@ export default function MyListingsScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.listContent, { paddingTop: SPACING.m }]}
           refreshing={refreshing}
-          onRefresh={() => loadCars({ pullToRefresh: true, showFullScreenLoader: false })}
+          onRefresh={() => loadCars({ pullToRefresh: true, showFullScreenLoader: false, forceRefresh: true })}
         />
       ) : (
         <View style={styles.emptyState}>

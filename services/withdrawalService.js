@@ -4,6 +4,7 @@
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken } from '../utils/userStorage';
 import { handleTokenExpiration } from '../utils/logoutHandler';
+import { isFreshLogin } from '../utils/screenDataCache';
 
 /**
  * Create a withdrawal request.
@@ -109,11 +110,16 @@ export const getHostWithdrawals = async (options = {}) => {
       return { success: false, error: 'No authentication token found', withdrawals: [], total: 0 };
     }
 
+    const cacheHeaders = isFreshLogin()
+      ? { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+      : {};
+
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
         accept: 'application/json',
         Authorization: `Bearer ${token}`,
+        ...cacheHeaders,
       },
     });
 

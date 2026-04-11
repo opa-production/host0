@@ -17,10 +17,6 @@ import {
 } from '../services/bookingService';
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
-import {
-  getPastBookingsCached,
-  setPastBookingsCached,
-} from '../utils/screenDataCache';
 
 const SKELETON_CARD_COUNT = 4;
 const BACKGROUND_SYNC_INTERVAL_MS = 2 * 60 * 1000;
@@ -209,7 +205,6 @@ export default function PastBookingsScreen({ navigation }) {
         if (gen !== fetchGenerationRef.current) return;
         setBookings(bookingsWithImages);
         bookingsRef.current = bookingsWithImages;
-        await setPastBookingsCached(userIdForImages, bookingsWithImages);
         lastBackgroundSyncAtRef.current = Date.now();
       } else {
         if (gen !== fetchGenerationRef.current) return;
@@ -250,28 +245,8 @@ export default function PastBookingsScreen({ navigation }) {
   );
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const userId = await getUserId();
-      const cached = await getPastBookingsCached(userId);
-      if (cancelled) return;
-
-      if (Array.isArray(cached)) {
-        setBookings(cached);
-        bookingsRef.current = cached;
-        hasFetchedOnceRef.current = true;
-        setIsLoading(false);
-        lastBackgroundSyncAtRef.current = Date.now();
-      }
-      hydratedRef.current = true;
-      if (!hasFetchedOnceRef.current) {
-        loadBookings();
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    hasFetchedOnceRef.current = false;
+    loadBookings();
   }, [loadBookings]);
 
   const confirmDeleteBooking = (bookingId) => {
@@ -291,8 +266,6 @@ export default function PastBookingsScreen({ navigation }) {
         const updatedBookings = bookingsRef.current.filter((b) => (b.bookingId || b.id) !== bookingId);
         bookingsRef.current = updatedBookings;
         setBookings(updatedBookings);
-        const userId = await getUserId();
-        await setPastBookingsCached(userId, updatedBookings);
         setDeleteModal({ visible: false, bookingId: null });
       } else {
         setDeleteModal({ visible: false, bookingId: null });

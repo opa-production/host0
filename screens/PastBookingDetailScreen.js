@@ -20,10 +20,6 @@ import { getHostClientProfile } from '../services/clientProfileService';
 import { getClientRatings, submitHostClientRating } from '../services/ratingService';
 import { downloadBookingReceipt } from '../services/receiptService';
 import { getUserId } from '../utils/userStorage';
-import {
-  getPastBookingDetailCached,
-  setPastBookingDetailCached,
-} from '../utils/screenDataCache';
 
 const getStatusColor = (status) => {
   const statusLower = status?.toLowerCase() || '';
@@ -80,29 +76,12 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
       const resolvedBookingId = routeBooking.bookingId || routeBooking.id;
       const userId = await getUserId();
-      const cached = await getPastBookingDetailCached(userId, resolvedBookingId);
       if (cancelled) return;
 
       let nextDetailBooking = null;
       let nextClientRatingSummary = null;
       let nextClientProfile = null;
       let nextCarTrips = null;
-
-      if (cached) {
-        nextDetailBooking = cached.detailBooking || null;
-        nextClientRatingSummary = cached.clientRatingSummary || null;
-        nextClientProfile = cached.clientProfile || null;
-        nextCarTrips = cached.carTrips ?? null;
-        resolvedVehicleImage = cached.vehicleImage || resolvedVehicleImage;
-        resolvedClientAvatar = cached.clientAvatar || resolvedClientAvatar;
-
-        setDetailBooking(nextDetailBooking);
-        setVehicleImage(resolvedVehicleImage);
-        setClientAvatar(resolvedClientAvatar);
-        setClientRatingSummary(nextClientRatingSummary);
-        setClientProfile(nextClientProfile);
-        setCarTrips(nextCarTrips);
-      }
 
       if (resolvedBookingId) {
         const detailResult = await getBookingDetails(resolvedBookingId);
@@ -179,15 +158,6 @@ export default function PastBookingDetailScreen({ navigation, route }) {
       if (cancelled) return;
       setVehicleImage(resolvedVehicleImage);
       setClientAvatar(resolvedClientAvatar);
-
-      await setPastBookingDetailCached(userId, resolvedBookingId, {
-        detailBooking: nextDetailBooking,
-        vehicleImage: resolvedVehicleImage,
-        clientAvatar: resolvedClientAvatar,
-        clientRatingSummary: nextClientRatingSummary,
-        clientProfile: nextClientProfile,
-        carTrips: nextCarTrips,
-      });
     };
 
     loadBookingEnhancements();

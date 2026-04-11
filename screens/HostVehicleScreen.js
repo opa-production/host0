@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, TYPE, SPACING } from '../ui/tokens';
 import { createCarBasics, updateCarSpecs, updateCarPricing, saveVehicleImageUrls } from '../services/carService';
 import { uploadVehicleImages, uploadVehicleVideo } from '../services/mediaService';
+import { myListingsScreenCache } from '../utils/screenDataCache';
 import CitySelectionScreen, { HOST_LISTING_CITIES } from './HostVehicle/CitySelectionScreen';
 import BasicInfoScreen from './HostVehicle/BasicInfoMediaScreen';
 import MediaUploadScreen from './HostVehicle/MediaUploadScreen';
@@ -395,47 +396,121 @@ export default function HostVehicleScreen({ navigation, route }) {
   };
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     try {
-      const HOST_CARS_KEY = '@host_cars';
+      let currentCarId = carId;
       
-      // Get existing cars
-      const existingCars = await AsyncStorage.getItem(HOST_CARS_KEY);
-      const cars = existingCars ? JSON.parse(existingCars) : [];
+      // Step 1: Create car basics if this is a new car
+      if (!currentCarId) {
+        const basicsResult = await createCarBasics({
+          name: formData.name,
+          model: formData.model,
+          body_type: formData.body,
+          year: formData.year,
+          description: formData.description,
+          city: formData.hostCityName,
+        });
+        
+        if (!basicsResult.success) {
+          Alert.alert('Error', basicsResult.error || 'Failed to create car basics');
+          return;
+        }
+        
+        currentCarId = basicsResult.carId;
+        setCarId(currentCarId);
+      }
       
-      // Check for duplicates based on name and model
-      const isDuplicate = cars.some(car => 
-        car.name === formData.name && 
-        car.model === formData.model &&
-        car.year === formData.year
-      );
+      // Step 2: Update car specs
+      const specsResult = await updateCarSpecs(currentCarId, {
+        seats: formData.seats,
+        fuel_type: formData.fuelType,
+        transmission: formData.transmission,
+        color: formData.colour,
+        mileage: formData.mileage,
+        features: formData.features,
+      });
       
-      if (isDuplicate) {
-        Alert.alert('Duplicate Car', 'A car with the same name, model, and year already exists.');
+      if (!specsResult.success) {
+        Alert.alert('Error', specsResult.error || 'Failed to update car specifications');
         return;
       }
       
-      // Create new car object
-      const newCar = {
-        ...formData,
-        id: `car-${Date.now()}`,
-        status: 'awaiting_verification',
-        createdAt: new Date().toISOString(),
-        totalTrips: 0,
-      };
+      // Step 3: Update car pricing
+      const pricingResult = await updateCarPricing(currentCarId, {
+        daily_rate: formData.pricePerDay,
+        weekly_rate: formData.pricePerWeek,
+        monthly_rate: formData.pricePerMonth,
+        min_rental_days: formData.minimumRentalDays,
+        max_rental_days: formData.maxRentalDays,
+        min_age_requirement: formData.ageRestriction,
+        rules: formData.carRules,
+      });
       
-      // Add new car to array
-      cars.push(newCar);
+      if (!pricingResult.success) {
+        Alert.alert('Error', pricingResult.error || 'Failed to update car pricing');
+        return;
+      }
       
-      // Save to storage
-      await AsyncStorage.setItem(HOST_CARS_KEY, JSON.stringify(cars));
+      // Step 4: Handle media upload if images exist
+      if (formData.images && formData.images.length > 0) {
+        let uploadedImageUrls = [];
+        let uploadedVideoUrl = null;
+        
+        // Upload images
+        for (const image of formData.images) {
+          if (image.uri) {
+            const uploadResult = await uploadVehicleImages(image.uri, currentCarId);
+            if (uploadResult.success && uploadResult.url) {
+              uploadedImageUrls.push(uploadResult.url);
+            }
+          }
+        }
+        
+        // Upload video if exists
+        if (formData.video && formData.video.uri) {
+          const videoUploadResult = await uploadVehicleVideo(formData.video.uri, currentCarId);
+          if (videoUploadResult.success && videoUploadResult.url) {
+            uploadedVideoUrl = videoUploadResult.url;
+          }
+        }
+        
+        // Save image URLs to backend
+        if (uploadedImageUrls.length > 0) {
+          const mediaResult = await saveVehicleImageUrls(
+            currentCarId,
+            uploadedImageUrls[0], // cover image
+            uploadedImageUrls,   // all images
+            uploadedVideoUrl     // video (optional)
+          );
+          
+          if (!mediaResult.success) {
+            console.warn('Failed to save image URLs:', mediaResult.error);
+            // Don't fail the entire process if media upload fails
+          }
+        }
+      }
       
-      console.log('Car saved locally:', newCar);
+      // Invalidate cache to force refresh
+      myListingsScreenCache.cars = null;
+      myListingsScreenCache.fetchedOnce = false;
+      myListingsScreenCache.cachedUserId = null;
       
-      // Navigate to My Cars tab to see the car
-      navigation.navigate('MainTabs', { screen: 'My Cars' });
+      Alert.alert(
+        'Success!',
+        'Your car has been submitted for verification. You will see it in your garage shortly.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('MainTabs', { screen: 'My Cars' })
+          }
+        ]
+      );
+      
     } catch (error) {
-      console.error('Error saving car:', error);
-      Alert.alert('Error', 'Failed to save car. Please try again.');
+      console.error('Error submitting car:', error);
+      Alert.alert('Error', 'Failed to submit car. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

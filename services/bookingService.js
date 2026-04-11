@@ -6,6 +6,7 @@ import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { PLATFORM_FEE_PERCENTAGE } from '../ui/tokens';
 import { getUserToken } from '../utils/userStorage';
 import { handleTokenExpiration } from '../utils/logoutHandler';
+import { isFreshLogin } from '../utils/screenDataCache';
 
 /**
  * Get client/renter display name from API booking object (list or detail).
@@ -183,11 +184,18 @@ export const getHostBookings = async () => {
       };
     }
 
+    // Bypass backend Redis on the first request after login so a freshly
+    // created account never sees the previous user's booking data.
+    const cacheHeaders = isFreshLogin()
+      ? { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      : {};
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'accept': 'application/json',
         'Authorization': `Bearer ${token}`,
+        ...cacheHeaders,
       },
     });
 

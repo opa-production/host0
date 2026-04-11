@@ -4,6 +4,7 @@
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken } from '../utils/userStorage';
 import { handleTokenExpiration } from '../utils/logoutHandler';
+import { isFreshLogin } from '../utils/screenDataCache';
 
 /**
  * Get host earnings summary (dashboard/home).
@@ -25,11 +26,18 @@ export const getHostEarningsSummary = async () => {
       };
     }
 
+    // Bypass backend Redis on first request after login so the new account
+    // never inherits stale earnings data from the previous session.
+    const cacheHeaders = isFreshLogin()
+      ? { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+      : {};
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         accept: 'application/json',
         Authorization: `Bearer ${token}`,
+        ...cacheHeaders,
       },
     });
 

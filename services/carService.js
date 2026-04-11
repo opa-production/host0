@@ -5,6 +5,7 @@ import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken, getUserId, clearUserData } from '../utils/userStorage';
 import { handleTokenExpiration } from '../utils/logoutHandler';
 import { supabase, STORAGE_BUCKETS } from '../config/supabase';
+import { isFreshLogin } from '../utils/screenDataCache';
 import { getCarDriveSettings } from './driveSettingsService';
 import { getHostBookings, isBookingCompleted } from './bookingService';
 
@@ -1085,11 +1086,18 @@ export const getHostCars = async (options = {}) => {
       throw new Error('No authentication token found');
     }
 
+    // On the first request after a new login, bypass backend Redis so a
+    // freshly-created account never briefly sees the previous user's cached data.
+    const cacheHeaders = isFreshLogin()
+      ? { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      : {};
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'accept': 'application/json',
         'Authorization': `Bearer ${token}`,
+        ...cacheHeaders,
       },
     });
 

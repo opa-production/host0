@@ -11,6 +11,7 @@ import { getHostEarningsSummary } from '../services/earningsService';
 import { getHostWithdrawals } from '../services/withdrawalService';
 import { getHostSubscription } from '../services/subscriptionService';
 import { getHidePremiumBadgePreference } from '../utils/userStorage';
+import { isFreshLogin } from '../utils/screenDataCache';
 
 const { width } = Dimensions.get('window');
 
@@ -196,11 +197,14 @@ export default function HomeScreen({ navigation }) {
     fetchData();
   }, []);
 
-  // Refresh wallet/earnings when Home tab is focused — throttled so app resume / refocus does not refetch every time
+  // Refresh wallet/earnings when Home tab is focused — throttled so app resume /
+  // refocus does not refetch every time.  The throttle is bypassed on a fresh
+  // login so the new session always loads authoritative data immediately.
   useFocusEffect(
     useCallback(() => {
       const now = Date.now();
-      if (now - lastHomeFocusRefreshRef.current < HOME_FOCUS_REFRESH_MS) {
+      const freshSession = isFreshLogin();
+      if (!freshSession && now - lastHomeFocusRefreshRef.current < HOME_FOCUS_REFRESH_MS) {
         return;
       }
       lastHomeFocusRefreshRef.current = now;
