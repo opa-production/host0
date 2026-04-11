@@ -241,7 +241,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
       setIsLoading(true);
     }
     try {
-      const result = await getBookingDetails(bookingId);
+      const result = await getBookingDetails(bookingId, { noCache: bypassCache });
       if (result.success && result.booking) {
         const bookingData = result.booking;
         
@@ -410,8 +410,21 @@ export default function ActiveBookingScreen({ navigation, route }) {
     try {
       const result = await confirmPickup(bookingId);
       if (result.success) {
-        // Reload booking details to get updated status
-        await loadBookingDetails({ bypassCache: true });
+        // Optimistic update: reflect the new status immediately so the UI
+        // doesn't wait for the reload (backend Redis may still serve old data
+        // for a moment even with Cache-Control: no-cache on some CDN layers).
+        const optimisticStatus = 'active';
+        setBooking((prev) => prev ? { ...prev, status: optimisticStatus } : prev);
+        const cacheKey = String(bookingId);
+        if (activeBookingScreenCache.has(cacheKey)) {
+          const entry = activeBookingScreenCache.get(cacheKey);
+          activeBookingScreenCache.set(cacheKey, {
+            ...entry,
+            mappedBooking: { ...entry.mappedBooking, status: optimisticStatus },
+          });
+        }
+        // Then reload to sync full state (extensions, updated timestamps, etc.)
+        loadBookingDetails({ bypassCache: true, silent: true });
       } else {
         console.error('Failed to confirm pickup:', result.error);
         setStatusModal({
@@ -463,8 +476,18 @@ export default function ActiveBookingScreen({ navigation, route }) {
     try {
       const result = await confirmDropoff(bookingId);
       if (result.success) {
-        // Reload booking details to get updated status
-        await loadBookingDetails({ bypassCache: true });
+        // Optimistic update: reflect completed status immediately.
+        const optimisticStatus = 'completed';
+        setBooking((prev) => prev ? { ...prev, status: optimisticStatus } : prev);
+        const cacheKey = String(bookingId);
+        if (activeBookingScreenCache.has(cacheKey)) {
+          const entry = activeBookingScreenCache.get(cacheKey);
+          activeBookingScreenCache.set(cacheKey, {
+            ...entry,
+            mappedBooking: { ...entry.mappedBooking, status: optimisticStatus },
+          });
+        }
+        loadBookingDetails({ bypassCache: true, silent: true });
       } else {
         console.error('Failed to confirm dropoff:', result.error);
         setStatusModal({

@@ -296,7 +296,7 @@ export const getHostBookings = async () => {
  * @param {number|string} bookingId - Booking ID
  * @returns {Promise<Object>} Result with success status and booking data or error
  */
-export const getBookingDetails = async (bookingId) => {
+export const getBookingDetails = async (bookingId, opts = {}) => {
   if (!bookingId) {
     return {
       success: false,
@@ -310,10 +310,10 @@ export const getBookingDetails = async (bookingId) => {
   console.log('📅 [GET BOOKING DETAILS API] Fetching booking details...');
   console.log('📅 [GET BOOKING DETAILS API] Endpoint URL:', url);
   console.log('📅 [GET BOOKING DETAILS API] Booking ID:', bookingId);
-  
+
   try {
     const token = await getUserToken();
-    
+
     if (!token) {
       console.error('📅 [GET BOOKING DETAILS API] ERROR: No authentication token found');
       return {
@@ -323,11 +323,18 @@ export const getBookingDetails = async (bookingId) => {
       };
     }
 
+    // Bypass backend Redis when caller explicitly requests fresh data
+    // (e.g. immediately after a status mutation like confirm-pickup/dropoff).
+    const cacheHeaders = opts.noCache
+      ? { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      : {};
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'accept': 'application/json',
         'Authorization': `Bearer ${token}`,
+        ...cacheHeaders,
       },
     });
 
