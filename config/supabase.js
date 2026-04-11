@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 // NOTE: Supabase is used ONLY for document storage
 // User authentication and data are handled by your Python backend
 const SUPABASE_URL = 'https://mvzddrdfkgydoitrblpq.supabase.co';
-const SUPABASE_ANON_KEY = 
-const SUPABASE_SERVICE_ROLE_KEY = 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12emRkcmRma2d5ZG9pdHJibHBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzUwMjIsImV4cCI6MjA4MjU1MTAyMn0.g1Y4gOHwNyk_Wff_JtIZborgOsGfSccVASEikPR05gI';
+const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12emRkcmRma2d5ZG9pdHJibHBxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njk3NTAyMiwiZXhwIjoyMDgyNTUxMDIyfQ.o0csPVj6MLCNa0_crtBllxl8UgkivrXOjZ08KZUqpg0'; 
 // Create Supabase client for storage operations (uses anon key)
 // This client is used for document uploads - no user authentication required
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
