@@ -287,12 +287,13 @@ export default function HomeScreen({ navigation }) {
     return numericAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
-  // Use same keys as loadEarningsSummary sets (from API: net_earnings, withdrawable, commission_amount)
-  // The backend's `withdrawable` field equals net_earnings (it doesn't subtract pending withdrawals).
-  // Subtract pending withdrawals client-side so the displayed balance is accurate.
-  const netEarnings = financialData.net_earnings ?? 0;
+  // total_gross = what customers paid. commission was deducted to produce net_earnings.
+  // withdrawable = net_earnings minus any pending withdrawal requests.
+  // Showing total_gross as "Total earned" makes the commission deduction visible.
+  const totalGross = financialData.total_gross ?? 0;
   const commission = financialData.commission_amount ?? 0;
-  const withdrawable = Math.max(0, (financialData.withdrawable ?? 0) - pendingWithdrawalTotal);
+  const netEarnings = financialData.net_earnings ?? 0;
+  const withdrawable = Math.max(0, netEarnings - pendingWithdrawalTotal);
 
   return (
     <View style={styles.container}>
@@ -348,9 +349,9 @@ export default function HomeScreen({ navigation }) {
 
           <View style={styles.balanceContainer}>
             <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>Net earnings</Text>
+              <Text style={styles.balanceLabel}>Total earned</Text>
               <Text style={styles.balanceLabelValue}>
-                {isBalanceVisible ? `KSh ${formatCurrency(netEarnings)}` : '••••'}
+                {isBalanceVisible ? `KSh ${formatCurrency(totalGross)}` : '••••'}
               </Text>
             </View>
             <View style={styles.balanceRow}>
@@ -380,7 +381,7 @@ export default function HomeScreen({ navigation }) {
             onPress={(e) => {
               e.stopPropagation();
               lightHaptic();
-              navigation.navigate('Withdraw', { withdrawable: financialData.withdrawable });
+              navigation.navigate('Withdraw', { withdrawable });
             }}
             activeOpacity={0.8}
           >

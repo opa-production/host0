@@ -93,8 +93,9 @@ export default function FinanceScreen({ navigation }) {
   );
 
   const { netEarnings, commission } = financialData;
-  // Backend `withdrawable` equals net_earnings; subtract pending withdrawals client-side.
-  const withdrawable = Math.max(0, (financialData.withdrawable ?? 0) - pendingWithdrawalTotal);
+  // net_earnings = total_gross - commission (backend already deducted commission).
+  // Subtract pending withdrawal requests client-side for the true available balance.
+  const withdrawable = Math.max(0, netEarnings - pendingWithdrawalTotal);
 
   const formatCurrency = (amount) => {
     const numericAmount = Number(amount) || 0;
@@ -167,9 +168,9 @@ export default function FinanceScreen({ navigation }) {
             ) : (
               <>
                 <View style={styles.balanceRow}>
-                  <Text style={styles.balanceLabel}>Net earnings</Text>
+                  <Text style={styles.balanceLabel}>Total earned</Text>
                   <Text style={styles.balanceLabelValue}>
-                    {isBalanceVisible ? `KSh ${formatCurrency(netEarnings)}` : '••••'}
+                    {isBalanceVisible ? `KSh ${formatCurrency(financialData.total_gross ?? 0)}` : '••••'}
                   </Text>
                 </View>
                 <View style={styles.balanceRow}>
