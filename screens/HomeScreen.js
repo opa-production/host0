@@ -297,9 +297,11 @@ export default function HomeScreen({ navigation }) {
   };
 
   // Use same keys as loadEarningsSummary sets (from API: net_earnings, withdrawable, commission_amount)
-  const withdrawable = financialData.withdrawable ?? 0;
+  // The backend's `withdrawable` field equals net_earnings (it doesn't subtract pending withdrawals).
+  // Subtract pending withdrawals client-side so the displayed balance is accurate.
   const netEarnings = financialData.net_earnings ?? 0;
   const commission = financialData.commission_amount ?? 0;
+  const withdrawable = Math.max(0, (financialData.withdrawable ?? 0) - pendingWithdrawalTotal);
 
   return (
     <View style={styles.container}>
@@ -374,9 +376,9 @@ export default function HomeScreen({ navigation }) {
             </View>
             {pendingWithdrawalTotal > 0 && (
               <View style={styles.pendingWithdrawalRow}>
-                <Text style={styles.pendingWithdrawalLabel}>Pending withdrawal</Text>
+                <Text style={styles.pendingWithdrawalLabel}>Held (pending withdrawal)</Text>
                 <Text style={styles.pendingWithdrawalValue}>
-                  {isBalanceVisible ? `KSh ${formatCurrency(pendingWithdrawalTotal)}` : '••••'}
+                  {isBalanceVisible ? `- KSh ${formatCurrency(pendingWithdrawalTotal)}` : '••••'}
                 </Text>
               </View>
             )}

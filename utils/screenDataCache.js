@@ -84,7 +84,18 @@ export const addPaymentMethodScreenCache = {
   loadedOnce: false,
 };
 
+/** Keyed by bookingId. Entry shape: { mappedBooking, clientAvatar, timestamp } */
 export const activeBookingScreenCache = new Map();
+
+/**
+ * Cache for PastBookingDetailScreen enrichment data.
+ * Keyed by bookingId string.
+ * Entry: { detailBooking, clientProfile, clientRatingSummary,
+ *          vehicleImage, clientAvatar, carTrips, timestamp }
+ * Past bookings are immutable so a 5-minute TTL is generous.
+ */
+export const pastBookingDetailCache = new Map();
+export const PAST_BOOKING_DETAIL_TTL_MS = 5 * 60 * 1000;
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
@@ -105,6 +116,7 @@ function _clearAllCaches() {
   addPaymentMethodScreenCache.loadedOnce = false;
 
   activeBookingScreenCache.clear();
+  pastBookingDetailCache.clear();
 }
 
 // ─── Public reset (logout) ────────────────────────────────────────────────────

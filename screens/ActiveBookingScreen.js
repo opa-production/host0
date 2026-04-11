@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert, TextInput } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, Text, ScrollView, StatusBar, Image, TouchableOpacity, Dimensions, Animated, Alert, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS, PLATFORM_FEE_PERCENTAGE } from '../ui/tokens';
@@ -15,6 +15,22 @@ import { getBookingExtensions, approveExtension, rejectExtension } from '../serv
 import { activeBookingScreenCache } from '../utils/screenDataCache';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// ─── Skeleton component ───────────────────────────────────────────────────────
+function SkeletonPulse({ style }) {
+  const opacity = useRef(new Animated.Value(0.35)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.7, duration: 600, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 600, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return <Animated.View style={[{ backgroundColor: '#E5E5EA', borderRadius: 6 }, style, { opacity }]} />;
+}
 
 export default function ActiveBookingScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -648,31 +664,79 @@ export default function ActiveBookingScreen({ navigation, route }) {
     }
   };
 
-  // Show loading or empty state
+  // Show skeleton loading state
   if (isLoading) {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+        {/* Hero image skeleton */}
         <View style={[styles.carouselContainer, { height: 300 + insets.top }]}>
           <TouchableOpacity
             style={[styles.stickyBackButton, { top: insets.top + 10 }]}
-            onPress={() => {
-              lightHaptic();
-              navigation.goBack();
-            }}
+            onPress={() => { lightHaptic(); navigation.goBack(); }}
             activeOpacity={0.8}
           >
             <View style={styles.backButtonCircle}>
               <Ionicons name="arrow-back" size={24} color={COLORS.text} />
             </View>
           </TouchableOpacity>
-          <View style={[styles.carouselImagePlaceholder, { height: 300 + insets.top }]}>
-            <ActivityIndicator size="large" color={COLORS.subtle} />
+          <SkeletonPulse style={{ width: '100%', height: 300 + insets.top, borderRadius: 0 }} />
+        </View>
+
+        {/* Content card skeletons */}
+        <ScrollView
+          contentContainerStyle={{ padding: SPACING.l, gap: SPACING.m }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Booking ID & status */}
+          <View style={styles.card}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ gap: 6 }}>
+                <SkeletonPulse style={{ width: 70, height: 11 }} />
+                <SkeletonPulse style={{ width: 110, height: 14 }} />
+              </View>
+              <SkeletonPulse style={{ width: 90, height: 28, borderRadius: 14 }} />
+            </View>
           </View>
-        </View>
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={COLORS.text} />
-        </View>
+
+          {/* Vehicle card */}
+          <View style={styles.card}>
+            <SkeletonPulse style={{ width: 80, height: 14, marginBottom: 14 }} />
+            <SkeletonPulse style={{ width: '65%', height: 16, marginBottom: 8 }} />
+            <SkeletonPulse style={{ width: '45%', height: 13, marginBottom: 6 }} />
+            <SkeletonPulse style={{ width: '50%', height: 13 }} />
+          </View>
+
+          {/* Renter card */}
+          <View style={styles.card}>
+            <SkeletonPulse style={{ width: 55, height: 14, marginBottom: 14 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <SkeletonPulse style={{ width: 48, height: 48, borderRadius: 24 }} />
+              <View style={{ flex: 1, gap: 8 }}>
+                <SkeletonPulse style={{ width: '55%', height: 14 }} />
+                <SkeletonPulse style={{ width: '75%', height: 12 }} />
+              </View>
+            </View>
+            <SkeletonPulse style={{ width: '100%', height: 1, marginBottom: 10 }} />
+            <SkeletonPulse style={{ width: '80%', height: 12, marginBottom: 8 }} />
+            <SkeletonPulse style={{ width: '70%', height: 12 }} />
+          </View>
+
+          {/* Price card */}
+          <View style={styles.card}>
+            <SkeletonPulse style={{ width: 110, height: 14, marginBottom: 14 }} />
+            {[100, 90, 115, 95].map((w, i) => (
+              <View key={i}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 }}>
+                  <SkeletonPulse style={{ width: w, height: 13 }} />
+                  <SkeletonPulse style={{ width: 80, height: 13 }} />
+                </View>
+                {i < 3 && <SkeletonPulse style={{ width: '100%', height: 1 }} />}
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       </View>
     );
   }

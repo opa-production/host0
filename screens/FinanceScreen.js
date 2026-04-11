@@ -92,7 +92,9 @@ export default function FinanceScreen({ navigation }) {
     }, [loadTransactions])
   );
 
-  const { netEarnings, commission, withdrawable } = financialData;
+  const { netEarnings, commission } = financialData;
+  // Backend `withdrawable` equals net_earnings; subtract pending withdrawals client-side.
+  const withdrawable = Math.max(0, (financialData.withdrawable ?? 0) - pendingWithdrawalTotal);
 
   const formatCurrency = (amount) => {
     const numericAmount = Number(amount) || 0;
@@ -184,9 +186,9 @@ export default function FinanceScreen({ navigation }) {
                 </View>
                 {pendingWithdrawalTotal > 0 && (
                   <View style={styles.pendingWithdrawalRow}>
-                    <Text style={styles.pendingWithdrawalLabel}>Pending withdrawal</Text>
+                    <Text style={styles.pendingWithdrawalLabel}>Held (pending withdrawal)</Text>
                     <Text style={styles.pendingWithdrawalValue}>
-                      {isBalanceVisible ? `KSh ${formatCurrency(pendingWithdrawalTotal)}` : '••••'}
+                      {isBalanceVisible ? `- KSh ${formatCurrency(pendingWithdrawalTotal)}` : '••••'}
                     </Text>
                   </View>
                 )}

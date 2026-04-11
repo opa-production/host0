@@ -1,5 +1,9 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, Image, Alert, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet, View, Text, StatusBar, TouchableOpacity,
+  ScrollView, Image, Alert, Modal, TextInput,
+  KeyboardAvoidingView, Platform, Animated,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
@@ -20,15 +24,132 @@ import { getHostClientProfile } from '../services/clientProfileService';
 import { getClientRatings, submitHostClientRating } from '../services/ratingService';
 import { downloadBookingReceipt } from '../services/receiptService';
 import { getUserId } from '../utils/userStorage';
+import {
+  pastBookingDetailCache,
+  PAST_BOOKING_DETAIL_TTL_MS,
+} from '../utils/screenDataCache';
+
+// ─── Skeleton helpers ────────────────────────────────────────────────────────
+
+function SkeletonPulse({ style }) {
+  const opacity = useRef(new Animated.Value(0.35)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.7, duration: 600, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 600, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return <Animated.View style={[{ backgroundColor: '#E5E5EA', borderRadius: 6 }, style, { opacity }]} />;
+}
+
+function SkeletonCard({ children, style }) {
+  return (
+    <View style={[styles.card, style]}>
+      {children}
+    </View>
+  );
+}
+
+function SkeletonRow({ labelWidth = 80, valueWidth = 120 }) {
+  return (
+    <View style={styles.detailRow}>
+      <SkeletonPulse style={{ width: labelWidth, height: 13 }} />
+      <SkeletonPulse style={{ width: valueWidth, height: 13 }} />
+    </View>
+  );
+}
+
+function LoadingSkeleton({ insets }) {
+  return (
+    <ScrollView
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Hero card skeleton */}
+      <View style={styles.heroCard}>
+        <SkeletonPulse style={{ width: 60, height: 60, borderRadius: 30, marginRight: 14 }} />
+        <View style={{ flex: 1, gap: 8 }}>
+          <SkeletonPulse style={{ width: '70%', height: 16 }} />
+          <SkeletonPulse style={{ width: '45%', height: 12 }} />
+          <SkeletonPulse style={{ width: '55%', height: 12 }} />
+        </View>
+      </View>
+
+      {/* Booking meta skeleton */}
+      <SkeletonCard>
+        <View style={styles.statusHeader}>
+          <View style={styles.bookingIdRow}>
+            <SkeletonPulse style={{ width: 80, height: 12 }} />
+            <SkeletonPulse style={{ width: 110, height: 12 }} />
+          </View>
+          <SkeletonPulse style={{ width: 90, height: 26, borderRadius: 13 }} />
+        </View>
+      </SkeletonCard>
+
+      {/* Trip details skeleton */}
+      <SkeletonCard>
+        <SkeletonPulse style={{ width: 90, height: 15, marginBottom: SPACING.m }} />
+        <SkeletonRow labelWidth={40} valueWidth={140} />
+        <View style={styles.tripDivider} />
+        <SkeletonRow labelWidth={30} valueWidth={140} />
+        <View style={styles.tripDivider} />
+        <SkeletonRow labelWidth={65} valueWidth={80} />
+      </SkeletonCard>
+
+      {/* Locations skeleton */}
+      <SkeletonCard>
+        <SkeletonPulse style={{ width: 70, height: 15, marginBottom: SPACING.m }} />
+        <SkeletonRow labelWidth={50} valueWidth={160} />
+        <View style={styles.divider} />
+        <SkeletonRow labelWidth={55} valueWidth={150} />
+      </SkeletonCard>
+
+      {/* Renter skeleton */}
+      <SkeletonCard>
+        <View style={[styles.sectionHeader, { marginBottom: SPACING.m }]}>
+          <SkeletonPulse style={{ width: 55, height: 15 }} />
+          <SkeletonPulse style={{ width: 50, height: 30, borderRadius: 8 }} />
+        </View>
+        <View style={styles.renterTopRow}>
+          <SkeletonPulse style={{ width: 48, height: 48, borderRadius: 24, marginRight: 12 }} />
+          <View style={{ flex: 1, gap: 8 }}>
+            <SkeletonPulse style={{ width: '55%', height: 14 }} />
+            <SkeletonPulse style={{ width: '80%', height: 12 }} />
+          </View>
+        </View>
+        <View style={[styles.renterStatsRow, { marginTop: 12, gap: 8 }]}>
+          <SkeletonPulse style={{ width: 120, height: 28, borderRadius: 14 }} />
+          <SkeletonPulse style={{ width: 80, height: 28, borderRadius: 14 }} />
+        </View>
+      </SkeletonCard>
+
+      {/* Price skeleton */}
+      <SkeletonCard>
+        <SkeletonPulse style={{ width: 110, height: 15, marginBottom: SPACING.m }} />
+        <SkeletonRow labelWidth={70} valueWidth={90} />
+        <View style={styles.divider} />
+        <SkeletonRow labelWidth={80} valueWidth={100} />
+        <View style={styles.divider} />
+        <SkeletonRow labelWidth={75} valueWidth={110} />
+        <View style={styles.divider} />
+        <SkeletonRow labelWidth={110} valueWidth={95} />
+        <View style={styles.divider} />
+        <SkeletonRow labelWidth={90} valueWidth={100} />
+      </SkeletonCard>
+    </ScrollView>
+  );
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const getStatusColor = (status) => {
   const statusLower = status?.toLowerCase() || '';
-  if (isBookingCompleted(statusLower)) {
-    return '#34C759';
-  }
-  if (isBookingCancelled(statusLower)) {
-    return '#FF3B30';
-  }
+  if (isBookingCompleted(statusLower)) return '#34C759';
+  if (isBookingCancelled(statusLower)) return '#FF3B30';
   switch (statusLower) {
     case 'confirmed':
     case 'active':
@@ -43,6 +164,8 @@ const getStatusColor = (status) => {
 
 const getStatusText = (status) => getBookingStatusDisplayText(status);
 
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
 export default function PastBookingDetailScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const [rateOpen, setRateOpen] = useState(false);
@@ -56,6 +179,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   const [clientProfile, setClientProfile] = useState(null);
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
   const [carTrips, setCarTrips] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [statusModal, setStatusModal] = useState({
     visible: false,
     type: 'info',
@@ -67,11 +191,33 @@ export default function PastBookingDetailScreen({ navigation, route }) {
   const clientId = detailBooking?.client_id ?? routeBooking?.clientId ?? routeBooking?.client_id ?? null;
   const bookingId = routeBooking?.bookingId ?? routeBooking?.id ?? null;
 
-  // Fetch full booking details (same source as ActiveBookingScreen) to enrich past-booking UI.
   useEffect(() => {
     let cancelled = false;
+
     const loadBookingEnhancements = async () => {
-      let resolvedVehicleImage = typeof routeBooking.vehicleImage === 'string' ? routeBooking.vehicleImage : null;
+      const cacheKey = String(bookingId ?? '');
+
+      // ── Cache hit ──────────────────────────────────────────────────────────
+      if (cacheKey) {
+        const cached = pastBookingDetailCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < PAST_BOOKING_DETAIL_TTL_MS) {
+          if (!cancelled) {
+            setDetailBooking(cached.detailBooking);
+            setClientProfile(cached.clientProfile);
+            setClientRatingSummary(cached.clientRatingSummary);
+            setVehicleImage(cached.vehicleImage);
+            setClientAvatar(cached.clientAvatar);
+            setCarTrips(cached.carTrips);
+            setIsLoading(false);
+          }
+          return;
+        }
+      }
+
+      // ── Cache miss — fetch everything ──────────────────────────────────────
+      let resolvedVehicleImage = typeof routeBooking.vehicleImage === 'string'
+        ? routeBooking.vehicleImage
+        : null;
       let resolvedClientAvatar = routeBooking.renter?.avatar || null;
 
       const resolvedBookingId = routeBooking.bookingId || routeBooking.id;
@@ -106,64 +252,73 @@ export default function PastBookingDetailScreen({ navigation, route }) {
           }
           resolvedClientAvatar = avatarFromApi || resolvedClientAvatar;
 
+          // Count trips for this car (reuse host bookings — backend Redis caches this)
           try {
             const bookingsResult = await getHostBookings();
             if (bookingsResult.success && Array.isArray(bookingsResult.bookings)) {
-              const tripsCount = bookingsResult.bookings.filter((bk) => {
-                const sameCar = bk.car_id === b.car_id;
-                return sameCar && isBookingCompleted(bk);
-              }).length;
-              nextCarTrips = tripsCount;
-              setCarTrips(tripsCount);
+              nextCarTrips = bookingsResult.bookings.filter(
+                (bk) => bk.car_id === b.car_id && isBookingCompleted(bk)
+              ).length;
+              setCarTrips(nextCarTrips);
             }
           } catch (_) {}
 
           if (b.client_id) {
-            const ratingsResult = await getClientRatings(b.client_id);
+            const [ratingsResult, profileResult] = await Promise.all([
+              getClientRatings(b.client_id),
+              getHostClientProfile(b.client_id),
+            ]);
+            if (cancelled) return;
+
             if (ratingsResult.success) {
               nextClientRatingSummary = {
                 average: ratingsResult.average ?? 0,
                 count: ratingsResult.count ?? 0,
               };
               setClientRatingSummary(nextClientRatingSummary);
-            } else {
-              setClientRatingSummary(null);
             }
 
-            const profileResult = await getHostClientProfile(b.client_id);
             if (profileResult.success && profileResult.profile) {
               nextClientProfile = profileResult.profile;
               setClientProfile(profileResult.profile);
               if (profileResult.profile.avatar_url) {
                 resolvedClientAvatar = profileResult.profile.avatar_url;
               }
-            } else {
-              setClientProfile(null);
             }
           }
         }
       }
 
       if (!resolvedVehicleImage && routeBooking.carId) {
-        const userId = await getUserId();
         const carId = routeBooking.carId;
         if (userId && carId) {
           const imageResult = await fetchCarImagesFromSupabase(carId, userId);
-          if (imageResult.coverPhoto) {
-            resolvedVehicleImage = imageResult.coverPhoto;
-          }
+          if (imageResult.coverPhoto) resolvedVehicleImage = imageResult.coverPhoto;
         }
       }
 
       if (cancelled) return;
+
       setVehicleImage(resolvedVehicleImage);
       setClientAvatar(resolvedClientAvatar);
+      setIsLoading(false);
+
+      // ── Populate cache ─────────────────────────────────────────────────────
+      if (cacheKey) {
+        pastBookingDetailCache.set(cacheKey, {
+          detailBooking: nextDetailBooking,
+          clientProfile: nextClientProfile,
+          clientRatingSummary: nextClientRatingSummary,
+          vehicleImage: resolvedVehicleImage,
+          clientAvatar: resolvedClientAvatar,
+          carTrips: nextCarTrips,
+          timestamp: Date.now(),
+        });
+      }
     };
 
     loadBookingEnhancements();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [routeBooking.vehicleImage, routeBooking.carId, routeBooking.bookingId, routeBooking.id]);
 
   const statusResolved = (detailBooking?.status ?? routeBooking?.status ?? '').trim();
@@ -244,21 +399,11 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
   const submitRating = async () => {
     if (!rating) {
-      setStatusModal({
-        visible: true,
-        type: 'info',
-        title: 'Select a rating',
-        message: 'Please tap a star to rate your renter.',
-      });
+      setStatusModal({ visible: true, type: 'info', title: 'Select a rating', message: 'Please tap a star to rate your renter.' });
       return;
     }
     if (!clientId || !bookingId) {
-      setStatusModal({
-        visible: true,
-        type: 'error',
-        title: 'Rating unavailable',
-        message: 'Booking or client information is missing. Please refresh and try again.',
-      });
+      setStatusModal({ visible: true, type: 'error', title: 'Rating unavailable', message: 'Booking or client information is missing. Please refresh and try again.' });
       return;
     }
 
@@ -278,30 +423,22 @@ export default function PastBookingDetailScreen({ navigation, route }) {
         if (clientId) {
           const refetch = await getClientRatings(clientId);
           if (refetch.success) {
-            setClientRatingSummary({ average: refetch.average ?? 0, count: refetch.count ?? 0 });
+            const updated = { average: refetch.average ?? 0, count: refetch.count ?? 0 };
+            setClientRatingSummary(updated);
+            // Invalidate cache so re-open shows fresh rating
+            if (bookingId) {
+              const key = String(bookingId);
+              const cached = pastBookingDetailCache.get(key);
+              if (cached) pastBookingDetailCache.set(key, { ...cached, clientRatingSummary: updated, timestamp: Date.now() });
+            }
           }
         }
-        setStatusModal({
-          visible: true,
-          type: 'success',
-          title: 'Thanks!',
-          message: `You rated ${booking?.renter?.name || 'the renter'} ${rating}★.`,
-        });
+        setStatusModal({ visible: true, type: 'success', title: 'Thanks!', message: `You rated ${booking?.renter?.name || 'the renter'} ${rating}★.` });
       } else {
-        setStatusModal({
-          visible: true,
-          type: 'error',
-          title: 'Rating failed',
-          message: result.error || 'Could not submit rating. Try again.',
-        });
+        setStatusModal({ visible: true, type: 'error', title: 'Rating failed', message: result.error || 'Could not submit rating. Try again.' });
       }
     } catch (e) {
-      setStatusModal({
-        visible: true,
-        type: 'error',
-        title: 'Error',
-        message: e?.message || 'Could not submit rating.',
-      });
+      setStatusModal({ visible: true, type: 'error', title: 'Error', message: e?.message || 'Could not submit rating.' });
     } finally {
       setSubmittingRating(false);
     }
@@ -309,11 +446,8 @@ export default function PastBookingDetailScreen({ navigation, route }) {
 
   const formatCurrency = (amount) => {
     if (!amount && amount !== 0) return '0';
-    // Handle string amounts like "KSh 0" or "KSh 14,000"
     if (typeof amount === 'string') {
-      // Extract numbers from string (remove "KSh" and commas)
-      const numStr = amount.replace(/[^\d]/g, '');
-      const num = parseInt(numStr, 10);
+      const num = parseInt(amount.replace(/[^\d]/g, ''), 10);
       return isNaN(num) ? '0' : num.toLocaleString();
     }
     return amount.toLocaleString();
@@ -330,10 +464,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => {
-            lightHaptic();
-            navigation.goBack();
-          }}
+          onPress={() => { lightHaptic(); navigation.goBack(); }}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
@@ -342,363 +473,346 @@ export default function PastBookingDetailScreen({ navigation, route }) {
         <View style={styles.backButton} />
       </View>
 
-      <ScrollView 
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {!booking.vehicleName ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="document-text-outline" size={64} color="#C7C7CC" />
-            <Text style={styles.emptyStateTitle}>No booking details</Text>
-            <Text style={styles.emptyStateText}>Booking information will appear here</Text>
-          </View>
-        ) : (
-          <>
-            {/* Booking Meta & Status */}
-            <View style={styles.card}>
-              <View style={styles.statusHeader}>
-                <View style={styles.bookingIdRow}>
-                  <Text style={styles.bookingIdLabel}>Booking ID</Text>
-                  <Text style={styles.bookingIdValue}>
-                    {detailBooking?.booking_id || routeBooking.bookingId || routeBooking.id || '—'}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    {
-                      backgroundColor: getStatusColor(
-                        detailBooking?.status || routeBooking.status || 'completed'
-                      ) + '1A',
-                    },
-                  ]}
-                >
-                  <Text
+      {/* Loading skeleton */}
+      {isLoading ? (
+        <LoadingSkeleton insets={insets} />
+      ) : (
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {!booking.vehicleName ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="document-text-outline" size={64} color="#C7C7CC" />
+              <Text style={styles.emptyStateTitle}>No booking details</Text>
+              <Text style={styles.emptyStateText}>Booking information will appear here</Text>
+            </View>
+          ) : (
+            <>
+              {/* Booking Meta & Status */}
+              <View style={styles.card}>
+                <View style={styles.statusHeader}>
+                  <View style={styles.bookingIdRow}>
+                    <Text style={styles.bookingIdLabel}>Booking ID</Text>
+                    <Text style={styles.bookingIdValue}>
+                      {detailBooking?.booking_id || routeBooking.bookingId || routeBooking.id || '—'}
+                    </Text>
+                  </View>
+                  <View
                     style={[
-                      styles.statusBadgeText,
-                      {
-                        color: getStatusColor(
-                          detailBooking?.status || routeBooking.status || 'completed'
-                        ),
-                      },
+                      styles.statusBadge,
+                      { backgroundColor: getStatusColor(detailBooking?.status || routeBooking.status || 'completed') + '1A' },
                     ]}
                   >
-                    {getStatusText(detailBooking?.status || routeBooking.status || 'completed')}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.statusBadgeText,
+                        { color: getStatusColor(detailBooking?.status || routeBooking.status || 'completed') },
+                      ]}
+                    >
+                      {getStatusText(detailBooking?.status || routeBooking.status || 'completed')}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {/* Vehicle Info */}
-            <View style={styles.heroCard}>
-              {booking.vehicleImage ? (
-                <Image 
-                  source={typeof booking.vehicleImage === 'string' 
-                    ? { uri: booking.vehicleImage } 
-                    : booking.vehicleImage} 
-                  style={styles.heroAvatar} 
-                  resizeMode="cover" 
-                />
-              ) : (
-                <View style={styles.heroAvatar}>
-                  <Ionicons name="car-outline" size={24} color={COLORS.subtle} />
-                </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.heroTitle}>{booking.vehicleName?.trim?.() || 'Unknown Car'}</Text>
-                <View style={styles.carStatsRow}>
-                  <View style={styles.carStatItem}>
-                    <Ionicons name="star" size={14} color="#FFCC00" />
-                    <Text style={styles.carStatText}>
-                      {(booking.carRating ?? 4.8).toFixed(1)} rating
-                    </Text>
-                  </View>
-                  <View style={styles.carStatItem}>
-                    <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
-                    <Text style={styles.carStatText}>
-                      {(booking.carTrips ?? 12)} trips
-                    </Text>
-                  </View>
-                </View>
-                {booking.location && <Text style={styles.heroSub}>{booking.location}</Text>}
-                {booking.plate && (
-                  <View style={styles.plateRow}>
-                    <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
-                    <Text style={styles.plateText}>{booking.plate}</Text>
+              {/* Vehicle Info */}
+              <View style={styles.heroCard}>
+                {booking.vehicleImage ? (
+                  <Image
+                    source={typeof booking.vehicleImage === 'string' ? { uri: booking.vehicleImage } : booking.vehicleImage}
+                    style={styles.heroAvatar}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.heroAvatar}>
+                    <Ionicons name="car-outline" size={24} color={COLORS.subtle} />
                   </View>
                 )}
-              </View>
-            </View>
-
-            {/* Trip Details */}
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Trip details</Text>
-              <View style={styles.detailRow}>
-                <View style={styles.iconCircle}>
-                  <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
-                </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.detailLabel}>Start</Text>
-                  <Text style={styles.detailValue}>
-                    {booking.startDate || detailBooking?.start_date || ''}
-                    {(booking.startTime || detailBooking?.pickup_time) &&
-                      ` • ${booking.startTime || detailBooking?.pickup_time}`}
-                  </Text>
+                  <Text style={styles.heroTitle}>{booking.vehicleName?.trim?.() || 'Unknown Car'}</Text>
+                  <View style={styles.carStatsRow}>
+                    <View style={styles.carStatItem}>
+                      <Ionicons name="star" size={14} color="#FFCC00" />
+                      <Text style={styles.carStatText}>{(booking.carRating ?? 4.8).toFixed(1)} rating</Text>
+                    </View>
+                    <View style={styles.carStatItem}>
+                      <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
+                      <Text style={styles.carStatText}>{(booking.carTrips ?? 12)} trips</Text>
+                    </View>
+                  </View>
+                  {booking.location && <Text style={styles.heroSub}>{booking.location}</Text>}
+                  {booking.plate && (
+                    <View style={styles.plateRow}>
+                      <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
+                      <Text style={styles.plateText}>{booking.plate}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
-              <View style={styles.tripDivider} />
-              <View style={styles.detailRow}>
-                <View style={styles.iconCircle}>
-                  <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.detailLabel}>End</Text>
-                  <Text style={styles.detailValue}>
-                    {booking.endDate || detailBooking?.end_date || ''}
-                    {(booking.endTime || detailBooking?.return_time) &&
-                      ` • ${booking.endTime || detailBooking?.return_time}`}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.tripDivider} />
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Duration</Text>
-                <Text style={styles.detailValue}>
-                  {(detailBooking?.rental_days ??
-                    routeBooking.rental_days ??
-                    routeBooking.rentalDays ??
-                    booking.duration) || '—'}
-                </Text>
-              </View>
-            </View>
 
-            {/* Locations */}
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Locations</Text>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Pickup</Text>
-                <Text style={styles.detailValue} numberOfLines={2}>
-                  {Array.isArray(detailBooking?.pickup_location)
-                    ? detailBooking.pickup_location.join(', ')
-                    : detailBooking?.pickup_location ||
-                      routeBooking.pickup_location ||
-                      routeBooking.pickupLocation ||
-                      'Not specified'}
-                </Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Dropoff</Text>
-                <Text style={styles.detailValue} numberOfLines={2}>
-                  {Array.isArray(detailBooking?.return_location)
-                    ? detailBooking.return_location.join(', ')
-                    : detailBooking?.return_location ||
-                      routeBooking.return_location ||
-                      routeBooking.returnLocation ||
-                      'Not specified'}
-                </Text>
-              </View>
-            </View>
-
-        {/* Renter Info */}
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Renter</Text>
-            <TouchableOpacity
-              style={styles.rateButton}
-              onPress={() => {
-                lightHaptic();
-                setRateOpen(true);
-              }}
-              activeOpacity={0.9}
-            >
-              <Text style={styles.rateButtonText}>Rate</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.renterTopRow}>
-            {booking?.renter?.avatar ? (
-              <Image source={{ uri: booking.renter.avatar }} style={styles.renterAvatar} />
-            ) : (
-              <View style={styles.renterAvatarPlaceholder}>
-                <Ionicons name="person" size={22} color={COLORS.subtle} />
-              </View>
-            )}
-            <View style={styles.renterTopDetails}>
-              <Text style={styles.renterName}>{booking?.renter?.name || 'Renter'}</Text>
-              {booking?.renter?.bio ? (
-                <Text style={styles.renterBio} numberOfLines={2}>{booking.renter.bio}</Text>
-              ) : (
-                <Text style={styles.renterBioMuted}>No profile bio added yet.</Text>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.renterStatsRow}>
-            <View style={styles.statPill}>
-              <Ionicons name="star" size={14} color="#FFCC00" />
-              <Text style={styles.statPillText}>
-                {(clientRatingSummary?.average ?? booking?.renter?.rating)
-                  ? `${clientRatingSummary?.average ?? booking?.renter?.rating} rating${(clientRatingSummary?.count ?? 0) > 0 ? ` (${clientRatingSummary.count} reviews)` : ''}`
-                  : 'No ratings yet'}
-              </Text>
-            </View>
-            <View style={styles.statPill}>
-              <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
-              <Text style={styles.statPillText}>{booking?.renter?.trips ?? 0} trips</Text>
-            </View>
-          </View>
-
-          <View style={styles.renterDetailsWrap}>
-            <View style={styles.renterDetailRow}>
-              <Text style={styles.renterDetailLabel}>Email</Text>
-              <Text style={styles.renterDetailValue} numberOfLines={1}>
-                {booking?.renter?.email || 'Not provided'}
-              </Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.renterDetailRow}>
-              <Text style={styles.renterDetailLabel}>Phone</Text>
-              <Text style={styles.renterDetailValue} numberOfLines={1}>
-                {booking?.renter?.phone || 'Not provided'}
-              </Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.renterDetailRow}>
-              <Text style={styles.renterDetailLabel}>ID Number</Text>
-              <Text style={styles.renterDetailValue} numberOfLines={1}>
-                {booking?.renter?.idNumber || 'Not provided'}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-            {/* Price & payout — no earnings breakdown for cancelled trips */}
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Price & payout</Text>
-
-              {cancelled ? (
-                <Text style={styles.cancelledMoneyNote}>
-                  This booking was cancelled before the trip completed. There is no guest payment, platform commission, or host payout for this booking.
-                </Text>
-              ) : (
-                <>
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.rowLabel}>Daily rate</Text>
-                    <Text style={styles.rowValueMuted}>
-                      {dailyRateDisplay != null && dailyRateDisplay !== ''
-                        ? `KSh ${formatCurrency(dailyRateDisplay)}`
-                        : '—'}
+              {/* Trip Details */}
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Trip details</Text>
+                <View style={styles.detailRow}>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>Start</Text>
+                    <Text style={styles.detailValue}>
+                      {booking.startDate || detailBooking?.start_date || ''}
+                      {(booking.startTime || detailBooking?.pickup_time) &&
+                        ` • ${booking.startTime || detailBooking?.pickup_time}`}
                     </Text>
                   </View>
+                </View>
+                <View style={styles.tripDivider} />
+                <View style={styles.detailRow}>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="calendar-outline" size={18} color={COLORS.text} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>End</Text>
+                    <Text style={styles.detailValue}>
+                      {booking.endDate || detailBooking?.end_date || ''}
+                      {(booking.endTime || detailBooking?.return_time) &&
+                        ` • ${booking.endTime || detailBooking?.return_time}`}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.tripDivider} />
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Duration</Text>
+                  <Text style={styles.detailValue}>
+                    {(detailBooking?.rental_days ??
+                      routeBooking.rental_days ??
+                      routeBooking.rentalDays ??
+                      booking.duration) || '—'}
+                  </Text>
+                </View>
+              </View>
 
+              {/* Locations */}
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Locations</Text>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Pickup</Text>
+                  <Text style={styles.detailValue} numberOfLines={2}>
+                    {Array.isArray(detailBooking?.pickup_location)
+                      ? detailBooking.pickup_location.join(', ')
+                      : detailBooking?.pickup_location ||
+                        routeBooking.pickup_location ||
+                        routeBooking.pickupLocation ||
+                        'Not specified'}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Dropoff</Text>
+                  <Text style={styles.detailValue} numberOfLines={2}>
+                    {Array.isArray(detailBooking?.return_location)
+                      ? detailBooking.return_location.join(', ')
+                      : detailBooking?.return_location ||
+                        routeBooking.return_location ||
+                        routeBooking.returnLocation ||
+                        'Not specified'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Renter Info */}
+              <View style={styles.card}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Renter</Text>
+                  <TouchableOpacity
+                    style={styles.rateButton}
+                    onPress={() => { lightHaptic(); setRateOpen(true); }}
+                    activeOpacity={0.9}
+                  >
+                    <Text style={styles.rateButtonText}>Rate</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.renterTopRow}>
+                  {booking?.renter?.avatar ? (
+                    <Image source={{ uri: booking.renter.avatar }} style={styles.renterAvatar} />
+                  ) : (
+                    <View style={styles.renterAvatarPlaceholder}>
+                      <Ionicons name="person" size={22} color={COLORS.subtle} />
+                    </View>
+                  )}
+                  <View style={styles.renterTopDetails}>
+                    <Text style={styles.renterName}>{booking?.renter?.name || 'Renter'}</Text>
+                    {booking?.renter?.bio ? (
+                      <Text style={styles.renterBio} numberOfLines={2}>{booking.renter.bio}</Text>
+                    ) : (
+                      <Text style={styles.renterBioMuted}>No profile bio added yet.</Text>
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.renterStatsRow}>
+                  <View style={styles.statPill}>
+                    <Ionicons name="star" size={14} color="#FFCC00" />
+                    <Text style={styles.statPillText}>
+                      {(clientRatingSummary?.average ?? booking?.renter?.rating)
+                        ? `${clientRatingSummary?.average ?? booking?.renter?.rating} rating${(clientRatingSummary?.count ?? 0) > 0 ? ` (${clientRatingSummary.count} reviews)` : ''}`
+                        : 'No ratings yet'}
+                    </Text>
+                  </View>
+                  <View style={styles.statPill}>
+                    <Ionicons name="car-sport-outline" size={14} color={COLORS.subtle} />
+                    <Text style={styles.statPillText}>{booking?.renter?.trips ?? 0} trips</Text>
+                  </View>
+                </View>
+
+                <View style={styles.renterDetailsWrap}>
+                  <View style={styles.renterDetailRow}>
+                    <Text style={styles.renterDetailLabel}>Email</Text>
+                    <Text style={styles.renterDetailValue} numberOfLines={1}>{booking?.renter?.email || 'Not provided'}</Text>
+                  </View>
                   <View style={styles.divider} />
-
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.rowLabel}>Base price</Text>
-                    <Text style={styles.rowValueMuted}>
-                      {basePriceDisplay != null && basePriceDisplay !== ''
-                        ? `KSh ${formatCurrency(basePriceDisplay)}`
-                        : '—'}
-                    </Text>
+                  <View style={styles.renterDetailRow}>
+                    <Text style={styles.renterDetailLabel}>Phone</Text>
+                    <Text style={styles.renterDetailValue} numberOfLines={1}>{booking?.renter?.phone || 'Not provided'}</Text>
                   </View>
+                  <View style={styles.divider} />
+                  <View style={styles.renterDetailRow}>
+                    <Text style={styles.renterDetailLabel}>ID Number</Text>
+                    <Text style={styles.renterDetailValue} numberOfLines={1}>{booking?.renter?.idNumber || 'Not provided'}</Text>
+                  </View>
+                </View>
+              </View>
 
-                  {detailBooking?.damage_waiver_enabled && (
+              {/* Price & payout */}
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Price & payout</Text>
+
+                {cancelled ? (
+                  <Text style={styles.cancelledMoneyNote}>
+                    This booking was cancelled before the trip completed. There is no guest payment, platform commission, or host payout for this booking.
+                  </Text>
+                ) : (
+                  <>
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.rowLabel}>Daily rate</Text>
+                      <Text style={styles.rowValueMuted}>
+                        {dailyRateDisplay != null && dailyRateDisplay !== ''
+                          ? `KSh ${formatCurrency(dailyRateDisplay)}`
+                          : '—'}
+                      </Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.rowLabel}>Base price</Text>
+                      <Text style={styles.rowValueMuted}>
+                        {basePriceDisplay != null && basePriceDisplay !== ''
+                          ? `KSh ${formatCurrency(basePriceDisplay)}`
+                          : '—'}
+                      </Text>
+                    </View>
+
+                    {detailBooking?.damage_waiver_enabled && (
+                      <>
+                        <View style={styles.divider} />
+                        <View style={styles.rowBetween}>
+                          <Text style={styles.rowLabel}>Damage waiver</Text>
+                          <Text style={styles.rowValue}>
+                            KSh {formatCurrency(detailBooking?.damage_waiver_fee ?? 0)}
+                          </Text>
+                        </View>
+                      </>
+                    )}
+
+                    <View style={styles.divider} />
+                    <View style={styles.rowBetween}>
+                      <Text style={[styles.rowLabel, styles.rowStrong]}>Total paid</Text>
+                      <Text style={[styles.rowValueOrange, styles.rowStrong]}>
+                        KSh {formatCurrency(displayMoney.totalPrice)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.divider} />
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.rowLabel}>Platform commission</Text>
+                      <Text style={styles.rowValueRed}>KSh {formatCurrency(displayMoney.commissionAmount)}</Text>
+                    </View>
+
+                    <View style={styles.divider} />
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.rowLabel}>Your payout</Text>
+                      <Text style={styles.rowValueGreen}>KSh {formatCurrency(displayMoney.payoutAmount)}</Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <TouchableOpacity
+                      style={styles.receiptLink}
+                      onPress={async () => {
+                        if (!bookingId || isDownloadingReceipt || cancelled) return;
+                        setIsDownloadingReceipt(true);
+                        const result = await downloadBookingReceipt(bookingId);
+                        setIsDownloadingReceipt(false);
+                        if (!result.success) {
+                          Alert.alert('Receipt', result.error || 'Could not download receipt.');
+                        }
+                      }}
+                      activeOpacity={0.7}
+                      disabled={isDownloadingReceipt || cancelled}
+                    >
+                      <Ionicons name="document-text-outline" size={18} color={COLORS.brand} />
+                      <Text style={styles.receiptLinkText}>
+                        {isDownloadingReceipt ? 'Opening…' : 'View receipt'}
+                      </Text>
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+
+              {/* Additional booking details */}
+              {(detailBooking?.drive_type ||
+                detailBooking?.check_in_preference ||
+                detailBooking?.special_requirements) && (
+                <View style={styles.card}>
+                  <Text style={styles.sectionTitle}>Additional details</Text>
+                  {detailBooking?.drive_type && (
                     <>
-                      <View style={styles.divider} />
-                      <View style={styles.rowBetween}>
-                        <Text style={styles.rowLabel}>Damage waiver</Text>
-                        <Text style={styles.rowValue}>
-                          KSh {formatCurrency(detailBooking?.damage_waiver_fee ?? 0)}
-                        </Text>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Drive type</Text>
+                        <Text style={styles.detailValue}>{detailBooking.drive_type}</Text>
                       </View>
+                      <View style={styles.divider} />
                     </>
                   )}
-
-                  <View style={styles.divider} />
-                  <View style={styles.rowBetween}>
-                    <Text style={[styles.rowLabel, styles.rowStrong]}>Total paid</Text>
-                    <Text style={[styles.rowValueOrange, styles.rowStrong]}>
-                      KSh {formatCurrency(displayMoney.totalPrice)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.divider} />
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.rowLabel}>Platform commission</Text>
-                    <Text style={styles.rowValueRed}>KSh {formatCurrency(displayMoney.commissionAmount)}</Text>
-                  </View>
-
-                  <View style={styles.divider} />
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.rowLabel}>Your payout</Text>
-                    <Text style={styles.rowValueGreen}>KSh {formatCurrency(displayMoney.payoutAmount)}</Text>
-                  </View>
-
-                  <View style={styles.divider} />
-
-                  <TouchableOpacity
-                    style={styles.receiptLink}
-                    onPress={async () => {
-                      if (!bookingId || isDownloadingReceipt || cancelled) return;
-                      setIsDownloadingReceipt(true);
-                      const result = await downloadBookingReceipt(bookingId);
-                      setIsDownloadingReceipt(false);
-                      if (!result.success) {
-                        Alert.alert('Receipt', result.error || 'Could not download receipt.');
-                      }
-                    }}
-                    activeOpacity={0.7}
-                    disabled={isDownloadingReceipt || cancelled}
-                  >
-                    <Ionicons name="document-text-outline" size={18} color={COLORS.brand} />
-                    <Text style={styles.receiptLinkText}>
-                      {isDownloadingReceipt ? 'Opening…' : 'View receipt'}
-                    </Text>
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.brand} />
-                  </TouchableOpacity>
-                </>
+                  {detailBooking?.check_in_preference && (
+                    <>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Check-in preference</Text>
+                        <Text style={styles.detailValue}>{detailBooking.check_in_preference}</Text>
+                      </View>
+                      <View style={styles.divider} />
+                    </>
+                  )}
+                  {detailBooking?.special_requirements && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Special requirements</Text>
+                      <Text style={styles.detailValue} numberOfLines={3}>
+                        {detailBooking.special_requirements}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               )}
-            </View>
+            </>
+          )}
+        </ScrollView>
+      )}
 
-            {/* Additional booking details */}
-            {(detailBooking?.drive_type ||
-              detailBooking?.check_in_preference ||
-              detailBooking?.special_requirements) && (
-              <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Additional details</Text>
-                {detailBooking?.drive_type && (
-                  <>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Drive type</Text>
-                      <Text style={styles.detailValue}>{detailBooking.drive_type}</Text>
-                    </View>
-                    <View style={styles.divider} />
-                  </>
-                )}
-                {detailBooking?.check_in_preference && (
-                  <>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Check-in preference</Text>
-                      <Text style={styles.detailValue}>{detailBooking.check_in_preference}</Text>
-                    </View>
-                    <View style={styles.divider} />
-                  </>
-                )}
-                {detailBooking?.special_requirements && (
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Special requirements</Text>
-                    <Text style={styles.detailValue} numberOfLines={3}>
-                      {detailBooking.special_requirements}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
-          </>
-        )}
-      </ScrollView>
-
+      {/* Rate modal */}
       <Modal
         visible={rateOpen}
         transparent
@@ -717,10 +831,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                 <Text style={styles.modalTitle}>Rate renter</Text>
                 <TouchableOpacity
                   style={styles.modalClose}
-                  onPress={() => {
-                    lightHaptic();
-                    setRateOpen(false);
-                  }}
+                  onPress={() => { lightHaptic(); setRateOpen(false); }}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="close" size={18} color={COLORS.subtle} />
@@ -738,10 +849,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
                     <TouchableOpacity
                       key={`star-${n}`}
                       style={styles.starButton}
-                      onPress={() => {
-                        lightHaptic();
-                        setRating(n);
-                      }}
+                      onPress={() => { lightHaptic(); setRating(n); }}
                       activeOpacity={0.85}
                     >
                       <Ionicons name={on ? 'star' : 'star-outline'} size={26} color={on ? '#FFCC00' : '#C7C7CC'} />
@@ -766,10 +874,7 @@ export default function PastBookingDetailScreen({ navigation, route }) {
               <View style={styles.modalActions}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalSecondary]}
-                  onPress={() => {
-                    lightHaptic();
-                    setRateOpen(false);
-                  }}
+                  onPress={() => { lightHaptic(); setRateOpen(false); }}
                   activeOpacity={0.85}
                 >
                   <Text style={styles.modalSecondaryText}>Cancel</Text>
@@ -897,321 +1002,222 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...TYPE.section,
     fontSize: 16,
-    marginBottom: 16,
+    marginBottom: SPACING.m,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  bookingIdRow: {
+    flex: 1,
+  },
+  bookingIdLabel: {
+    ...TYPE.caption,
+    color: COLORS.subtle,
+    marginBottom: 2,
+  },
+  bookingIdValue: {
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  statusBadgeText: {
+    ...TYPE.bodyStrong,
+    fontSize: 12,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
+    justifyContent: 'space-between',
+    gap: 8,
+    paddingVertical: 4,
   },
   iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.bg,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
+    marginRight: 8,
   },
   detailLabel: {
-    ...TYPE.caption,
-    fontSize: 12,
+    ...TYPE.body,
+    fontSize: 13,
     color: COLORS.subtle,
   },
   detailValue: {
     ...TYPE.bodyStrong,
-    fontSize: 14,
-    color: COLORS.text,
-    marginTop: 2,
+    fontSize: 13,
+    textAlign: 'right',
+    flexShrink: 1,
   },
-  rateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.text,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.button,
+  tripDivider: {
+    height: 1,
+    backgroundColor: COLORS.borderStrong,
+    marginVertical: SPACING.s,
   },
-  rateButtonText: {
-    ...TYPE.caption,
-    color: '#ffffff',
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.borderStrong,
+    marginVertical: SPACING.s,
   },
   renterTopRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    marginBottom: 12,
   },
   renterAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.bg,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
   },
   renterAvatarPlaceholder: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.bg,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 12,
+  },
+  renterTopDetails: {
+    flex: 1,
   },
   renterName: {
     ...TYPE.bodyStrong,
     fontSize: 15,
-    color: COLORS.text,
-  },
-  renterTopDetails: {
-    flex: 1,
+    marginBottom: 4,
   },
   renterBio: {
     ...TYPE.body,
     fontSize: 13,
     color: COLORS.subtle,
-    marginTop: 4,
-    lineHeight: 18,
   },
   renterBioMuted: {
     ...TYPE.body,
     fontSize: 13,
-    color: 'rgba(60, 60, 67, 0.4)',
-    marginTop: 4,
-    lineHeight: 18,
+    color: COLORS.border,
     fontStyle: 'italic',
   },
   renterStatsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
-    marginTop: 12,
+    flexWrap: 'wrap',
+    marginBottom: 12,
   },
   statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.bg,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
+    gap: 4,
+    backgroundColor: COLORS.borderStrong,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 5,
+    borderRadius: 20,
   },
   statPillText: {
-    ...TYPE.caption,
+    ...TYPE.body,
+    fontSize: 12,
     color: COLORS.text,
   },
   renterDetailsWrap: {
-    marginTop: 12,
-    borderRadius: RADIUS.card,
-    backgroundColor: COLORS.bg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderStrong,
+    paddingTop: SPACING.s,
   },
   renterDetailRow: {
-    minHeight: 42,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
+    alignItems: 'center',
+    paddingVertical: 4,
   },
   renterDetailLabel: {
-    ...TYPE.caption,
+    ...TYPE.body,
+    fontSize: 13,
     color: COLORS.subtle,
-    fontSize: 12,
   },
   renterDetailValue: {
     ...TYPE.bodyStrong,
-    color: COLORS.text,
     fontSize: 13,
-    flex: 1,
+    flexShrink: 1,
+    marginLeft: 12,
     textAlign: 'right',
   },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
+  rateButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: COLORS.brand,
   },
-  amountLabel: {
-    ...TYPE.body,
-    color: COLORS.subtle,
-  },
-  amountValue: {
-    fontSize: 22,
-    lineHeight: 28,
-    fontFamily: 'Nunito-Bold',
-    color: COLORS.text,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.border,
-    marginVertical: 6,
-  },
-  tripDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.text,
-    marginVertical: 6,
+  rateButtonText: {
+    ...TYPE.bodyStrong,
+    fontSize: 13,
+    color: '#FFFFFF',
   },
   rowBetween: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
   },
   rowLabel: {
     ...TYPE.body,
+    fontSize: 14,
     color: COLORS.subtle,
+  },
+  rowStrong: {
+    fontFamily: 'Nunito-SemiBold',
+    color: COLORS.text,
   },
   rowValue: {
     ...TYPE.bodyStrong,
-    color: COLORS.text,
-  },
-  rowStrong: {
-    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
   },
   rowValueMuted: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.text,
+  },
+  rowValueOrange: {
     ...TYPE.bodyStrong,
-    color: COLORS.subtle,
+    fontSize: 14,
+    color: '#FF9500',
   },
   rowValueRed: {
     ...TYPE.bodyStrong,
+    fontSize: 14,
     color: '#FF3B30',
   },
   rowValueGreen: {
     ...TYPE.bodyStrong,
+    fontSize: 14,
     color: '#34C759',
-  },
-  rowValueOrange: {
-    ...TYPE.bodyStrong,
-    color: '#FF9500',
   },
   cancelledMoneyNote: {
     ...TYPE.body,
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.subtle,
     lineHeight: 20,
+    fontStyle: 'italic',
   },
   receiptLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-    paddingVertical: 8,
+    gap: 6,
+    paddingVertical: 4,
   },
   receiptLinkText: {
     ...TYPE.bodyStrong,
     fontSize: 14,
     color: COLORS.brand,
     flex: 1,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'center',
-    padding: SPACING.l,
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  modalCenter: {
-    justifyContent: 'center',
-  },
-  modalCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.l,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
-  modalTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.s,
-  },
-  modalTitle: {
-    ...TYPE.section,
-  },
-  modalClose: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.bg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
-  modalSub: {
-    ...TYPE.caption,
-    color: COLORS.subtle,
-    marginBottom: SPACING.m,
-  },
-  starsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.m,
-  },
-  starButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.bg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
-  noteWrap: {
-    marginBottom: SPACING.l,
-  },
-  noteLabel: {
-    ...TYPE.micro,
-    color: COLORS.subtle,
-    marginBottom: 8,
-  },
-  noteInput: {
-    minHeight: 88,
-    borderRadius: RADIUS.card,
-    padding: 12,
-    backgroundColor: COLORS.bg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    ...TYPE.body,
-    fontSize: 13,
-    color: COLORS.text,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: SPACING.s,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: RADIUS.button,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalSecondary: {
-    backgroundColor: COLORS.bg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
-  modalSecondaryText: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: COLORS.text,
-  },
-  modalPrimary: {
-    backgroundColor: COLORS.text,
-  },
-  modalPrimaryText: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-    color: '#ffffff',
   },
   emptyState: {
     flex: 1,
@@ -1231,32 +1237,94 @@ const styles = StyleSheet.create({
     color: COLORS.subtle,
     textAlign: 'center',
   },
-  statusHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  bookingIdRow: {
+  // Modal
+  modalOverlay: {
     flex: 1,
+    justifyContent: 'flex-end',
   },
-  bookingIdLabel: {
-    ...TYPE.body,
-    fontSize: 12,
-    color: COLORS.subtle,
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  modalCenter: {
+    padding: SPACING.l,
+  },
+  modalCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: SPACING.l,
+  },
+  modalTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 4,
   },
-  bookingIdValue: {
+  modalTitle: {
+    ...TYPE.section,
+    fontSize: 17,
+  },
+  modalClose: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalSub: {
+    ...TYPE.caption,
+    marginBottom: SPACING.m,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: SPACING.m,
+  },
+  starButton: {
+    padding: 4,
+  },
+  noteWrap: {
+    marginBottom: SPACING.m,
+  },
+  noteLabel: {
+    ...TYPE.caption,
+    marginBottom: 6,
+  },
+  noteInput: {
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 10,
+    padding: SPACING.s,
+    minHeight: 70,
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.text,
+    textAlignVertical: 'top',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalSecondary: {
+    backgroundColor: COLORS.borderStrong,
+  },
+  modalSecondaryText: {
     ...TYPE.bodyStrong,
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.text,
   },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+  modalPrimary: {
+    backgroundColor: COLORS.brand,
   },
-  statusBadgeText: {
-    fontSize: 12,
-    fontFamily: 'Nunito-SemiBold',
+  modalPrimaryText: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: '#FFFFFF',
   },
 });
