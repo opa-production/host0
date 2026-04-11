@@ -77,6 +77,8 @@ export const getHostEarningsSummary = async () => {
       net_earnings: Number(raw.net_earnings) || 0,
       withdrawable: Number(raw.withdrawable) || 0,
       paid_bookings_count: Number(raw.paid_bookings_count) || 0,
+      // Backend now returns this directly — sum of all pending withdrawal amounts.
+      pending_withdrawals_total: Number(raw.pending_withdrawals_total) || 0,
     };
 
     return {

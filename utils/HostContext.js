@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { getCurrentHost } from '../services/authService';
 import { getUserToken, clearUserData, setUserProfile, getUserProfile, getUserId } from './userStorage';
 import { markNewSession, resetScreenDataCaches } from './screenDataCache';
+import { registerPushToken, unregisterPushToken } from './pushNotifications';
 import { fetchHostAvatarFromSupabase } from '../services/mediaService';
 import { setLogoutHandler } from './logoutHandler';
 
@@ -181,11 +182,18 @@ export const HostProvider = ({ children }) => {
     setIsAuthenticated(true);
     // Store profile locally
     await setUserProfile(hostData);
+    // Register push token with backend (non-blocking, errors are swallowed)
+    registerPushToken();
   };
 
   const logout = async () => {
+    // Grab the token before clearing storage so the DELETE request can auth.
+    const authToken = await getUserToken();
+    // Unregister push token from backend (non-blocking, errors are swallowed)
+    unregisterPushToken(authToken);
     setHost(null);
     setIsAuthenticated(false);
+    resetScreenDataCaches();
     // Clear all storage
     await clearUserData();
   };

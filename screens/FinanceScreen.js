@@ -34,13 +34,17 @@ export default function FinanceScreen({ navigation }) {
     try {
       const result = await getHostEarningsSummary();
       if (result.success && result.summary) {
+        const s = result.summary;
         setFinancialData({
-          netEarnings: result.summary.net_earnings ?? 0,
-          commission: result.summary.commission_amount ?? 0,
-          withdrawable: result.summary.withdrawable ?? 0,
-          total_gross: result.summary.total_gross ?? 0,
-          paid_bookings_count: result.summary.paid_bookings_count ?? 0,
+          netEarnings: s.net_earnings ?? 0,
+          commission: s.commission_amount ?? 0,
+          withdrawable: s.withdrawable ?? 0,
+          total_gross: s.total_gross ?? 0,
+          paid_bookings_count: s.paid_bookings_count ?? 0,
         });
+        // Backend now returns pending_withdrawals_total directly in the summary —
+        // no separate withdrawals fetch needed for the balance calculation.
+        setPendingWithdrawalTotal(s.pending_withdrawals_total ?? 0);
       }
     } catch (error) {
       console.error('Error loading earnings summary:', error);
@@ -68,10 +72,6 @@ export default function FinanceScreen({ navigation }) {
       ]);
       const txList = (txResult.success && txResult.transactions) ? txResult.transactions : [];
       const withdrawals = (wdResult.success && wdResult.withdrawals) ? wdResult.withdrawals : [];
-      const pending = withdrawals
-        .filter((w) => String(w.status || '').toLowerCase() === 'pending')
-        .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
-      setPendingWithdrawalTotal(pending);
       const withdrawalItems = withdrawals.map(withdrawalToTransactionItem);
       const merged = [...txList, ...withdrawalItems].sort((a, b) => (b.sortDate || 0) - (a.sortDate || 0));
       setRecentTransactions(merged);

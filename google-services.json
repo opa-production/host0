@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "428158708562",
+    "project_id": "deon-b0231",
+    "storage_bucket": "deon-b0231.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:428158708562:android:002b5b515d5e6505ce288b",
+        "android_client_info": {
+          "package_name": "com.ardena.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8WrMY_b32OMkbhux6pA1bS96uxE89m90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:428158708562:android:a92993326bf2d85ace288b",
+        "android_client_info": {
+          "package_name": "com.ardenahost.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8WrMY_b32OMkbhux6pA1bS96uxE89m90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

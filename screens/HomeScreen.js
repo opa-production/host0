@@ -8,7 +8,6 @@ import { lightHaptic } from '../ui/haptics';
 import { useHost } from '../utils/HostContext';
 import { getHostBookings, isBookingCancelled } from '../services/bookingService';
 import { getHostEarningsSummary } from '../services/earningsService';
-import { getHostWithdrawals } from '../services/withdrawalService';
 import { getHostSubscription } from '../services/subscriptionService';
 import { getHidePremiumBadgePreference } from '../utils/userStorage';
 import { isFreshLogin } from '../utils/screenDataCache';
@@ -160,27 +159,19 @@ export default function HomeScreen({ navigation }) {
 
   const loadEarningsSummary = async () => {
     try {
-      const [summaryResult, withdrawalsResult] = await Promise.all([
-        getHostEarningsSummary(),
-        getHostWithdrawals({ limit: 100 }),
-      ]);
+      const summaryResult = await getHostEarningsSummary();
       if (summaryResult.success && summaryResult.summary) {
+        const s = summaryResult.summary;
         setFinancialData({
-          total_gross: summaryResult.summary.total_gross,
-          commission_rate: summaryResult.summary.commission_rate,
-          commission_amount: summaryResult.summary.commission_amount,
-          net_earnings: summaryResult.summary.net_earnings,
-          withdrawable: summaryResult.summary.withdrawable,
-          paid_bookings_count: summaryResult.summary.paid_bookings_count,
+          total_gross: s.total_gross,
+          commission_rate: s.commission_rate,
+          commission_amount: s.commission_amount,
+          net_earnings: s.net_earnings,
+          withdrawable: s.withdrawable,
+          paid_bookings_count: s.paid_bookings_count,
         });
-      }
-      if (withdrawalsResult.success && Array.isArray(withdrawalsResult.withdrawals)) {
-        const pending = withdrawalsResult.withdrawals
-          .filter((w) => (String(w.status || '').toLowerCase() === 'pending'))
-          .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
-        setPendingWithdrawalTotal(pending);
-      } else {
-        setPendingWithdrawalTotal(0);
+        // Backend now returns pending_withdrawals_total directly in the summary.
+        setPendingWithdrawalTotal(s.pending_withdrawals_total ?? 0);
       }
     } catch (error) {
       console.error('Error loading earnings summary:', error);

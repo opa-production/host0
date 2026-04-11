@@ -110,6 +110,9 @@ export const API_ENDPOINTS = {
   HOST_KYC_SESSION: '/api/v1/host/kyc/session',
   HOST_KYC_STATUS: '/api/v1/host/kyc/status',
 
+  // Push notifications
+  HOST_PUSH_TOKEN: '/api/v1/host/push-token',
+
   // Business subscription (M-Pesa STK via Payhero)
   HOST_SUBSCRIPTION_PLANS: '/api/v1/host/subscription/plans',
   HOST_SUBSCRIPTION_ME: '/api/v1/host/subscription/me',
