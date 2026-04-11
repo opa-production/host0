@@ -21,6 +21,107 @@ import { getUserId } from '../utils/userStorage';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+// Module-level — hooks are only called from named components, never from render fns
+function SkeletonPulse({ style }) {
+  const opacity = useRef(new Animated.Value(0.35)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.7, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 700, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <Animated.View style={[{ backgroundColor: '#E5E5EA', borderRadius: 6 }, style, { opacity }]} />
+  );
+}
+
+// Mirrors the real listCard layout: circle image | name + metrics column
+function CarSkeletonCard({ isLast }) {
+  return (
+    <View style={[carSkeletonStyles.card, isLast && carSkeletonStyles.cardLast]}>
+      {/* Circle image placeholder */}
+      <SkeletonPulse style={carSkeletonStyles.avatar} />
+
+      <View style={carSkeletonStyles.info}>
+        {/* Name + model */}
+        <View style={carSkeletonStyles.header}>
+          <SkeletonPulse style={{ width: 140, height: 14, marginBottom: 6 }} />
+          <SkeletonPulse style={{ width: 100, height: 11 }} />
+        </View>
+
+        {/* Metric rows: icon stub + text stub */}
+        <View style={carSkeletonStyles.metrics}>
+          <View style={carSkeletonStyles.metricRow}>
+            <SkeletonPulse style={carSkeletonStyles.iconStub} />
+            <SkeletonPulse style={{ width: 110, height: 11 }} />
+          </View>
+          <View style={carSkeletonStyles.metricRow}>
+            <SkeletonPulse style={carSkeletonStyles.iconStub} />
+            <SkeletonPulse style={{ width: 60, height: 11 }} />
+          </View>
+          <View style={carSkeletonStyles.metricRow}>
+            <SkeletonPulse style={carSkeletonStyles.dotStub} />
+            <SkeletonPulse style={{ width: 90, height: 11 }} />
+          </View>
+          <View style={carSkeletonStyles.metricRow}>
+            <SkeletonPulse style={{ width: 36, height: 11, borderRadius: 4 }} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const carSkeletonStyles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E5EA',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  cardLast: {
+    marginBottom: 0,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 12,
+  },
+  info: {
+    flex: 1,
+  },
+  header: {
+    marginBottom: 8,
+  },
+  metrics: {
+    gap: 6,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  iconStub: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+  },
+  dotStub: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+});
+
 export default function MyListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
@@ -134,72 +235,6 @@ export default function MyListingsScreen({ navigation }) {
   );
 
   const allListings = cars;
-
-  // Skeleton component for loading state with shimmer effect
-  const SkeletonBox = ({ width, height, style }) => {
-    const shimmerAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(shimmerAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shimmerAnim, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    }, []);
-
-    const opacity = shimmerAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.3, 0.7],
-    });
-
-    return (
-      <Animated.View
-        style={[
-          {
-            width,
-            height,
-            backgroundColor: '#E5E5EA',
-            borderRadius: 8,
-            opacity,
-          },
-          style,
-        ]}
-      />
-    );
-  };
-
-  const renderSkeletonCard = () => (
-    <View style={[styles.listCard, styles.skeletonCard]}>
-      {/* Skeleton Image */}
-      <View style={styles.carImageContainer}>
-        <View style={[styles.carImagePlaceholder, { backgroundColor: '#E5E5EA' }]} />
-      </View>
-
-      {/* Skeleton Info */}
-      <View style={styles.carInfo}>
-        <View style={styles.carHeader}>
-          <SkeletonBox width={120} height={16} style={{ marginBottom: 8, borderRadius: 4 }} />
-          <SkeletonBox width={150} height={12} style={{ borderRadius: 4 }} />
-        </View>
-
-        <View style={styles.carMetrics}>
-          <SkeletonBox width={100} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
-          <SkeletonBox width={80} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
-          <SkeletonBox width={90} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
-          <SkeletonBox width={60} height={12} style={{ borderRadius: 4 }} />
-        </View>
-      </View>
-    </View>
-  );
 
   const getDriveSettingLabel = (value) => {
     switch (value) {
@@ -367,9 +402,18 @@ export default function MyListingsScreen({ navigation }) {
 
       {/* Listings */}
       {isLoading ? (
+        // Show as many skeletons as we have cached cars (so the layout doesn't
+        // visually jump when real data arrives). Default to 2 when unknown.
         <FlatList
-          data={[1, 2, 3]} // Render 3 skeleton cards
-          renderItem={renderSkeletonCard}
+          data={Array.from(
+            { length: Math.max(2, myListingsScreenCache.cars?.length ?? 2) },
+            (_, i) => i
+          )}
+          renderItem={({ index, item }) => (
+            <CarSkeletonCard
+              isLast={index === Math.max(2, myListingsScreenCache.cars?.length ?? 2) - 1}
+            />
+          )}
           keyExtractor={(item) => `skeleton-${item}`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.listContent, { paddingTop: SPACING.m }]}
@@ -436,9 +480,6 @@ const styles = StyleSheet.create({
   },
   listCardLast: {
     marginBottom: 0,
-  },
-  skeletonCard: {
-    opacity: 0.7,
   },
   carImageContainer: {
     width: 80,

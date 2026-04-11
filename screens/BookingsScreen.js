@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, RefreshControl } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, RefreshControl, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,111 @@ import {
 import { fetchCarImagesFromSupabase } from '../services/carService';
 import { getUserId } from '../utils/userStorage';
 import { getBookingExtensions } from '../services/extensionService';
+
+// Module-level so hooks are not called inside a render function
+function SkeletonPulse({ style }) {
+  const opacity = useRef(new Animated.Value(0.35)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.7, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 700, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <Animated.View style={[{ backgroundColor: '#E5E5EA', borderRadius: 6 }, style, { opacity }]} />
+  );
+}
+
+// Skeleton card that mirrors the real gridCard layout exactly
+function BookingSkeletonCard() {
+  return (
+    <View style={bookingSkeletonStyles.card}>
+      <View style={bookingSkeletonStyles.headerRow}>
+        {/* Circle image */}
+        <SkeletonPulse style={bookingSkeletonStyles.avatar} />
+        <View style={bookingSkeletonStyles.details}>
+          {/* Car name */}
+          <SkeletonPulse style={{ width: '75%', height: 14, marginBottom: 10 }} />
+          {/* Metric rows: icon placeholder + text */}
+          <View style={bookingSkeletonStyles.metricRow}>
+            <SkeletonPulse style={bookingSkeletonStyles.iconPlaceholder} />
+            <SkeletonPulse style={{ flex: 1, height: 12, maxWidth: 130 }} />
+          </View>
+          <View style={bookingSkeletonStyles.metricRow}>
+            <SkeletonPulse style={bookingSkeletonStyles.iconPlaceholder} />
+            <SkeletonPulse style={{ flex: 1, height: 12, maxWidth: 170 }} />
+          </View>
+          <View style={bookingSkeletonStyles.metricRow}>
+            <SkeletonPulse style={bookingSkeletonStyles.iconPlaceholder} />
+            <SkeletonPulse style={{ flex: 1, height: 12, maxWidth: 80 }} />
+          </View>
+          <View style={bookingSkeletonStyles.metricRow}>
+            <SkeletonPulse style={bookingSkeletonStyles.dotPlaceholder} />
+            <SkeletonPulse style={{ flex: 1, height: 12, maxWidth: 70 }} />
+          </View>
+        </View>
+      </View>
+      {/* Amount row */}
+      <View style={bookingSkeletonStyles.amountRow}>
+        <SkeletonPulse style={{ width: 90, height: 12 }} />
+        <SkeletonPulse style={{ width: 80, height: 14 }} />
+      </View>
+    </View>
+  );
+}
+
+const bookingSkeletonStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E5EA',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  details: {
+    flex: 1,
+    gap: 6,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  iconPlaceholder: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+  },
+  dotPlaceholder: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F2F7',
+  },
+});
 
 export default function BookingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -76,20 +181,6 @@ export default function BookingsScreen({ navigation }) {
   };
 
   const getStatusText = (status) => getBookingStatusDisplayText(status);
-
-  const SkeletonBox = ({ width, height, style }) => (
-    <View
-      style={[
-        {
-          width,
-          height,
-          backgroundColor: '#E5E5EA',
-          borderRadius: 8,
-        },
-        style,
-      ]}
-    />
-  );
 
   const loadBookings = useCallback(async ({ pullToRefresh = false, showFullScreenLoader } = {}) => {
     const hadCached = bookingsRef.current.length > 0;
@@ -299,26 +390,8 @@ export default function BookingsScreen({ navigation }) {
         {/* Bookings List */}
         {isLoading ? (
           <View style={styles.grid}>
-            {[1, 2, 3].map((i) => (
-              <View key={i} style={[styles.gridCard, styles.skeletonCard]}>
-                <View style={styles.gridHeaderRow}>
-                  <SkeletonBox width={60} height={60} style={{ borderRadius: 30 }} />
-                  <View style={styles.gridDetails}>
-                    <SkeletonBox width={180} height={16} style={{ marginBottom: 8, borderRadius: 6 }} />
-                    <View style={styles.gridMetrics}>
-                      <SkeletonBox width={120} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
-                      <SkeletonBox width={160} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
-                      <SkeletonBox width={80} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
-                      <SkeletonBox width={70} height={12} style={{ borderRadius: 4 }} />
-                    </View>
-                    <View style={styles.amountRow}>
-                      <SkeletonBox width={90} height={12} style={{ borderRadius: 4 }} />
-                      <SkeletonBox width={80} height={14} style={{ borderRadius: 4 }} />
-                    </View>
-                  </View>
-                </View>
-              </View>
-            ))}
+            <BookingSkeletonCard />
+            <BookingSkeletonCard />
           </View>
         ) : bookings.length > 0 ? (
           <View style={styles.grid}>
