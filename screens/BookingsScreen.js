@@ -129,8 +129,7 @@ export default function BookingsScreen({ navigation }) {
   const bookingsRef = useRef([]);
   const fetchGenerationRef = useRef(0);
   const hasFetchedOnceRef = useRef(false);
-  const lastBookingsFocusFetchRef = useRef(0);
-  const BOOKINGS_FOCUS_THROTTLE_MS = 45 * 1000;
+  const fetchingRef = useRef(false);
 
   useEffect(() => {
     bookingsRef.current = bookings;
@@ -183,6 +182,9 @@ export default function BookingsScreen({ navigation }) {
   const getStatusText = (status) => getBookingStatusDisplayText(status);
 
   const loadBookings = useCallback(async ({ pullToRefresh = false, showFullScreenLoader } = {}) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+
     const hadCached = bookingsRef.current.length > 0;
     const useFullLoader =
       showFullScreenLoader !== undefined
@@ -206,26 +208,46 @@ export default function BookingsScreen({ navigation }) {
           (b) => !isBookingCompleted(b) && !isBookingCancelled(b)
         );
         const userId = await getUserId();
+
+        // Build a lookup of already-loaded images/extensions so re-focus
+        // refreshes don't repeat the N+1 Supabase/extension fetches
+        const cachedById = {};
+        for (const b of bookingsRef.current) {
+          cachedById[b.bookingId || b.id] = b;
+        }
+
         const mappedBookings = await Promise.all(
           activeBookings.map(async (booking) => {
-            let carImageUrls = booking.car_image_urls || [];
+            const cacheKey = booking.booking_id || booking.id;
+            const cached = cachedById[cacheKey];
 
-            if (carImageUrls.length === 0 && booking.car_id && userId) {
-              const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
-              if (imageResult.images && imageResult.images.length > 0) {
-                carImageUrls = imageResult.images;
+            // Reuse images from cache; only fetch if genuinely missing
+            let carImageUrls = booking.car_image_urls || [];
+            if (carImageUrls.length === 0) {
+              carImageUrls = cached?.carImageUrls?.length > 0
+                ? cached.carImageUrls
+                : [];
+              if (carImageUrls.length === 0 && booking.car_id && userId) {
+                const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
+                if (imageResult.images?.length > 0) carImageUrls = imageResult.images;
               }
             }
 
-            let pendingExtension = null;
+            // Re-fetch extensions only if status changed or not yet cached
             const statusLower = (booking.status || '').toLowerCase();
+            let pendingExtension = null;
             if (statusLower === 'confirmed' || statusLower === 'active') {
-              try {
-                const extResult = await getBookingExtensions(booking.booking_id || booking.id);
-                if (extResult.success && extResult.extensions?.length > 0) {
-                  pendingExtension = extResult.extensions.find(e => e.status === 'pending_host_approval') || null;
-                }
-              } catch (_) {}
+              const statusChanged = cached?.status !== booking.status;
+              if (!cached || statusChanged) {
+                try {
+                  const extResult = await getBookingExtensions(booking.booking_id || booking.id);
+                  if (extResult.success && extResult.extensions?.length > 0) {
+                    pendingExtension = extResult.extensions.find(e => e.status === 'pending_host_approval') || null;
+                  }
+                } catch (_) {}
+              } else {
+                pendingExtension = cached.pendingExtension ?? null;
+              }
             }
 
             return {
@@ -237,7 +259,7 @@ export default function BookingsScreen({ navigation }) {
               carModel: booking.car_model || '',
               carYear: booking.car_year,
               carMake: booking.car_make || '',
-              carImageUrls: carImageUrls,
+              carImageUrls,
               clientName: getClientDisplayName(booking),
               clientEmail: booking.client_email,
               clientMobile: booking.client_mobile_number,
@@ -278,6 +300,7 @@ export default function BookingsScreen({ navigation }) {
       if (gen !== fetchGenerationRef.current) return;
       if (!hadCached) setBookings([]);
     } finally {
+      fetchingRef.current = false;
       if (gen === fetchGenerationRef.current) {
         hasFetchedOnceRef.current = true;
         setIsLoading(false);
@@ -287,16 +310,15 @@ export default function BookingsScreen({ navigation }) {
   }, []);
 
   const onRefresh = useCallback(() => {
+    fetchingRef.current = false; // allow pull-to-refresh to bypass the guard
     loadBookings({ pullToRefresh: true, showFullScreenLoader: false });
   }, [loadBookings]);
 
+  // Always re-fetch on focus so status changes (pending→confirmed→active)
+  // are reflected as soon as the user returns to this tab.
+  // fetchingRef prevents double-calls on initial mount.
   useFocusEffect(
     useCallback(() => {
-      const now = Date.now();
-      if (now - lastBookingsFocusFetchRef.current < BOOKINGS_FOCUS_THROTTLE_MS) {
-        return;
-      }
-      lastBookingsFocusFetchRef.current = now;
       loadBookings();
     }, [loadBookings])
   );
