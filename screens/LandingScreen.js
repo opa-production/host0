@@ -1,26 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ImageBackground, Image, Linking } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
-
-const TERMS_KEY = '@terms_accepted';
 
 export default function LandingScreen({ navigation }) {
   const [imageError, setImageError] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-
-  useEffect(() => {
-    AsyncStorage.getItem(TERMS_KEY).then((value) => {
-      if (value === 'true') setTermsAccepted(true);
-    });
-  }, []);
 
   const handleContinue = (screen) => {
-    if (!termsAccepted) {
-      return;
-    }
     navigation.navigate(screen);
   };
 
@@ -55,48 +41,31 @@ export default function LandingScreen({ navigation }) {
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <View style={styles.ctaSection}>
-        <TouchableOpacity style={styles.termsRow} onPress={() => {
-          const next = !termsAccepted;
-          setTermsAccepted(next);
-          if (next) {
-            AsyncStorage.setItem(TERMS_KEY, 'true');
-          } else {
-            AsyncStorage.removeItem(TERMS_KEY);
-          }
-        }} activeOpacity={0.7}>
-          <Ionicons
-            name={termsAccepted ? 'checkbox' : 'square-outline'}
-            size={22}
-            color={termsAccepted ? '#FFFFFF' : 'rgba(255,255,255,0.7)'}
-          />
-          <Text style={styles.termsText}>
-            to proceed, you need to agree to the{' '}
-            <Text
-              style={styles.termsLink}
-              onPress={() => Linking.openURL('https://ardena.xyz/terms.html')}
-            >
-              Terms & Conditions
-            </Text>
-          </Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
-          style={[styles.primaryButton, !termsAccepted && styles.buttonDisabled]}
+          style={styles.primaryButton}
           onPress={() => handleContinue('SignUp')}
           activeOpacity={0.9}
-          disabled={!termsAccepted}
         >
           <Text style={styles.primaryButtonText} numberOfLines={1}>Get Started</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.secondaryButton, !termsAccepted && styles.buttonDisabled]}
+          style={styles.secondaryButton}
           onPress={() => handleContinue('Login')}
           activeOpacity={0.9}
-          disabled={!termsAccepted}
         >
           <Text style={styles.secondaryButtonText} numberOfLines={1}>Login</Text>
         </TouchableOpacity>
+
+        <Text style={styles.termsText}>
+          By continuing, you agree to our{' '}
+          <Text
+            style={styles.termsLink}
+            onPress={() => Linking.openURL('https://ardena.xyz/terms.html')}
+          >
+            Terms & Conditions
+          </Text>
+        </Text>
       </View>
     </View>
   );
@@ -136,28 +105,18 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 12,
   },
-  termsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    gap: 10,
-    marginBottom: 4,
-    paddingHorizontal: 16,
-  },
   termsText: {
-    flex: 1,
     fontSize: 13,
     fontFamily: 'Nunito-Regular',
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.75)',
     lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 4,
   },
   termsLink: {
     fontFamily: 'Nunito-SemiBold',
     color: '#FFFFFF',
     textDecorationLine: 'underline',
-  },
-  buttonDisabled: {
-    opacity: 0.45,
   },
   primaryButton: {
     backgroundColor: COLORS.brand,

@@ -16,8 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostCars } from '../services/carService';
-import { myListingsScreenCache, getSessionId } from '../utils/screenDataCache';
-import { getUserId } from '../utils/userStorage';
+import { myListingsScreenCache } from '../utils/screenDataCache';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -126,79 +125,38 @@ export default function MyListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
 
-  // Capture the session ID at mount time.  If the module cache belongs to a
-  // different session (e.g. just after a logout/login without a full remount)
-  // we start with an empty list and let the API provide authoritative data.
-  const mountSessionId = useRef(getSessionId());
-  const cacheIsValid =
-    mountSessionId.current !== null &&
-    mountSessionId.current === getSessionId() &&
-    myListingsScreenCache.fetchedOnce &&
-    myListingsScreenCache.cars !== null;
-
-  const [cars, setCars] = useState(() =>
-    cacheIsValid ? [...myListingsScreenCache.cars] : []
-  );
-  const [isLoading, setIsLoading] = useState(() => !cacheIsValid);
+  const [cars, setCars] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const carsRef = useRef(cars);
-  const fetchGenerationRef = useRef(0);
+  const hasLoadedRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
+  const fetchGenRef = useRef(0);
 
-  useEffect(() => {
-    carsRef.current = cars;
-  }, [cars]);
+  const loadCars = useCallback(async ({ pullToRefresh = false, initial = false } = {}) => {
+    const gen = ++fetchGenRef.current;
 
-  const loadCars = useCallback(async ({ pullToRefresh = false, showFullScreenLoader, forceRefresh = false } = {}) => {
-    const cachedLen = Array.isArray(myListingsScreenCache.cars)
-      ? myListingsScreenCache.cars.length
-      : 0;
-    const rowCount = Math.max(carsRef.current.length, cachedLen);
-    const hadCached = rowCount > 0 || myListingsScreenCache.fetchedOnce;
-
-    // Force refresh bypasses cache
-    const shouldBypassCache = pullToRefresh || forceRefresh;
-
-    const useFullLoader =
-      showFullScreenLoader !== undefined
-        ? showFullScreenLoader
-        : !myListingsScreenCache.fetchedOnce && rowCount === 0;
-
-    const gen = ++fetchGenerationRef.current;
-
-    if (pullToRefresh) {
-      setRefreshing(true);
-    } else if (useFullLoader) {
+    if (initial) {
       setIsLoading(true);
+    } else if (pullToRefresh) {
+      setRefreshing(true);
     }
+    // silent re-focus: no visual indicator, list stays visible until new data arrives
 
     try {
       const result = await getHostCars();
-      if (gen !== fetchGenerationRef.current) return;
+      if (gen !== fetchGenRef.current) return;
 
-      if (result.success && result.cars) {
-        const uid = await getUserId();
-        myListingsScreenCache.cachedUserId = uid;
-        myListingsScreenCache.cars = result.cars;
-        mountSessionId.current = getSessionId(); // mark cache as belonging to this session
-        setCars(result.cars);
-      } else {
-        if (!hadCached || shouldBypassCache) {
-          myListingsScreenCache.cars = [];
-          myListingsScreenCache.cachedUserId = null;
-          setCars([]);
-        }
+      if (result.success) {
+        const fresh = result.cars || [];
+        setCars(fresh);
+        myListingsScreenCache.cars = fresh;
+        myListingsScreenCache.fetchedOnce = true;
+        lastFetchTimeRef.current = Date.now();
       }
     } catch (error) {
       console.error('📱 [MyListingsScreen] Error loading cars:', error);
-      if (gen !== fetchGenerationRef.current) return;
-      if (!hadCached || shouldBypassCache) {
-        myListingsScreenCache.cars = [];
-        myListingsScreenCache.cachedUserId = null;
-        setCars([]);
-      }
     } finally {
-      if (gen === fetchGenerationRef.current) {
-        myListingsScreenCache.fetchedOnce = true;
+      if (gen === fetchGenRef.current) {
         setIsLoading(false);
         setRefreshing(false);
       }
@@ -207,30 +165,16 @@ export default function MyListingsScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-      (async () => {
-        const uid = await getUserId();
-        if (cancelled) return;
-        const cacheUid = myListingsScreenCache.cachedUserId;
-        const wrongUser =
-          cacheUid != null &&
-          uid != null &&
-          String(cacheUid) !== String(uid);
-        if (wrongUser) {
-          myListingsScreenCache.cars = null;
-          myListingsScreenCache.fetchedOnce = false;
-          myListingsScreenCache.cachedUserId = null;
-          setCars([]);
-          loadCars({ forceRefresh: true });
-          return;
-        }
-        
-        // Always load fresh data on focus to ensure new cars appear
-        loadCars({ forceRefresh: true });
-      })();
-      return () => {
-        cancelled = true;
-      };
+      const isFirstLoad = !hasLoadedRef.current;
+      // HostVehicleScreen sets fetchedOnce=false after a car is submitted
+      const cacheInvalidated = !myListingsScreenCache.fetchedOnce;
+      const isStale = Date.now() - lastFetchTimeRef.current > 30_000;
+
+      if (!isFirstLoad && !cacheInvalidated && !isStale) return;
+
+      hasLoadedRef.current = true;
+      // Only show skeleton on the very first visit — never flash it on re-focus
+      loadCars({ initial: isFirstLoad });
     }, [loadCars])
   );
 
@@ -397,7 +341,16 @@ export default function MyListingsScreen({ navigation }) {
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Cars</Text>
-        <View style={styles.backButton} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            lightHaptic();
+            navigation.navigate('HostVehicle');
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="add" size={28} color={COLORS.brand} />
+        </TouchableOpacity>
       </View>
 
       {/* Listings */}
@@ -405,14 +358,9 @@ export default function MyListingsScreen({ navigation }) {
         // Show as many skeletons as we have cached cars (so the layout doesn't
         // visually jump when real data arrives). Default to 2 when unknown.
         <FlatList
-          data={Array.from(
-            { length: Math.max(2, myListingsScreenCache.cars?.length ?? 2) },
-            (_, i) => i
-          )}
-          renderItem={({ index, item }) => (
-            <CarSkeletonCard
-              isLast={index === Math.max(2, myListingsScreenCache.cars?.length ?? 2) - 1}
-            />
+          data={Array.from({ length: 3 }, (_, i) => i)}
+          renderItem={({ index }) => (
+            <CarSkeletonCard isLast={index === 2} />
           )}
           keyExtractor={(item) => `skeleton-${item}`}
           showsVerticalScrollIndicator={false}
@@ -434,6 +382,17 @@ export default function MyListingsScreen({ navigation }) {
           <Ionicons name="car-sport-outline" size={64} color="#C7C7CC" />
           <Text style={styles.emptyTitle}>No cars yet</Text>
           <Text style={styles.emptySubtitle}>Add your first vehicle to start hosting</Text>
+          <TouchableOpacity
+            style={styles.addCarButton}
+            onPress={() => {
+              lightHaptic();
+              navigation.navigate('HostVehicle');
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add" size={18} color="#FFFFFF" />
+            <Text style={styles.addCarButtonText}>Add a Car</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -579,5 +538,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#8E8E93',
     textAlign: 'center',
+  },
+  addCarButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 24,
+    backgroundColor: COLORS.brand,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  addCarButtonText: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: '#FFFFFF',
   },
 });

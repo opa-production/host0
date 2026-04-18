@@ -35,59 +35,50 @@ export default function HostScreen({ navigation }) {
     message: '',
   });
 
+  // Prevents concurrent API calls (initial useEffect + useFocusEffect both fire on mount)
+  const fetchingRef = useRef(false);
+
   const loadCars = async (isRefresh = false) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+
     if (isRefresh) {
       setIsRefreshing(true);
     } else {
       setIsLoading(true);
     }
-    
+
     try {
-      console.log('📱 [HostScreen] Calling getHostCars API...');
       const result = await getHostCars();
-      console.log('📱 [HostScreen] getHostCars result:', result);
-      
+
       if (result.success && result.cars) {
-        console.log('📱 [HostScreen] Setting cars:', result.cars.length);
         setCars(result.cars);
-        // Store the count for skeleton matching
         if (result.cars.length > 0) {
           setPreviousCarsCount(result.cars.length);
         }
       } else {
-        console.error('📱 [HostScreen] Failed to load cars:', result.error);
-        // Check if error indicates session expiration
         if (result.error && (result.error.includes('Session expired') || result.error.includes('Please login again'))) {
-          // Clear context state and navigate to landing
           await logout();
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Landing' }],
-          });
+          navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
           return;
         }
         setCars([]);
       }
     } catch (error) {
-      console.error('📱 [HostScreen] Error loading cars:', error);
-      // Check if error indicates session expiration
       if (error.message && (error.message.includes('Session expired') || error.message.includes('Please login again'))) {
-        // Clear context state and navigate to landing
         await logout();
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Landing' }],
-        });
+        navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
         return;
       }
       setCars([]);
     } finally {
+      fetchingRef.current = false;
       setIsLoading(false);
       setIsRefreshing(false);
     }
   };
 
-  // Load / clear when signed-in host identity changes (new login must not keep previous host's list)
+  // Initial load — fires when the signed-in host identity is first known
   useEffect(() => {
     if (!hostSessionKey) {
       setCars([]);
@@ -97,12 +88,15 @@ export default function HostScreen({ navigation }) {
     loadCars(false);
   }, [hostSessionKey]);
 
-  // Retry when user returns to an empty tab (initial load is driven by hostSessionKey above)
+  // Re-fetch when the tab regains focus (e.g. returning from HostVehicle after adding a car).
+  // IMPORTANT: deps must NOT include isLoading or cars.length — those change during every
+  // load cycle and would cause useFocusEffect to re-fire infinitely on an empty list.
+  // fetchingRef guards against the double-call with the useEffect above on initial mount.
   useFocusEffect(
     React.useCallback(() => {
-      if (!hostSessionKey || cars.length > 0 || isLoading) return;
+      if (!hostSessionKey) return;
       loadCars(false);
-    }, [cars.length, hostSessionKey, isLoading])
+    }, [hostSessionKey])
   );
 
   const handleAddVehicle = () => {
