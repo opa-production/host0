@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert, ActivityIndicator, Animated, Modal, Pressable } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert, ActivityIndicator, Animated, Modal, Pressable, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,6 +10,8 @@ import { getHostCars, toggleCarVisibility, deleteHostCar } from '../services/car
 import StatusModal from '../ui/StatusModal';
 import { getCarDriveSettings, updateCarDriveSettings } from '../services/driveSettingsService';
 import { useHost } from '../utils/HostContext';
+import { getHostSubscription } from '../services/subscriptionService';
+import { hostHasActiveSubscription } from '../utils/subscriptionUtils';
 
 export default function HostScreen({ navigation }) {
   const { logout, host } = useHost();
@@ -34,14 +36,9 @@ export default function HostScreen({ navigation }) {
     title: '',
     message: '',
   });
-
-  // Prevents concurrent API calls (initial useEffect + useFocusEffect both fire on mount)
-  const fetchingRef = useRef(false);
+  const [canAddCar, setCanAddCar] = useState(false);
 
   const loadCars = async (isRefresh = false) => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
-
     if (isRefresh) {
       setIsRefreshing(true);
     } else {
@@ -72,30 +69,27 @@ export default function HostScreen({ navigation }) {
       }
       setCars([]);
     } finally {
-      fetchingRef.current = false;
       setIsLoading(false);
       setIsRefreshing(false);
     }
   };
 
-  // Initial load — fires when the signed-in host identity is first known
-  useEffect(() => {
-    if (!hostSessionKey) {
-      setCars([]);
-      setIsLoading(false);
-      return;
-    }
-    loadCars(false);
-  }, [hostSessionKey]);
-
-  // Re-fetch when the tab regains focus (e.g. returning from HostVehicle after adding a car).
+  // Single load trigger: covers initial mount, tab re-focus, and returning from HostVehicle.
   // IMPORTANT: deps must NOT include isLoading or cars.length — those change during every
   // load cycle and would cause useFocusEffect to re-fire infinitely on an empty list.
-  // fetchingRef guards against the double-call with the useEffect above on initial mount.
   useFocusEffect(
     React.useCallback(() => {
-      if (!hostSessionKey) return;
+      if (!hostSessionKey) {
+        setCars([]);
+        setIsLoading(false);
+        setCanAddCar(false);
+        return;
+      }
       loadCars(false);
+      // Fetch subscription separately so Add Car visibility always reflects backend state
+      getHostSubscription().then((res) => {
+        setCanAddCar(hostHasActiveSubscription(res?.subscription));
+      });
     }, [hostSessionKey])
   );
 
@@ -579,11 +573,17 @@ export default function HostScreen({ navigation }) {
           onRefresh={() => loadCars(true)}
         />
       ) : (
-        <View style={styles.emptyState}>
+        <ScrollView
+          contentContainerStyle={styles.emptyState}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={() => loadCars(true)} />
+          }
+        >
           <Ionicons name="car-sport-outline" size={64} color="#C7C7CC" />
           <Text style={styles.emptyTitle}>No cars yet</Text>
           <Text style={styles.emptySubtitle}>Add your first vehicle to start hosting</Text>
-        </View>
+        </ScrollView>
       )}
 
       {/* Floating buttons - add car only when less than 2 cars; drive settings when at least 1 car */}
@@ -602,7 +602,7 @@ export default function HostScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
             )}
-            {cars.length < 2 && (
+            {canAddCar ? (
               <TouchableOpacity
                 style={styles.floatingButton}
                 onPress={handleAddVehicle}
@@ -610,6 +610,14 @@ export default function HostScreen({ navigation }) {
               >
                 <Ionicons name="car-sport" size={20} color="#FFFFFF" />
                 <Ionicons name="add" size={16} color="#FFFFFF" style={styles.plusIcon} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.floatingButton, styles.floatingButtonUpgrade]}
+                onPress={() => { lightHaptic(); navigation.navigate('SupaHost'); }}
+                activeOpacity={0.9}
+              >
+                <Ionicons name="lock-closed" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             )}
           </View>
@@ -911,6 +919,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  floatingButtonUpgrade: {
+    backgroundColor: '#FF9500',
   },
   plusIcon: {
     position: 'absolute',

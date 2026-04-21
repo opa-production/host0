@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated, Dimensions, Image } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Animated, Dimensions, Image, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,8 +43,9 @@ export default function HomeScreen({ navigation }) {
 
   const [showPremiumBadge, setShowPremiumBadge] = useState(false);
 
+  const [refreshing, setRefreshing] = useState(false);
   const lastHomeFocusRefreshRef = useRef(0);
-  const HOME_FOCUS_REFRESH_MS = 45 * 1000;
+  const HOME_FOCUS_REFRESH_MS = 15 * 1000;
 
   // Get user name from host profile
   const userName = host?.name || host?.full_name || 'Host';
@@ -56,7 +57,8 @@ export default function HomeScreen({ navigation }) {
       if (sub.success && sub.subscription) {
         const plan = String(sub.subscription.plan || '').toLowerCase();
         const paid = sub.subscription.is_paid_active === true;
-        setShowPremiumBadge(paid && plan === 'premium' && !hideBadge);
+        const trial = sub.subscription.is_trial === true;
+        setShowPremiumBadge((paid || trial) && plan === 'premium' && !hideBadge);
       } else {
         setShowPremiumBadge(false);
       }
@@ -178,6 +180,13 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    lastHomeFocusRefreshRef.current = Date.now();
+    await Promise.all([loadTodayActions(), loadEarningsSummary(), refreshSubscriptionBadge()]);
+    setRefreshing(false);
+  }, [refreshSubscriptionBadge]);
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -229,9 +238,10 @@ export default function HomeScreen({ navigation }) {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={[styles.content, { paddingBottom: 100 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           <View style={{ marginTop: 20 }}>
             <SkeletonBox width={150} height={14} style={{ marginBottom: 10, borderRadius: 6 }} />
@@ -298,9 +308,10 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Header with Greeting */}
         <View style={styles.header}>

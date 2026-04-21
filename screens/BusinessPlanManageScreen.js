@@ -51,6 +51,8 @@ export default function BusinessPlanManageScreen({ navigation }) {
   const [blurb, setBlurb] = useState('');
   const [hidePremiumBadge, setHidePremiumBadge] = useState(false);
 
+  const [isTrial, setIsTrial] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -62,18 +64,23 @@ export default function BusinessPlanManageScreen({ navigation }) {
       const s = res.subscription;
       const plan = String(s.plan || 'free').toLowerCase();
       const paid = s.is_paid_active === true;
-      if (!paid || (plan !== 'starter' && plan !== 'premium')) {
+      const trial = s.is_trial === true;
+
+      if (!paid && !trial) {
         navigation.replace('SupaHost');
         return;
       }
+      setIsTrial(trial && !paid);
       setPlanCode(plan);
       setPlanLabel(plan === 'premium' ? 'Premium' : 'Starter');
       const days = parseDaysRemaining(s.days_remaining);
-      setCountdownText(formatCountdown(days));
+      setCountdownText(trial ? 'Free trial' : formatCountdown(days));
       setBlurb(
-        plan === 'premium'
-          ? 'Lower commission, higher listing limits, and a verified badge on your profile.'
-          : 'More listings, smart calendar, and reduced commission vs. free hosting.'
+        trial
+          ? 'You\'re on a free 30-day Starter trial. Upgrade to a paid plan to keep access after it ends.'
+          : plan === 'premium'
+            ? 'Lower commission, higher listing limits, and a verified badge on your profile.'
+            : 'More listings, smart calendar, and reduced commission vs. free hosting.'
       );
       const hidePref = await getHidePremiumBadgePreference();
       setHidePremiumBadge(hidePref);
@@ -180,8 +187,13 @@ export default function BusinessPlanManageScreen({ navigation }) {
               ) : null}
             </View>
 
+            {isTrial && (
+              <View style={styles.trialBadge}>
+                <Text style={styles.trialBadgeText}>Free Trial</Text>
+              </View>
+            )}
             {countdownText ? (
-              <Text style={styles.countdown}>{countdownText}</Text>
+              <Text style={[styles.countdown, isTrial && styles.countdownTrial]}>{countdownText}</Text>
             ) : (
               <Text style={styles.countdownMuted}>Active</Text>
             )}
@@ -237,13 +249,24 @@ export default function BusinessPlanManageScreen({ navigation }) {
 
             <View style={styles.divider} />
 
-            <TouchableOpacity style={styles.inCardRow} onPress={openChangePlan} activeOpacity={0.75}>
-              <View style={styles.inCardRowLeft}>
-                <Ionicons name="swap-horizontal-outline" size={22} color={COLORS.text} />
-                <Text style={styles.inCardRowLabel}>Change plan</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
-            </TouchableOpacity>
+            {isTrial ? (
+              <TouchableOpacity
+                style={styles.upgradeButton}
+                onPress={openChangePlan}
+                activeOpacity={0.9}
+              >
+                <Text style={styles.upgradeButtonText}>Upgrade to paid plan</Text>
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.inCardRow} onPress={openChangePlan} activeOpacity={0.75}>
+                <View style={styles.inCardRowLeft}>
+                  <Ionicons name="swap-horizontal-outline" size={22} color={COLORS.text} />
+                  <Text style={styles.inCardRowLabel}>Change plan</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={COLORS.subtle} />
+              </TouchableOpacity>
+            )}
 
             {__DEV__ ? (
               <>
@@ -345,6 +368,37 @@ const styles = StyleSheet.create({
     ...TYPE.bodyStrong,
     fontSize: 15,
     color: COLORS.subtle,
+  },
+  countdownTrial: {
+    color: '#34C759',
+  },
+  trialBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 6,
+  },
+  trialBadgeText: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Bold',
+    color: '#34C759',
+  },
+  upgradeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.brand,
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  upgradeButtonText: {
+    fontSize: 15,
+    fontFamily: 'Nunito-Bold',
+    color: '#FFFFFF',
   },
   divider: {
     height: 1,

@@ -152,6 +152,45 @@ export const getHostSubscription = async () => {
 };
 
 /**
+ * POST /host/subscription/trial — activate the one-time 30-day Starter free trial.
+ * @returns {Promise<{ success: boolean, message?: string, plan?: string, expires_at?: string, days_granted?: number, error?: string }>}
+ */
+export const activateFreeTrial = async () => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_SUBSCRIPTION_TRIAL);
+  try {
+    const token = await getUserToken();
+    if (!token) return { success: false, error: 'Not signed in' };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 401) {
+      await handleTokenExpiration();
+      return { success: false, error: 'Session expired. Please sign in again.' };
+    }
+    if (!response.ok) {
+      return {
+        success: false,
+        error: parseDetail(data.detail) || data.message || 'Could not activate trial',
+      };
+    }
+    return {
+      success: true,
+      message: data.message,
+      plan: data.plan,
+      expires_at: data.expires_at,
+      days_granted: data.days_granted,
+    };
+  } catch (e) {
+    return { success: false, error: e.message || 'Network error' };
+  }
+};
+
+/**
  * POST /host/subscription/checkout
  * @param {{ plan: 'starter'|'premium', phone_number: string }} body
  */

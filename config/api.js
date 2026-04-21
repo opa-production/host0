@@ -116,6 +116,7 @@ export const API_ENDPOINTS = {
   // Business subscription (M-Pesa STK via Payhero)
   HOST_SUBSCRIPTION_PLANS: '/api/v1/host/subscription/plans',
   HOST_SUBSCRIPTION_ME: '/api/v1/host/subscription/me',
+  HOST_SUBSCRIPTION_TRIAL: '/api/v1/host/subscription/trial',
   HOST_SUBSCRIPTION_CHECKOUT: '/api/v1/host/subscription/checkout',
   HOST_SUBSCRIPTION_PAYMENT_STATUS: '/api/v1/host/subscription/payment-status',
 };

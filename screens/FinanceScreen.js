@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,8 +26,8 @@ export default function FinanceScreen({ navigation }) {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
-  // Sum of amounts for withdrawals with status 'pending' (money not yet deducted)
   const [pendingWithdrawalTotal, setPendingWithdrawalTotal] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadEarningsSummary = useCallback(async () => {
     setIsLoadingEarnings(true);
@@ -53,16 +53,6 @@ export default function FinanceScreen({ navigation }) {
     }
   }, []);
 
-  useEffect(() => {
-    loadEarningsSummary();
-  }, [loadEarningsSummary]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadEarningsSummary();
-    }, [loadEarningsSummary])
-  );
-
   const loadTransactions = useCallback(async () => {
     setIsLoadingTransactions(true);
     try {
@@ -82,14 +72,22 @@ export default function FinanceScreen({ navigation }) {
     }
   }, []);
 
-  useEffect(() => {
+  const loadAll = useCallback(() => {
+    loadEarningsSummary();
     loadTransactions();
-  }, [loadTransactions]);
+  }, [loadEarningsSummary, loadTransactions]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([loadEarningsSummary(), loadTransactions()]);
+    setRefreshing(false);
+  }, [loadEarningsSummary, loadTransactions]);
+
+  // Single trigger for both initial load and re-focus
   useFocusEffect(
     useCallback(() => {
-      loadTransactions();
-    }, [loadTransactions])
+      loadAll();
+    }, [loadAll])
   );
 
   const { netEarnings, commission } = financialData;
@@ -132,9 +130,10 @@ export default function FinanceScreen({ navigation }) {
         <View style={styles.backButton} />
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Balance Card */}
         <TouchableOpacity 

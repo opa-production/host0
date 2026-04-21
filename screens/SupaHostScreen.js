@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useLayoutEffect, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Platform, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Platform, Image, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import { getHostSubscription, activateFreeTrial } from '../services/subscriptionService';
 
 /** Display pricing & benefits (checkout still posts plan code; server charges configured KES). */
 const PLANS = {
@@ -50,7 +51,9 @@ export default function SupaHostScreen({ navigation: nav }) {
       : undefined;
 
   const insets = useSafeAreaInsets();
-  const [selectedPlan, setSelectedPlan] = useState('starter'); // starter | premium
+  const [selectedPlan, setSelectedPlan] = useState('starter');
+  const [trialAvailable, setTrialAvailable] = useState(false);
+  const [activatingTrial, setActivatingTrial] = useState(false);
 
   useEffect(() => {
     const code = route.params?.activePlanCode;
@@ -58,6 +61,31 @@ export default function SupaHostScreen({ navigation: nav }) {
       setSelectedPlan(code);
     }
   }, [route.params?.activePlanCode]);
+
+  useEffect(() => {
+    getHostSubscription().then((res) => {
+      if (res.success && res.subscription) {
+        setTrialAvailable(res.subscription.trial_available === true);
+      }
+    });
+  }, []);
+
+  const handleActivateTrial = async () => {
+    lightHaptic();
+    setActivatingTrial(true);
+    try {
+      const result = await activateFreeTrial();
+      if (result.success) {
+        Alert.alert('Trial Activated', result.message || 'Your 30-day Starter trial is now active!', [
+          { text: 'OK', onPress: () => nav.goBack() },
+        ]);
+      } else {
+        Alert.alert('Could not activate trial', result.error || 'Please try again.');
+      }
+    } finally {
+      setActivatingTrial(false);
+    }
+  };
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -77,7 +105,9 @@ export default function SupaHostScreen({ navigation: nav }) {
     ? isCurrentPlan
       ? 'Current plan'
       : `Switch to ${plan.name}`
-    : 'Checkout';
+    : trialAvailable
+      ? `Pay KSh ${plan.price.toLocaleString()} · M-Pesa`
+      : 'Pay with M-Pesa';
 
   return (
     <View style={styles.container}>
@@ -106,6 +136,25 @@ export default function SupaHostScreen({ navigation: nav }) {
         <Text style={styles.subtitle}>
           For fleets, NGOs, and corporates: list more cars, pay lower commission, and stand out with a verified business profile.
         </Text>
+
+        {trialAvailable && (
+          <TouchableOpacity
+            style={styles.trialBanner}
+            onPress={handleActivateTrial}
+            activeOpacity={0.85}
+            disabled={activatingTrial}
+          >
+            <View style={styles.trialBannerLeft}>
+              <Text style={styles.trialBannerTitle}>Try Starter free for 30 days</Text>
+              <Text style={styles.trialBannerSub}>No payment needed · one-time offer</Text>
+            </View>
+            {activatingTrial ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+            )}
+          </TouchableOpacity>
+        )}
 
         <View style={styles.toggleWrapper}>
           <BlurView intensity={72} tint="light" style={StyleSheet.absoluteFillObject} />
@@ -206,6 +255,11 @@ export default function SupaHostScreen({ navigation: nav }) {
           >
             <Text style={styles.primaryButtonText}>{checkoutCtaLabel}</Text>
           </TouchableOpacity>
+          {trialAvailable && !isCurrentPlan && (
+            <Text style={styles.paidNote}>
+              This will send an M-Pesa prompt to your phone. Use the free trial above to start without paying.
+            </Text>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -246,6 +300,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8E8E93',
     lineHeight: 19,
+  },
+  trialBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#34C759',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 16,
+  },
+  trialBannerLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  trialBannerTitle: {
+    fontSize: 15,
+    fontFamily: 'Nunito-Bold',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  trialBannerSub: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: 'rgba(255,255,255,0.85)',
   },
   toggleWrapper: {
     alignSelf: 'center',
@@ -384,6 +463,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.subtle,
     marginTop: 8,
+  },
+  paidNote: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: COLORS.subtle,
+    textAlign: 'center',
+    marginTop: 10,
+    lineHeight: 17,
   },
   divider: {
     height: 1,

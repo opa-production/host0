@@ -108,7 +108,8 @@ export default function ProfileScreen({ navigation }) {
           const s = subRes.subscription;
           const plan = (s.plan || 'free').toString().toLowerCase();
           const paid = s.is_paid_active === true;
-          setShowPremiumBadge(paid && plan === 'premium' && !hideBadgePref);
+          const trial = s.is_trial === true;
+          setShowPremiumBadge((paid || trial) && plan === 'premium' && !hideBadgePref);
           if (paid && (plan === 'starter' || plan === 'premium')) {
             const label = plan === 'premium' ? 'Premium' : 'Starter';
             setBusinessPlanLabel(label);
@@ -117,6 +118,10 @@ export default function ProfileScreen({ navigation }) {
             } else {
               setBusinessPlanDaysText(null);
             }
+          } else if (trial && (plan === 'starter' || plan === 'premium')) {
+            const label = plan === 'premium' ? 'Premium' : 'Starter';
+            setBusinessPlanLabel(label);
+            setBusinessPlanDaysText('Free trial');
           } else {
             setBusinessPlanLabel(null);
             setBusinessPlanDaysText(null);
