@@ -105,9 +105,7 @@ export default function SupaHostScreen({ navigation: nav }) {
     ? isCurrentPlan
       ? 'Current plan'
       : `Switch to ${plan.name}`
-    : trialAvailable
-      ? `Pay KSh ${plan.price.toLocaleString()} · M-Pesa`
-      : 'Pay with M-Pesa';
+    : 'Pay with M-Pesa';
 
   return (
     <View style={styles.container}>
@@ -136,25 +134,6 @@ export default function SupaHostScreen({ navigation: nav }) {
         <Text style={styles.subtitle}>
           For fleets, NGOs, and corporates: list more cars, pay lower commission, and stand out with a verified business profile.
         </Text>
-
-        {trialAvailable && (
-          <TouchableOpacity
-            style={styles.trialBanner}
-            onPress={handleActivateTrial}
-            activeOpacity={0.85}
-            disabled={activatingTrial}
-          >
-            <View style={styles.trialBannerLeft}>
-              <Text style={styles.trialBannerTitle}>Try Starter free for 30 days</Text>
-              <Text style={styles.trialBannerSub}>No payment needed · one-time offer</Text>
-            </View>
-            {activatingTrial ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-            )}
-          </TouchableOpacity>
-        )}
 
         <View style={styles.toggleWrapper}>
           <BlurView intensity={72} tint="light" style={StyleSheet.absoluteFillObject} />
@@ -239,6 +218,20 @@ export default function SupaHostScreen({ navigation: nav }) {
             ))}
           </View>
 
+          {trialAvailable && !isCurrentPlan && (
+            <TouchableOpacity
+              style={styles.trialButton}
+              onPress={handleActivateTrial}
+              activeOpacity={0.85}
+              disabled={activatingTrial}
+            >
+              {activatingTrial ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.trialButtonText}>Free trial</Text>
+              )}
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={[styles.primaryButton, isCurrentPlan && styles.primaryButtonDisabled]}
             activeOpacity={0.9}
@@ -255,11 +248,6 @@ export default function SupaHostScreen({ navigation: nav }) {
           >
             <Text style={styles.primaryButtonText}>{checkoutCtaLabel}</Text>
           </TouchableOpacity>
-          {trialAvailable && !isCurrentPlan && (
-            <Text style={styles.paidNote}>
-              This will send an M-Pesa prompt to your phone. Use the free trial above to start without paying.
-            </Text>
-          )}
         </View>
       </ScrollView>
     </View>
@@ -301,30 +289,18 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     lineHeight: 19,
   },
-  trialBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  trialButton: {
     backgroundColor: '#34C759',
-    borderRadius: 14,
     paddingVertical: 16,
-    paddingHorizontal: 18,
-    marginBottom: 16,
+    borderRadius: RADIUS.button,
+    alignItems: 'center',
+    marginTop: 4,
   },
-  trialBannerLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  trialBannerTitle: {
-    fontSize: 15,
+  trialButtonText: {
+    ...TYPE.bodyStrong,
+    fontSize: 16,
     fontFamily: 'Nunito-Bold',
     color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  trialBannerSub: {
-    fontSize: 12,
-    fontFamily: 'Nunito-Regular',
-    color: 'rgba(255,255,255,0.85)',
   },
   toggleWrapper: {
     alignSelf: 'center',
@@ -463,14 +439,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.subtle,
     marginTop: 8,
-  },
-  paidNote: {
-    fontSize: 12,
-    fontFamily: 'Nunito-Regular',
-    color: COLORS.subtle,
-    textAlign: 'center',
-    marginTop: 10,
-    lineHeight: 17,
   },
   divider: {
     height: 1,

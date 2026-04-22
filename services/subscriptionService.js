@@ -191,6 +191,89 @@ export const activateFreeTrial = async () => {
 };
 
 /**
+ * POST /host/subscription/checkout/card — initiates Paystack hosted checkout.
+ * @param {'starter'|'premium'} plan
+ * @returns {Promise<{ success: boolean, authorization_url?: string, paystack_reference?: string, amount_kes?: number, plan?: string, error?: string }>}
+ */
+export const startCardCheckout = async (plan) => {
+  const url = getApiUrl(API_ENDPOINTS.HOST_SUBSCRIPTION_CHECKOUT_CARD);
+  try {
+    const token = await getUserToken();
+    if (!token) return { success: false, error: 'Not signed in' };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ plan }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 401) {
+      await handleTokenExpiration();
+      return { success: false, error: 'Session expired. Please sign in again.' };
+    }
+    if (!response.ok) {
+      return {
+        success: false,
+        error: parseDetail(data.detail) || data.message || 'Could not start card checkout',
+      };
+    }
+    return {
+      success: true,
+      authorization_url: data.authorization_url,
+      paystack_reference: data.paystack_reference,
+      amount_kes: data.amount_kes,
+      plan: data.plan,
+      message: data.message,
+    };
+  } catch (e) {
+    return { success: false, error: e.message || 'Network error' };
+  }
+};
+
+/**
+ * GET /host/subscription/card-status?paystack_reference=…
+ * @returns {Promise<{ success: boolean, status?: 'pending'|'completed'|'failed', paystack_card_last4?: string, paystack_card_brand?: string, error?: string }>}
+ */
+export const getCardPaymentStatus = async (paystackReference) => {
+  const base = getApiUrl(API_ENDPOINTS.HOST_SUBSCRIPTION_CARD_STATUS);
+  const url = `${base}?paystack_reference=${encodeURIComponent(paystackReference)}`;
+  try {
+    const token = await getUserToken();
+    if (!token) return { success: false, error: 'Not signed in' };
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 401) {
+      await handleTokenExpiration();
+      return { success: false, error: 'Session expired.' };
+    }
+    if (!response.ok) {
+      return {
+        success: false,
+        error: parseDetail(data.detail) || data.message || 'Status check failed',
+      };
+    }
+    return {
+      success: true,
+      status: data.status,
+      paystack_card_last4: data.paystack_card_last4,
+      paystack_card_brand: data.paystack_card_brand,
+      message: data.message,
+    };
+  } catch (e) {
+    return { success: false, error: e.message || 'Network error' };
+  }
+};
+
+/**
  * POST /host/subscription/checkout
  * @param {{ plan: 'starter'|'premium', phone_number: string }} body
  */

@@ -119,6 +119,9 @@ export const API_ENDPOINTS = {
   HOST_SUBSCRIPTION_TRIAL: '/api/v1/host/subscription/trial',
   HOST_SUBSCRIPTION_CHECKOUT: '/api/v1/host/subscription/checkout',
   HOST_SUBSCRIPTION_PAYMENT_STATUS: '/api/v1/host/subscription/payment-status',
+  // Business subscription (Card via Paystack)
+  HOST_SUBSCRIPTION_CHECKOUT_CARD: '/api/v1/host/subscription/checkout/card',
+  HOST_SUBSCRIPTION_CARD_STATUS: '/api/v1/host/subscription/card-status',
 };
 
 /**

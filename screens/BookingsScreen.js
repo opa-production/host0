@@ -221,16 +221,15 @@ export default function BookingsScreen({ navigation }) {
             const cacheKey = booking.booking_id || booking.id;
             const cached = cachedById[cacheKey];
 
-            // Reuse images from cache; only fetch if genuinely missing
-            let carImageUrls = booking.car_image_urls || [];
-            if (carImageUrls.length === 0) {
-              carImageUrls = cached?.carImageUrls?.length > 0
-                ? cached.carImageUrls
-                : [];
-              if (carImageUrls.length === 0 && booking.car_id && userId) {
-                const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
-                if (imageResult.images?.length > 0) carImageUrls = imageResult.images;
-              }
+            // Always resolve images from Supabase by car_id — the booking API's
+            // car_image_urls can point to the wrong car, so we ignore them.
+            // Reuse the cached result if available to avoid redundant fetches.
+            let carImageUrls = [];
+            if (cached?.carImageUrls?.length > 0) {
+              carImageUrls = cached.carImageUrls;
+            } else if (booking.car_id && userId) {
+              const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
+              if (imageResult.images?.length > 0) carImageUrls = imageResult.images;
             }
 
             // Re-fetch extensions only if status changed or not yet cached
