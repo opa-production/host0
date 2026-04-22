@@ -105,7 +105,7 @@ export default function SupaHostScreen({ navigation: nav }) {
     ? isCurrentPlan
       ? 'Current plan'
       : `Switch to ${plan.name}`
-    : 'Pay with M-Pesa';
+    : 'Checkout';
 
   return (
     <View style={styles.container}>

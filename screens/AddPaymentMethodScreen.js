@@ -36,6 +36,11 @@ export default function AddPaymentMethodScreen({ navigation }) {
       : []
   );
 
+  // Show the form immediately only when there are no saved methods yet
+  const [showForm, setShowForm] = useState(
+    () => addPaymentMethodScreenCache.savedMethods.length === 0
+  );
+
   const [mpesaForm, setMpesaForm] = useState({ name: '', mobileNumber: '', isDefault: false });
   const [mpesaErrors, setMpesaErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,6 +84,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
       if (result.success) {
         setMpesaForm({ name: '', mobileNumber: '', isDefault: false });
         setMpesaErrors({});
+        setShowForm(false);
         await loadPaymentMethods({ silent: true });
         setStatusModal({
           visible: true,
@@ -140,6 +146,8 @@ export default function AddPaymentMethodScreen({ navigation }) {
         addPaymentMethodScreenCache.savedMethods = transformed;
         addPaymentMethodScreenCache.loadedOnce = true;
         setSavedMethods(transformed);
+        // Auto-hide form once methods are loaded
+        if (transformed.length > 0) setShowForm(false);
       }
     } catch {
       // silent
@@ -195,7 +203,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add M-Pesa</Text>
+        <Text style={styles.headerTitle}>Payment methods</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -204,105 +212,122 @@ export default function AddPaymentMethodScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* M-Pesa form */}
-        <View style={styles.formCard}>
-          <View style={styles.formRow}>
-            <Text style={styles.label}>Name on Account</Text>
-            <TextInput
-              style={[styles.formInput, mpesaErrors.name && styles.inputError]}
-              placeholder="Enter full name"
-              placeholderTextColor="#999999"
-              value={mpesaForm.name}
-              onChangeText={(text) => {
-                setMpesaForm({ ...mpesaForm, name: text });
-                if (mpesaErrors.name) setMpesaErrors({ ...mpesaErrors, name: '' });
-              }}
-              autoCapitalize="words"
-            />
-            {mpesaErrors.name ? <Text style={styles.errorText}>{mpesaErrors.name}</Text> : null}
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.formRow}>
-            <Text style={styles.label}>Mobile Number</Text>
-            <TextInput
-              style={[styles.formInput, mpesaErrors.mobileNumber && styles.inputError]}
-              placeholder="07XX XXX XXX or 2547XX XXX XXX"
-              placeholderTextColor="#999999"
-              value={mpesaForm.mobileNumber}
-              onChangeText={(text) => {
-                setMpesaForm({ ...mpesaForm, mobileNumber: formatMobileNumber(text) });
-                if (mpesaErrors.mobileNumber) setMpesaErrors({ ...mpesaErrors, mobileNumber: '' });
-              }}
-              keyboardType="phone-pad"
-              maxLength={15}
-            />
-            {mpesaErrors.mobileNumber ? <Text style={styles.errorText}>{mpesaErrors.mobileNumber}</Text> : null}
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.formRow}>
-            <View style={styles.toggleRow}>
-              <View style={styles.toggleLeft}>
-                <Text style={styles.toggleLabel}>Set as default</Text>
-                <Text style={styles.toggleHint}>Used for withdrawals by default</Text>
-              </View>
-              <Switch
-                value={mpesaForm.isDefault}
-                onValueChange={(value) => setMpesaForm({ ...mpesaForm, isDefault: value })}
-                trackColor={{ false: '#E5E5EA', true: COLORS.text }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.formRow}>
-            <TouchableOpacity
-              style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-              onPress={handleMpesaSubmit}
-              activeOpacity={0.9}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.submitButtonText}>Add M-Pesa</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Saved methods */}
         {isLoadingMethods && savedMethods.length === 0 ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="small" color={COLORS.text} />
           </View>
-        ) : savedMethods.length > 0 ? (
-          <View style={styles.savedSection}>
-            <Text style={styles.savedTitle}>Saved</Text>
-            {savedMethods.map((method) => (
-              <View key={method.idString} style={styles.savedCard}>
-                <View style={styles.savedCardLeft}>
-                  <Image source={method.logo} style={styles.savedLogo} resizeMode="contain" />
-                  <View>
-                    <Text style={styles.savedName}>{method.name}</Text>
-                    <Text style={styles.savedDetail}>
-                      {method.mobileNumber ? formatPhoneNumber(method.mobileNumber) : 'M-Pesa'}
-                      {method.isDefault ? '  •  Default' : ''}
-                    </Text>
+        ) : (
+          <>
+            {/* Saved methods list */}
+            {savedMethods.length > 0 && (
+              <View style={styles.savedSection}>
+                {savedMethods.map((method) => (
+                  <View key={method.idString} style={styles.savedCard}>
+                    <View style={styles.savedCardLeft}>
+                      <Image source={method.logo} style={styles.savedLogo} resizeMode="contain" />
+                      <View>
+                        <Text style={styles.savedName}>{method.name}</Text>
+                        <Text style={styles.savedDetail}>
+                          {method.mobileNumber ? formatPhoneNumber(method.mobileNumber) : 'M-Pesa'}
+                          {method.isDefault ? '  ·  Default' : ''}
+                        </Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity onPress={() => handleRemoveMethod(method.id)} activeOpacity={1} style={styles.deleteBtn}>
+                      <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+
+                {/* Add another button — only visible when form is hidden */}
+                {!showForm && (
+                  <TouchableOpacity
+                    style={styles.addMoreButton}
+                    onPress={() => { lightHaptic(); setShowForm(true); }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="add" size={18} color={COLORS.text} />
+                    <Text style={styles.addMoreText}>Add payment method</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* Form — shown when no saved methods or user tapped Add */}
+            {(showForm || savedMethods.length === 0) && (
+              <View style={styles.formCard}>
+                <View style={styles.formRow}>
+                  <Text style={styles.label}>Name on Account</Text>
+                  <TextInput
+                    style={[styles.formInput, mpesaErrors.name && styles.inputError]}
+                    placeholder="Enter full name"
+                    placeholderTextColor="#999999"
+                    value={mpesaForm.name}
+                    onChangeText={(text) => {
+                      setMpesaForm({ ...mpesaForm, name: text });
+                      if (mpesaErrors.name) setMpesaErrors({ ...mpesaErrors, name: '' });
+                    }}
+                    autoCapitalize="words"
+                  />
+                  {mpesaErrors.name ? <Text style={styles.errorText}>{mpesaErrors.name}</Text> : null}
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.formRow}>
+                  <Text style={styles.label}>Mobile Number</Text>
+                  <TextInput
+                    style={[styles.formInput, mpesaErrors.mobileNumber && styles.inputError]}
+                    placeholder="07XX XXX XXX or 2547XX XXX XXX"
+                    placeholderTextColor="#999999"
+                    value={mpesaForm.mobileNumber}
+                    onChangeText={(text) => {
+                      setMpesaForm({ ...mpesaForm, mobileNumber: formatMobileNumber(text) });
+                      if (mpesaErrors.mobileNumber) setMpesaErrors({ ...mpesaErrors, mobileNumber: '' });
+                    }}
+                    keyboardType="phone-pad"
+                    maxLength={15}
+                  />
+                  {mpesaErrors.mobileNumber ? <Text style={styles.errorText}>{mpesaErrors.mobileNumber}</Text> : null}
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.formRow}>
+                  <View style={styles.toggleRow}>
+                    <View style={styles.toggleLeft}>
+                      <Text style={styles.toggleLabel}>Set as default</Text>
+                      <Text style={styles.toggleHint}>Used for withdrawals by default</Text>
+                    </View>
+                    <Switch
+                      value={mpesaForm.isDefault}
+                      onValueChange={(value) => setMpesaForm({ ...mpesaForm, isDefault: value })}
+                      trackColor={{ false: '#E5E5EA', true: COLORS.text }}
+                      thumbColor="#FFFFFF"
+                    />
                   </View>
                 </View>
-                <TouchableOpacity onPress={() => handleRemoveMethod(method.id)} activeOpacity={1} style={styles.deleteBtn}>
-                  <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                </TouchableOpacity>
+
+                <View style={styles.divider} />
+
+                <View style={styles.formRow}>
+                  <TouchableOpacity
+                    style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                    onPress={handleMpesaSubmit}
+                    activeOpacity={0.9}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>Add M-Pesa</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
-            ))}
-          </View>
-        ) : null}
+            )}
+          </>
+        )}
       </ScrollView>
 
       <StatusModal
@@ -351,7 +376,65 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: SPACING.l,
     paddingTop: SPACING.m,
-    gap: 20,
+    gap: 16,
+  },
+  loadingWrap: {
+    padding: SPACING.l,
+    alignItems: 'center',
+  },
+  savedSection: {
+    gap: 10,
+  },
+  savedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: 1.5,
+    borderColor: '#C7C7CC',
+    padding: SPACING.m,
+  },
+  savedCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+  },
+  savedLogo: {
+    width: 56,
+    height: 18,
+  },
+  savedName: {
+    ...TYPE.bodyStrong,
+    fontSize: 14,
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  savedDetail: {
+    ...TYPE.caption,
+    fontSize: 13,
+    color: COLORS.subtle,
+  },
+  deleteBtn: {
+    padding: 8,
+  },
+  addMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: RADIUS.button,
+    borderWidth: 1,
+    borderColor: COLORS.borderVisible,
+    backgroundColor: 'transparent',
+    marginTop: 4,
+  },
+  addMoreText: {
+    ...TYPE.bodyStrong,
+    fontSize: 15,
+    color: COLORS.text,
   },
   formCard: {
     backgroundColor: COLORS.surface,
@@ -425,54 +508,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
     fontFamily: 'Nunito-Bold',
-  },
-  loadingWrap: {
-    padding: SPACING.l,
-    alignItems: 'center',
-  },
-  savedSection: {
-    gap: 10,
-  },
-  savedTitle: {
-    ...TYPE.section,
-    fontSize: 13,
-    color: COLORS.subtle,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 2,
-  },
-  savedCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-    padding: SPACING.m,
-  },
-  savedCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    flex: 1,
-  },
-  savedLogo: {
-    width: 56,
-    height: 18,
-  },
-  savedName: {
-    ...TYPE.bodyStrong,
-    fontSize: 14,
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  savedDetail: {
-    ...TYPE.caption,
-    fontSize: 13,
-    color: COLORS.subtle,
-  },
-  deleteBtn: {
-    padding: 8,
   },
 });

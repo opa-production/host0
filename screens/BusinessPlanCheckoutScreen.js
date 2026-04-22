@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
   Platform,
+  Linking,
 } from 'react-native';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -256,10 +257,27 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
         });
         return;
       }
-      // Open Paystack's hosted page — no card details ever enter the app
-      await WebBrowser.openBrowserAsync(checkout.authorization_url);
-      // Browser dismissed (redirect or manual close) — start polling
-      if (mounted.current) {
+      // openAuthSessionAsync opens the system browser (not a WebView) and
+      // automatically intercepts the ardenahost:// deep-link redirect from Paystack.
+      const result = await WebBrowser.openAuthSessionAsync(
+        checkout.authorization_url,
+        'ardenahost://subscription/result'
+      );
+
+      if (!mounted.current) return;
+
+      if (result.type === 'success' && result.url) {
+        // Paystack redirected back — extract reference from the URL if present,
+        // otherwise fall back to the reference we already have from checkout.
+        let ref = checkout.paystack_reference;
+        try {
+          const parsed = new URL(result.url);
+          ref = parsed.searchParams.get('paystack_reference') || ref;
+        } catch (_) {}
+        startCardPolling(ref);
+      } else if (result.type === 'cancel' || result.type === 'dismiss') {
+        // User closed the browser without completing — start polling anyway in
+        // case payment went through before they dismissed.
         startCardPolling(checkout.paystack_reference);
       }
     } catch (e) {
