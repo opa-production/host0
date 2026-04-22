@@ -3,101 +3,72 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   StatusBar,
   TouchableOpacity,
+  Linking,
+  Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
+import { lightHaptic } from '../ui/haptics';
 
-// Mock data - Replace with actual API data
-const statsData = {
-  totalCars: 5,
-  totalRentals: 87,
-  bestPerformingCar: {
-    name: 'BMW M3',
-    model: '2023 G80',
-  },
-  averageRating: 4.86,
-  responseRate: 98,
-  hostAccountPlan: 'Premium',
-  membershipPeriod: 'Feb 2024',
-};
+const ANALYTICS_URL = 'https://analytics.ardena.co.ke';
 
 export default function HostStatsScreen({ navigation }) {
-  const StatRow = ({ label, value, icon }) => (
-    <View style={styles.statRow}>
-      <View style={styles.statLeft}>
-        {icon && <Ionicons name={icon} size={20} color={COLORS.subtle} style={styles.statIcon} />}
-        <Text style={styles.statLabel}>{label}</Text>
-      </View>
-      <Text style={styles.statValue}>{value}</Text>
-    </View>
-  );
+  const insets = useSafeAreaInsets();
+
+  const openDashboard = async () => {
+    lightHaptic();
+    try {
+      await Linking.openURL(ANALYTICS_URL);
+    } catch {
+      Alert.alert('Unable to open', 'Could not open the analytics dashboard. Please try again.');
+    }
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-      <ScrollView 
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Host Stats</Text>
-          <View style={styles.backButton} />
+
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => { lightHaptic(); navigation.goBack(); }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Analytics</Text>
+        <View style={styles.backButton} />
+      </View>
+
+      <View style={styles.body}>
+        <Text style={styles.title}>Your analytics dashboard</Text>
+        <Text style={styles.subtitle}>
+          Detailed insights into your fleet performance, earnings, booking trends, and more are available on the Ardena analytics web dashboard.
+        </Text>
+
+        <View style={styles.featureList}>
+          {[
+            'Booking trends & occupancy rates',
+            'Earnings breakdown by car',
+            'Client ratings and reviews',
+            'Fleet performance over time',
+          ].map((item) => (
+            <View style={styles.featureRow} key={item}>
+              <Ionicons name="checkmark-circle" size={18} color={COLORS.brand} />
+              <Text style={styles.featureText}>{item}</Text>
+            </View>
+          ))}
         </View>
 
-        <View style={styles.statsContainer}>
-          <StatRow 
-            label="Total Cars" 
-            value={statsData.totalCars.toString()} 
-            icon="car-outline" 
-          />
-          <View style={styles.divider} />
-          <StatRow 
-            label="Rentals" 
-            value={statsData.totalRentals.toString()} 
-            icon="calendar-outline" 
-          />
-          <View style={styles.divider} />
-          <StatRow 
-            label="Best Performing" 
-            value={`${statsData.bestPerformingCar.name} ${statsData.bestPerformingCar.model}`} 
-            icon="trophy-outline" 
-          />
-          <View style={styles.divider} />
-          <StatRow 
-            label="Rating" 
-            value={statsData.averageRating.toString()} 
-            icon="star-outline" 
-          />
-          <View style={styles.divider} />
-          <StatRow 
-            label="Response Rate" 
-            value={`${statsData.responseRate}%`} 
-            icon="chatbubble-outline" 
-          />
-          <View style={styles.divider} />
-          <StatRow 
-            label="Host Account Plan" 
-            value={statsData.hostAccountPlan} 
-            icon="card-outline" 
-          />
-          <View style={styles.divider} />
-          <StatRow 
-            label="Membership Period" 
-            value={statsData.membershipPeriod} 
-            icon="wallet-outline" 
-          />
-        </View>
-      </ScrollView>
+        <TouchableOpacity style={styles.cta} onPress={openDashboard} activeOpacity={0.9}>
+          <Text style={styles.ctaText}>Proceed to dashboard</Text>
+          <Ionicons name="open-outline" size={18} color="#FFFFFF" />
+        </TouchableOpacity>
+
+      </View>
     </View>
   );
 }
@@ -107,16 +78,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  content: {
-    padding: SPACING.l,
-    paddingTop: 60,
-    paddingBottom: 100,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    paddingHorizontal: SPACING.l,
+    paddingBottom: 8,
+    backgroundColor: COLORS.bg,
   },
   backButton: {
     width: 40,
@@ -124,39 +92,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
+  headerTitle: {
     ...TYPE.largeTitle,
     fontSize: 20,
-  },
-  statsContainer: {
-    backgroundColor: 'transparent',
-  },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: SPACING.l,
-    paddingHorizontal: SPACING.l,
-  },
-  statLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  statIcon: {
-    marginRight: SPACING.m,
-  },
-  statLabel: {
-    ...TYPE.body,
-    color: COLORS.subtle,
-  },
-  statValue: {
-    ...TYPE.bodyStrong,
     color: COLORS.text,
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.border,
-    marginLeft: SPACING.l,
+  body: {
+    flex: 1,
+    paddingHorizontal: SPACING.l,
+    paddingTop: 32,
+    alignItems: 'center',
+  },
+  title: {
+    ...TYPE.largeTitle,
+    fontSize: 22,
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  subtitle: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.subtle,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 28,
+    maxWidth: 320,
+  },
+  featureList: {
+    alignSelf: 'stretch',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: COLORS.borderVisible,
+    paddingVertical: 8,
+    paddingHorizontal: SPACING.m,
+    marginBottom: 32,
+    gap: 14,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  featureText: {
+    ...TYPE.body,
+    fontSize: 14,
+    color: COLORS.text,
+    flex: 1,
+  },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.brand,
+    borderRadius: RADIUS.button,
+    paddingVertical: 16,
+    alignSelf: 'stretch',
+    marginBottom: 12,
+  },
+  ctaText: {
+    ...TYPE.bodyStrong,
+    fontSize: 16,
+    fontFamily: 'Nunito-Bold',
+    color: '#FFFFFF',
   },
 });
