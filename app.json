@@ -64,11 +64,11 @@
         }
       ]
     ],
+    "owner": "ardenapa",
     "extra": {
       "eas": {
-        "projectId": "5e05e38d-1478-4d4b-8bd1-23cc61ec7079"
+        "projectId": "088d8faa-afce-4c3f-aca5-9eba2ccbe8d0"
       }
-    },
-    "owner": "chinesedeon"
+    }
   }
 }
