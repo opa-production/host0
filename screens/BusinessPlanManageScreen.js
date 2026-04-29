@@ -7,7 +7,6 @@ import {
   StatusBar,
   ScrollView,
   Image,
-  ActivityIndicator,
   Switch,
   Linking,
   Alert,
@@ -24,6 +23,7 @@ import {
   setHidePremiumBadgePreference,
 } from '../utils/userStorage';
 import { ARDENA_COMMUNITY_URL } from '../config/publicLinks';
+import AppLoader from "../ui/AppLoader";
 
 function parseDaysRemaining(raw) {
   if (raw == null || raw === '') return null;
@@ -164,7 +164,7 @@ export default function BusinessPlanManageScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="small" color={COLORS.text} />
+          <AppLoader size="small" color={COLORS.text} />
         </View>
       ) : (
         <ScrollView

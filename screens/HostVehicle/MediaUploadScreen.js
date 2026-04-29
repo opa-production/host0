@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +19,7 @@ import {
   hostVehicleFormOutlineColor,
 } from './formFieldStyles';
 import { uploadVehicleImages, uploadVehicleVideo } from '../../services/mediaService';
+import AppLoader from "../../ui/AppLoader";
 
 export default function MediaUploadScreen({ formData, updateFormData, onNext, onBack, onSubmit, isSubmitting }) {
   const insets = useSafeAreaInsets();
@@ -258,7 +258,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
           >
             {isUploading ? (
               <>
-                <ActivityIndicator size="small" color="#ffffff" style={styles.nextSpinner} />
+                <AppLoader size="small" color="#ffffff" style={styles.nextSpinner} />
                 <Text style={styles.nextButtonText}>Uploading…</Text>
               </>
             ) : (

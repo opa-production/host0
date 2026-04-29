@@ -10,7 +10,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +19,7 @@ import {
   hostVehiclePlaceholderColor,
   hostVehicleInputRuleColor,
 } from './formFieldStyles';
+import AppLoader from "../../ui/AppLoader";
 
 const BODY_TYPES = [
   'Sedan', 'SUV', 'Hatchback', 'Coupe', 'Convertible', 'Wagon', 'Pickup Truck', 'Van', 'Minivan', 'Sports Car', 'Luxury', 'Other'
@@ -182,7 +182,7 @@ export default function BasicInfoScreen({ formData, updateFormData, onNext, isSu
             activeOpacity={0.9}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#ffffff" />
+              <AppLoader color="#ffffff" />
             ) : (
               <Text style={styles.nextButtonText}>Next</Text>
             )}

@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   Switch,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { toggleCarVisibility, getHostCars } from '../services/carService';
+import AppLoader from "../ui/AppLoader";
 
 export default function CarDetailsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -249,7 +249,7 @@ export default function CarDetailsScreen({ navigation, route }) {
                 </Text>
               </View>
               {isToggling ? (
-                <ActivityIndicator size="small" color={COLORS.text} />
+                <AppLoader size="small" color={COLORS.text} />
               ) : (
                 <Switch
                   value={isListed}

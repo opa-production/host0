@@ -11,7 +11,6 @@ import {
   Platform,
   Animated,
   KeyboardAvoidingView,
-  ActivityIndicator,
   RefreshControl,
   Modal,
   FlatList,
@@ -21,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken } from '../utils/userStorage';
+import AppLoader from "../ui/AppLoader";
 
 const TABS = ['Report', 'My Issues'];
 
@@ -223,7 +223,7 @@ export default function ReportIssueScreen({ navigation, route }) {
         disabled={submitting}
       >
         {submitting ? (
-          <ActivityIndicator color="#fff" size="small" />
+          <AppLoader color="#fff" size="small" />
         ) : (
           <Text style={styles.primaryButtonText}>Submit report</Text>
         )}
@@ -291,7 +291,7 @@ export default function ReportIssueScreen({ navigation, route }) {
       ListEmptyComponent={
         loadingIssues ? (
           <View style={styles.centered}>
-            <ActivityIndicator color={COLORS.brand} size="large" />
+            <AppLoader color={COLORS.brand} size="large" />
           </View>
         ) : (
           <View style={styles.centered}>

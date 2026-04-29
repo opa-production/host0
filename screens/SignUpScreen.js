@@ -10,7 +10,6 @@ import {
   Platform,
   ScrollView,
   Image,
-  ActivityIndicator,
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { registerHost, loginHost, googleAuthHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
 import { GoogleSignin, statusCodes } from '../utils/googleSignIn';
+import AppLoader from "../ui/AppLoader";
 
 export default function SignUpScreen({ navigation }) {
   const { login } = useHost();
@@ -266,7 +266,7 @@ export default function SignUpScreen({ navigation }) {
 
           <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp} activeOpacity={0.85} disabled={isLoading}>
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <AppLoader color="#FFFFFF" size="small" />
             ) : (
               <Text style={styles.primaryButtonText}>Create Account</Text>
             )}
@@ -286,7 +286,7 @@ export default function SignUpScreen({ navigation }) {
               disabled={isGoogleLoading}
             >
               {isGoogleLoading ? (
-                <ActivityIndicator color={COLORS.subtle} size="small" />
+                <AppLoader color={COLORS.subtle} size="small" />
               ) : (
                 <>
                   <Image source={require('../assets/images/google.png')} style={styles.socialIcon} resizeMode="contain" />

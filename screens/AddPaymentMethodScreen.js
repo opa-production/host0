@@ -10,7 +10,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Switch,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +25,7 @@ import {
 import { formatPhoneNumber } from '../utils/phoneUtils';
 import StatusModal from '../ui/StatusModal';
 import { addPaymentMethodScreenCache } from '../utils/screenDataCache';
+import AppLoader from "../ui/AppLoader";
 
 export default function AddPaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -214,7 +214,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
       >
         {isLoadingMethods && savedMethods.length === 0 ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="small" color={COLORS.text} />
+            <AppLoader size="small" color={COLORS.text} />
           </View>
         ) : (
           <>
@@ -318,7 +318,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <AppLoader size="small" color="#FFFFFF" />
                     ) : (
                       <Text style={styles.submitButtonText}>Add M-Pesa</Text>
                     )}

@@ -7,7 +7,6 @@ import {
   StatusBar,
   ScrollView,
   Image,
-  ActivityIndicator,
   Modal,
   Platform,
   Linking,
@@ -28,6 +27,7 @@ import {
   getCardPaymentStatus,
   getHostSubscription,
 } from '../services/subscriptionService';
+import AppLoader from "../ui/AppLoader";
 
 function transformMpesaMethods(methods) {
   return methods
@@ -358,7 +358,7 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
 
             {isLoadingMethods ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color={COLORS.text} />
+                <AppLoader size="small" color={COLORS.text} />
               </View>
             ) : mpesaMethods.length > 0 ? (
               <>
@@ -445,7 +445,7 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
       <Modal visible={processing} transparent animationType="fade">
         <View style={styles.processingOverlay}>
           <View style={styles.processingCard}>
-            <ActivityIndicator size="large" color={COLORS.text} />
+            <AppLoader size="large" color={COLORS.text} />
             <Text style={styles.processingTitle}>
               {processingMode === 'card' ? 'Waiting for payment…' : 'Check your phone'}
             </Text>

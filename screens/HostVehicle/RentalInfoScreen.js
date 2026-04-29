@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,7 +9,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +19,7 @@ import {
   hostVehiclePlaceholderColor,
   hostVehicleInputRuleColor,
 } from './formFieldStyles';
+import AppLoader from "../../ui/AppLoader";
 
 const COMMON_RULES = [
   'No smoking',
@@ -38,6 +38,19 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
   
   // Initialize carRules as array if not already
   const carRules = Array.isArray(formData.carRules) ? formData.carRules : [];
+
+  // Auto-calculate weekly (6 days = 7 - 1 free) and monthly (27 days = 30 - 3 free)
+  // when the daily rate changes, pre-filling as a convenience the host can override.
+  useEffect(() => {
+    const daily = parseFloat(formData.pricePerDay);
+    if (!isNaN(daily) && daily > 0) {
+      updateFormData({
+        pricePerWeek: String(Math.round(daily * 6)),
+        pricePerMonth: String(Math.round(daily * 27)),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.pricePerDay]);
 
   const toggleRule = (rule) => {
     const rules = Array.isArray(formData.carRules) ? formData.carRules : [];
@@ -121,6 +134,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
 
         <View style={HV.inputSection}>
           <Text style={HV.fieldLabel}>Price per week (KSh) *</Text>
+          <Text style={styles.hint}>1 day free · auto-calculated, you can adjust</Text>
           <TextInput
             style={HV.field}
             placeholder="0"
@@ -133,6 +147,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
 
         <View style={HV.inputSection}>
           <Text style={HV.fieldLabel}>Price per month (KSh) *</Text>
+          <Text style={styles.hint}>3 days free · auto-calculated, you can adjust</Text>
           <TextInput
             style={HV.field}
             placeholder="0"
@@ -308,7 +323,7 @@ export default function RentalInfoScreen({ formData, updateFormData, onNext, onB
             activeOpacity={0.9}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#ffffff" />
+              <AppLoader size="small" color="#ffffff" />
             ) : (
               <Text style={styles.nextButtonText}>Next</Text>
             )}

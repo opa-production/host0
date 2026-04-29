@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npx expo:*)",
-      "Bash(ls \"/c/Users/PC/Desktop/host0/\"*.json)"
+      "Bash(ls \"/c/Users/PC/Desktop/host0/\"*.json)",
+      "Bash(npm install *)",
+      "Bash(npm list *)"
     ]
   }
 }

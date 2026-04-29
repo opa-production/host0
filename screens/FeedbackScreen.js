@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getUserToken } from '../utils/userStorage';
 import { getApiUrl, API_ENDPOINTS } from '../config/api';
+import AppLoader from "../ui/AppLoader";
 
 const MAX_FEEDBACK_LENGTH = 250;
 
@@ -147,7 +148,7 @@ export default function FeedbackScreen({ navigation }) {
             disabled={isSubmitting}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <AppLoader color="#FFFFFF" />
             ) : (
               <Text style={styles.primaryButtonText}>Submit</Text>
             )}

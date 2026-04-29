@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useLayoutEffect, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Platform, Image, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Platform, Image, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostSubscription, activateFreeTrial } from '../services/subscriptionService';
+import AppLoader from "../ui/AppLoader";
 
 /** Display pricing & benefits (checkout still posts plan code; server charges configured KES). */
 const PLANS = {
@@ -226,7 +227,7 @@ export default function SupaHostScreen({ navigation: nav }) {
               disabled={activatingTrial}
             >
               {activatingTrial ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <AppLoader size="small" color="#FFFFFF" />
               ) : (
                 <Text style={styles.trialButtonText}>Free trial</Text>
               )}

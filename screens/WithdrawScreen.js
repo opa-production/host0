@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, ActivityIndicator, InteractionManager } from 'react-native';
+import { StyleSheet, View, Text, StatusBar, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, InteractionManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { getPaymentMethods } from '../services/paymentService';
 import { formatPhoneNumber } from '../utils/phoneUtils';
 import { createWithdrawal, getHostWithdrawals } from '../services/withdrawalService';
 import StatusModal from '../ui/StatusModal';
+import AppLoader from "../ui/AppLoader";
 
 export default function WithdrawScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -343,7 +344,7 @@ export default function WithdrawScreen({ navigation, route }) {
             </View>
             {isLoadingMethods ? (
               <View style={styles.emptyStateCard}>
-                <ActivityIndicator size="small" color={COLORS.text} />
+                <AppLoader size="small" color={COLORS.text} />
                 <Text style={styles.emptyStateSubtitle}>Loading payment methods...</Text>
               </View>
             ) : paymentMethods.length > 0 ? (
@@ -435,7 +436,7 @@ export default function WithdrawScreen({ navigation, route }) {
                     disabled={!amount || !selectedMethod || isSubmitting}
                   >
                     {isSubmitting ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <AppLoader size="small" color="#FFFFFF" />
                     ) : (
                       <Text style={styles.withdrawButtonText}>Withdraw</Text>
                     )}
@@ -461,7 +462,7 @@ export default function WithdrawScreen({ navigation, route }) {
             </View>
             {isLoadingWithdrawals ? (
               <View style={styles.transactionCardEmpty}>
-                <ActivityIndicator size="small" color={COLORS.text} />
+                <AppLoader size="small" color={COLORS.text} />
                 <Text style={styles.transactionEmptyText}>Loading recent requests...</Text>
               </View>
             ) : recentWithdrawals.length === 0 ? (

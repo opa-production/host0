@@ -10,7 +10,6 @@ import {
   Platform,
   ScrollView,
   Image,
-  ActivityIndicator,
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +27,7 @@ import { setUserId, setUserToken, getUserProfile } from '../utils/userStorage';
 import { loginHost, googleAuthHost, biometricLoginHost } from '../services/authService';
 import { useHost } from '../utils/HostContext';
 import { GoogleSignin, statusCodes } from '../utils/googleSignIn';
+import AppLoader from "../ui/AppLoader";
 
 export default function LoginScreen({ navigation }) {
   const { login } = useHost();
@@ -234,7 +234,7 @@ export default function LoginScreen({ navigation }) {
 
       {checkingBiometric ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.text} />
+          <AppLoader size="large" color={COLORS.text} />
           <Text style={styles.loadingText}>Checking biometric authentication...</Text>
         </View>
       ) : (
@@ -295,7 +295,7 @@ export default function LoginScreen({ navigation }) {
 
           <TouchableOpacity style={styles.primaryButton} onPress={handleLogin} activeOpacity={0.85} disabled={isLoading}>
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <AppLoader color="#FFFFFF" size="small" />
             ) : (
               <Text style={styles.primaryButtonText}>Sign In</Text>
             )}
@@ -315,7 +315,7 @@ export default function LoginScreen({ navigation }) {
               disabled={isGoogleLoading}
             >
               {isGoogleLoading ? (
-                <ActivityIndicator color={COLORS.subtle} size="small" />
+                <AppLoader color={COLORS.subtle} size="small" />
               ) : (
                 <>
                   <Image source={require('../assets/images/google.png')} style={styles.socialIcon} resizeMode="contain" />

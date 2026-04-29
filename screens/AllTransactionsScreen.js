@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostEarningsTransactions } from '../services/earningsService';
 import { getHostWithdrawals, withdrawalToTransactionItem } from '../services/withdrawalService';
+import AppLoader from "../ui/AppLoader";
 
 export default function AllTransactionsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -110,7 +111,7 @@ export default function AllTransactionsScreen({ navigation, route }) {
         <View style={styles.card}>
           {isLoading ? (
             <View style={styles.emptyState}>
-              <ActivityIndicator size="large" color={COLORS.subtle} />
+              <AppLoader size="large" color={COLORS.subtle} />
               <Text style={styles.emptySub}>Loading transactions…</Text>
             </View>
           ) : transactions.length === 0 ? (

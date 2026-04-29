@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostEarningsSummary, getHostEarningsTransactions } from '../services/earningsService';
 import { getHostWithdrawals, withdrawalToTransactionItem } from '../services/withdrawalService';
+import AppLoader from "../ui/AppLoader";
 
 export default function FinanceScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -161,7 +162,7 @@ export default function FinanceScreen({ navigation }) {
           <View style={styles.balanceContainer}>
             {isLoadingEarnings ? (
               <View style={styles.balanceLoading}>
-                <ActivityIndicator size="small" color="rgba(255,255,255,0.8)" />
+                <AppLoader size="small" color="rgba(255,255,255,0.8)" />
                 <Text style={styles.balanceLoadingText}>Loading…</Text>
               </View>
             ) : (
@@ -216,7 +217,7 @@ export default function FinanceScreen({ navigation }) {
 
           {isLoadingTransactions ? (
             <View style={styles.transactionsLoading}>
-              <ActivityIndicator size="small" color={COLORS.subtle} />
+              <AppLoader size="small" color={COLORS.subtle} />
               <Text style={styles.transactionsLoadingText}>Loading transactions…</Text>
             </View>
           ) : recentTransactions.length > 0 ? (

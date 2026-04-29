@@ -10,13 +10,13 @@ import {
   Platform,
   Alert,
   ScrollView,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { Ionicons } from '@expo/vector-icons';
 import { lightHaptic } from '../ui/haptics';
 import { resetPasswordWithToken } from '../services/authService';
+import AppLoader from "../ui/AppLoader";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -184,7 +184,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <AppLoader size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.primaryButtonText}>Submit</Text>
             )}

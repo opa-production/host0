@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, StatusBar, KeyboardAvoidingView, Platform, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, StatusBar, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { changePassword } from '../services/authService';
 import { useHost } from '../utils/HostContext';
+import AppLoader from "../ui/AppLoader";
 
 const ChangePasswordScreen = () => {
   const navigation = useNavigation();
@@ -281,7 +282,7 @@ const ChangePasswordScreen = () => {
             activeOpacity={0.8}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <AppLoader size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.changePasswordButtonText}>Change Password</Text>
             )}

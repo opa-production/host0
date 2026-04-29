@@ -12,7 +12,6 @@ import {
   Keyboard,
   Linking,
   Alert,
-  ActivityIndicator,
   Image,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { sendSupportMessage, getSupportConversation } from '../services/supportService';
+import AppLoader from "../ui/AppLoader";
 
 // Support phone number
 const SUPPORT_PHONE = '0702248984';
@@ -243,7 +243,7 @@ export default function CustomerSupportScreen({ navigation }) {
       >
         {isLoading ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color={COLORS.text} />
+            <AppLoader size="large" color={COLORS.text} />
             <Text style={styles.loadingText}>Loading conversation...</Text>
           </View>
         ) : (
@@ -292,7 +292,7 @@ export default function CustomerSupportScreen({ navigation }) {
               disabled={!draft.trim() || isSending}
             >
               {isSending ? (
-                <ActivityIndicator size="small" color="#ffffff" />
+                <AppLoader size="small" color="#ffffff" />
               ) : (
                 <Ionicons name="arrow-up" size={18} color={'#ffffff'} />
               )}

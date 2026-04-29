@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostWithdrawals } from '../services/withdrawalService';
+import AppLoader from "../ui/AppLoader";
 
 export default function WithdrawalTransactionsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -110,7 +111,7 @@ export default function WithdrawalTransactionsScreen({ navigation }) {
         <View style={styles.card}>
           {isLoading ? (
             <View style={styles.emptyState}>
-              <ActivityIndicator size="small" color={COLORS.text} />
+              <AppLoader size="small" color={COLORS.text} />
               <Text style={styles.emptySub}>Loading requests...</Text>
             </View>
           ) : withdrawals.length === 0 ? (

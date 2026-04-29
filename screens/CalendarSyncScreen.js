@@ -7,7 +7,6 @@ import {
   StatusBar,
   TouchableOpacity,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +14,7 @@ import * as Calendar from 'expo-calendar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
+import AppLoader from "../ui/AppLoader";
 
 const SYNC_ENABLED_KEY = '@calendar_sync_enabled';
 const SYNC_CALENDAR_ID_KEY = '@calendar_sync_calendar_id';
@@ -212,7 +212,7 @@ export default function CalendarSyncScreen({ navigation }) {
           <View style={styles.backButton} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.text} />
+          <AppLoader size="large" color={COLORS.text} />
           <Text style={styles.loadingText}>Loading calendars...</Text>
         </View>
       </View>
@@ -350,7 +350,7 @@ export default function CalendarSyncScreen({ navigation }) {
               >
                 {isSyncing ? (
                   <>
-                    <ActivityIndicator size="small" color="#FFFFFF" style={styles.buttonLoader} />
+                    <AppLoader size="small" color="#FFFFFF" style={styles.buttonLoader} />
                     <Text style={styles.primaryButtonText}>Syncing...</Text>
                   </>
                 ) : (

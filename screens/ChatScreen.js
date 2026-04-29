@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  ActivityIndicator,
   Alert,
   Image,
 } from 'react-native';
@@ -21,6 +20,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getClientConversation, sendMessageToClient } from '../services/messageService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
+import AppLoader from "../ui/AppLoader";
 
 export default function ChatScreen({ navigation, route }) {
   const clientId = route?.params?.clientId;
@@ -269,7 +269,7 @@ export default function ChatScreen({ navigation, route }) {
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.text} />
+            <AppLoader size="large" color={COLORS.text} />
           </View>
         ) : (
           <FlatList
@@ -326,7 +326,7 @@ export default function ChatScreen({ navigation, route }) {
               accessibilityLabel="Send message"
             >
               {isSending ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <AppLoader size="small" color="#FFFFFF" />
               ) : (
                 <Ionicons name="arrow-forward" size={22} color="#FFFFFF" />
               )}

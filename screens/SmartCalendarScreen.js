@@ -9,7 +9,6 @@ import {
   Switch,
   Alert,
   Modal,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +17,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostCars } from '../services/carService';
 import { blockCarDates, getBlockedDates, unblockCarDate } from '../services/calendarService';
+import AppLoader from "../ui/AppLoader";
 
 function startOfDay(d) {
   const x = new Date(d);
@@ -473,7 +473,7 @@ export default function SmartCalendarScreen({ navigation }) {
           <View style={styles.carSelectorContainer}>
             <Text style={styles.carSelectorLabel}>Select Car</Text>
             {isLoadingCars ? (
-              <ActivityIndicator size="small" color={COLORS.text} />
+              <AppLoader size="small" color={COLORS.text} />
             ) : (
               <TouchableOpacity
                 style={styles.carSelectorButton}
@@ -492,7 +492,7 @@ export default function SmartCalendarScreen({ navigation }) {
 
           {selectedCarId && isLoadingBlockedDates && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={COLORS.text} />
+              <AppLoader size="small" color={COLORS.text} />
               <Text style={styles.loadingText}>Loading blocked dates...</Text>
             </View>
           )}
@@ -585,7 +585,7 @@ export default function SmartCalendarScreen({ navigation }) {
               disabled={!selectedCarId || isBlocking}
             >
               {isBlocking ? (
-                <ActivityIndicator size="small" color={COLORS.danger} />
+                <AppLoader size="small" color={COLORS.danger} />
               ) : (
                 <Text style={styles.dangerButtonText}>Unblock</Text>
               )}
@@ -598,7 +598,7 @@ export default function SmartCalendarScreen({ navigation }) {
               disabled={!selectedCarId || isBlocking}
             >
               {isBlocking ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <AppLoader size="small" color="#FFFFFF" />
               ) : (
                 <Text style={styles.primaryButtonText}>Block</Text>
               )}

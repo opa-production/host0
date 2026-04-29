@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, StatusBar, KeyboardAvoidingView, Platform, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, StatusBar, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { deleteHostAccount } from '../services/authService';
 import { useHost } from '../utils/HostContext';
+import AppLoader from "../ui/AppLoader";
 
 const DeleteAccountScreen = () => {
   const navigation = useNavigation();
@@ -165,7 +166,7 @@ const DeleteAccountScreen = () => {
             disabled={!password || confirmText !== 'DELETE' || isDeleting}
           >
             {isDeleting ? (
-              <ActivityIndicator size="small" color="#ffffff" />
+              <AppLoader size="small" color="#ffffff" />
             ) : (
               <Text style={styles.deleteButtonText}>Delete Account</Text>
             )}

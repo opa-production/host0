@@ -13,6 +13,7 @@ import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getUserId } from '../utils/userStorage';
 import { getBookingExtensions, approveExtension, rejectExtension } from '../services/extensionService';
 import { activeBookingScreenCache } from '../utils/screenDataCache';
+import AppLoader from "../ui/AppLoader";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -950,7 +951,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
                 activeOpacity={canConfirmPickup() ? 0.8 : 1}
               >
                 {isConfirmingPickup ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <AppLoader size="small" color="#FFFFFF" />
                 ) : (
                   <>
                     <Ionicons
@@ -1018,7 +1019,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
                 activeOpacity={canConfirmDropoff() ? 0.8 : 1}
               >
                 {isConfirmingDropoff ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <AppLoader size="small" color="#FFFFFF" />
                 ) : (
                   <>
                     <Ionicons
@@ -1132,7 +1133,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
                           activeOpacity={0.8}
                         >
                           {isRejectingExtension === ext.id ? (
-                            <ActivityIndicator size="small" color="#FF3B30" />
+                            <AppLoader size="small" color="#FF3B30" />
                           ) : (
                             <Text style={styles.rejectButtonText}>{showRejectInput ? 'Confirm Reject' : 'Reject'}</Text>
                           )}
@@ -1144,7 +1145,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
                           activeOpacity={0.8}
                         >
                           {isApprovingExtension === ext.id ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
+                            <AppLoader size="small" color="#FFFFFF" />
                           ) : (
                             <Text style={styles.approveButtonText}>Approve</Text>
                           )}

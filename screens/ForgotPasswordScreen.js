@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { Ionicons } from '@expo/vector-icons';
 import { lightHaptic } from '../ui/haptics';
 import { forgotPassword } from '../services/authService';
+import AppLoader from "../ui/AppLoader";
 
 export default function ForgotPasswordScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -131,7 +132,7 @@ export default function ForgotPasswordScreen({ navigation }) {
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <AppLoader size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.primaryButtonText}>Send reset link</Text>
             )}

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, ActivityIndicator, Linking } from 'react-native';
+import { View, Linking } from 'react-native';
+import AppLoader from '../ui/AppLoader';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -193,7 +194,7 @@ export default function AppNavigator() {
   if (!ready) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg }}>
-        <ActivityIndicator size="large" color={COLORS.text} />
+        <AppLoader size="large" color={COLORS.text} />
       </View>
     );
   }

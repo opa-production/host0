@@ -9,7 +9,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +16,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { updateCarSpecs, updateCarPricing, updateCarLocation } from '../services/carService';
 import StatusModal from '../ui/StatusModal';
+import AppLoader from "../ui/AppLoader";
 
 export default function EditCarScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -158,7 +158,7 @@ export default function EditCarScreen({ navigation, route }) {
           disabled={isSaving}
         >
           {isSaving ? (
-            <ActivityIndicator size="small" color={COLORS.brand} />
+            <AppLoader size="small" color={COLORS.brand} />
           ) : (
             <Text style={styles.saveButtonText}>Save</Text>
           )}

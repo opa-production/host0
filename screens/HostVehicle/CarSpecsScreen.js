@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import {
   hostVehiclePlaceholderColor,
   hostVehicleInputRuleColor,
 } from './formFieldStyles';
+import AppLoader from "../../ui/AppLoader";
 
 const FUEL_TYPES = ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'];
 const TRANSMISSIONS = ['Manual', 'Automatic', 'CVT'];
@@ -226,7 +226,7 @@ export default function CarSpecsScreen({ formData, updateFormData, onNext, onBac
             activeOpacity={0.9}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#ffffff" />
+              <AppLoader color="#ffffff" />
             ) : (
               <Text style={styles.nextButtonText}>Next</Text>
             )}

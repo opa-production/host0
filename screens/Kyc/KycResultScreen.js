@@ -5,13 +5,13 @@ import {
   Text,
   StatusBar,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../../ui/tokens';
 import { lightHaptic } from '../../ui/haptics';
 import { getKycStatus } from '../../services/kycService';
+import AppLoader from "../../ui/AppLoader";
 
 const POLL_INTERVAL_MS = 2000;
 const POLL_ATTEMPTS = 5;
@@ -94,7 +94,7 @@ export default function KycResultScreen({ navigation }) {
       <View style={styles.card}>
         {loading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={COLORS.brand} />
+            <AppLoader size="large" color={COLORS.brand} />
             <Text style={styles.loadingText}>Checking verification status…</Text>
           </View>
         ) : error ? (

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
@@ -7,6 +7,7 @@ import { lightHaptic } from '../ui/haptics';
 import StatusModal from '../ui/StatusModal';
 import { useHost } from '../utils/HostContext';
 import { updateHostProfile } from '../services/authService';
+import AppLoader from "../ui/AppLoader";
 
 export default function UpdateProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -284,7 +285,7 @@ export default function UpdateProfileScreen({ navigation, route }) {
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <AppLoader size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.saveButtonText}>Save Changes</Text>
             )}

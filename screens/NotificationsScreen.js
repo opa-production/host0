@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostNotifications, markNotificationAsRead } from '../services/notificationService';
 import { notificationsScreenCache } from '../utils/screenDataCache';
+import AppLoader from "../ui/AppLoader";
 
 export default function NotificationsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -126,7 +127,7 @@ export default function NotificationsScreen({ navigation }) {
       >
         {isLoading ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color={COLORS.text} />
+            <AppLoader size="large" color={COLORS.text} />
             <Text style={styles.loadingText}>Loading notifications...</Text>
           </View>
         ) : error ? (

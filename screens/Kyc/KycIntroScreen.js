@@ -8,13 +8,13 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../../ui/tokens';
 import { lightHaptic } from '../../ui/haptics';
 import { createKycSession, getKycStatus } from '../../services/kycService';
+import AppLoader from "../../ui/AppLoader";
 
 export default function KycIntroScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -83,7 +83,7 @@ export default function KycIntroScreen({ navigation }) {
         <View style={styles.card}>
           {statusLoading ? (
             <View style={styles.loadingWrap}>
-              <ActivityIndicator size="large" color={COLORS.brand} />
+              <AppLoader size="large" color={COLORS.brand} />
               <Text style={styles.loadingText}>Checking verification status…</Text>
             </View>
           ) : isAlreadyVerified ? (
@@ -136,7 +136,7 @@ export default function KycIntroScreen({ navigation }) {
                 disabled={startingSession}
               >
                 {startingSession ? (
-                  <ActivityIndicator size="small" color="#FFF" />
+                  <AppLoader size="small" color="#FFF" />
                 ) : (
                   <>
                     <Text style={styles.primaryButtonText}>Continue to verification</Text>

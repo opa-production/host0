@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ScrollView, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { getPaymentMethods } from '../services/paymentService';
 import { formatPhoneNumber } from '../utils/phoneUtils';
+import AppLoader from "../ui/AppLoader";
 
 export default function GetBadgeScreen({ navigation }) {
   const [selectedMethodId, setSelectedMethodId] = useState(null);
@@ -128,7 +129,7 @@ export default function GetBadgeScreen({ navigation }) {
           
           {isLoadingMethods ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={COLORS.text} />
+              <AppLoader size="small" color={COLORS.text} />
             </View>
           ) : paymentMethods.length > 0 ? (
             paymentMethods.map((method) => (

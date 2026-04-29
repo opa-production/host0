@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert, ActivityIndicator, Animated, Modal, Pressable, RefreshControl } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, StatusBar, TouchableOpacity, Image, FlatList, Switch, Alert, Animated, Modal, Pressable, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +12,7 @@ import { getCarDriveSettings, updateCarDriveSettings } from '../services/driveSe
 import { useHost } from '../utils/HostContext';
 import { getHostSubscription } from '../services/subscriptionService';
 import { hostHasActiveSubscription } from '../utils/subscriptionUtils';
+import AppLoader from "../ui/AppLoader";
 
 export default function HostScreen({ navigation }) {
   const { logout, host } = useHost();
@@ -693,7 +694,7 @@ export default function HostScreen({ navigation }) {
               activeOpacity={0.8}
             >
               {isSavingDriveSettings ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <AppLoader size="small" color="#FFFFFF" />
               ) : (
                 <Text style={styles.modalSaveButtonText}>Save</Text>
               )}
