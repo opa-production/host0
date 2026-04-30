@@ -106,8 +106,9 @@ export const API_ENDPOINTS = {
   HOST_REPORT_ISSUE: (bookingId) => `/api/v1/host/bookings/${bookingId}/report-issue`,
   HOST_ISSUES: '/api/v1/host/issues',
 
-  // KYC (Veriff)
-  HOST_KYC_SESSION: '/api/v1/host/kyc/session',
+  // KYC (Dojah)
+  HOST_KYC_LOOKUP: '/api/v1/host/kyc/lookup',
+  HOST_KYC_INITIALIZE: '/api/v1/host/kyc/initialize',
   HOST_KYC_STATUS: '/api/v1/host/kyc/status',
 
   // Push notifications

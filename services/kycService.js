@@ -2,18 +2,14 @@ import { getApiUrl, API_ENDPOINTS } from '../config/api';
 import { getUserToken } from '../utils/userStorage';
 
 /**
- * Create a KYC (Veriff) session. Returns the verification URL to open.
- * POST /api/v1/host/kyc/session
- * @returns {{ success: boolean, verification_url?: string, error?: string }}
+ * KYC Lookup (Step 1)
+ * POST /api/v1/host/kyc/lookup
  */
-export const createKycSession = async () => {
+export const lookupKycDetails = async (idType, idNumber, country = 'KE') => {
   const token = await getUserToken();
-  if (!token) {
-    return { success: false, error: 'Not logged in' };
-  }
+  if (!token) return { success: false, error: 'Not logged in' };
 
-  const url = getApiUrl(API_ENDPOINTS.HOST_KYC_SESSION);
-  const callbackUrl = 'ardenahost://kyc/result';
+  const url = getApiUrl(API_ENDPOINTS.HOST_KYC_LOOKUP || '/api/v1/host/kyc/lookup');
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -21,34 +17,49 @@ export const createKycSession = async () => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ callback_url: callbackUrl }),
+      body: JSON.stringify({ id_type: idType, id_number: idNumber, country }),
     });
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const errorMessage = data.detail || data.message || data.error || 'Failed to create verification session';
-      return { success: false, error: typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage) };
+      return { success: false, error: data.detail || 'ID lookup failed' };
     }
-
-    const verificationUrl = data.verification_url ?? data.url ?? data.session_url ?? data.verificationUrl;
-    if (!verificationUrl || typeof verificationUrl !== 'string') {
-      return { success: false, error: 'No verification URL in response' };
-    }
-    return { success: true, verification_url: verificationUrl };
+    return { success: true, data };
   } catch (error) {
-    console.error('[KYC] createKycSession error:', error);
-    return {
-      success: false,
-      error: error.message || 'Network error. Please try again.',
-    };
+    return { success: false, error: error.message };
   }
 };
 
 /**
- * Get current host KYC status.
+ * Initialize Dojah Widget (Step 2)
+ * POST /api/v1/host/kyc/initialize
+ */
+export const initializeKycWidget = async () => {
+  const token = await getUserToken();
+  if (!token) return { success: false, error: 'Not logged in' };
+
+  const url = getApiUrl(API_ENDPOINTS.HOST_KYC_INITIALIZE || '/api/v1/host/kyc/initialize');
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { success: false, error: data.detail || 'Failed to initialize verification' };
+    }
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Get current host KYC status (Dojah)
  * GET /api/v1/host/kyc/status
- * @returns {{ success: boolean, status?: object, error?: string }}
- * status: { user_id, veriff_session_id, status, document_type, decision_reason, verified_at }
  */
 export const getKycStatus = async () => {
   const token = await getUserToken();
@@ -67,23 +78,12 @@ export const getKycStatus = async () => {
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      // 404 or no status yet is acceptable - treat as "no status"
-      if (response.status === 404) {
-        return { success: true, status: null };
-      }
-      const errorMessage = data.detail || data.message || data.error || 'Failed to load verification status';
-      return {
-        success: false,
-        error: typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage),
-      };
+      if (response.status === 404) return { success: true, status: null };
+      return { success: false, error: data.detail || 'Failed to load status' };
     }
 
     return { success: true, status: data };
   } catch (error) {
-    console.error('[KYC] getKycStatus error:', error);
-    return {
-      success: false,
-      error: error.message || 'Failed to load status',
-    };
+    return { success: false, error: error.message };
   }
 };

@@ -42,6 +42,7 @@
       "usesCleartextTraffic": true
     },
     "plugins": [
+      "dojah-kyc-sdk-react-expo",
       "expo-font",
       "expo-splash-screen",
       "expo-video",

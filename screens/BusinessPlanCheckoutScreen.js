@@ -124,9 +124,8 @@ export default function BusinessPlanCheckoutScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      loadPaymentMethods();
-      checkPendingCardCheckout();
-    }, [])
+      navigation.replace('SupaHost');
+    }, [navigation])
   );
 
   const selectedMpesa = mpesaMethods.find((m) => m.id === selectedMethodId);

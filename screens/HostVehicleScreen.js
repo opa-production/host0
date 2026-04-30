@@ -162,7 +162,13 @@ export default function HostVehicleScreen({ navigation, route }) {
           setCarId(result.carId);
           updateFormData({ carId: result.carId });
           setCurrentStep(2);
-        } else Alert.alert('Error', result.error);
+        } else {
+          if (result.error?.includes('limit of 10 car listings')) {
+            Alert.alert('Listing Limit Reached', result.error);
+          } else {
+            Alert.alert('Error', result.error || 'Failed to create listing');
+          }
+        }
       } catch (error) { Alert.alert('Error', error.message); }
       finally { setIsSubmitting(false); }
     } else if (currentStep === 2) {

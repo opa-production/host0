@@ -370,27 +370,15 @@ export default function ProfileScreen({ navigation }) {
               style={styles.linkItem}
               onPress={() => {
                 lightHaptic();
-                if (businessPlanLabel) {
-                  navigation.navigate('BusinessPlanManage');
-                } else {
-                  navigation.navigate('SupaHost');
-                }
+                navigation.navigate('SupaHost');
               }}
             >
               <Ionicons name="business-outline" size={22} color="#666666" style={styles.linkIcon} />
               <View style={styles.linkTextBlock}>
                 <Text style={styles.linkTextInner}>Ardena for Business</Text>
-                {businessPlanLabel ? (
-                  <Text style={styles.linkSubText}>
-                    <Text style={styles.linkSubTextPlan}>{businessPlanLabel}</Text>
-                    {businessPlanDaysText ? (
-                      <>
-                        <Text style={styles.linkSubTextPlan}>{' · '}</Text>
-                        <Text style={styles.linkSubTextCountdown}>{businessPlanDaysText}</Text>
-                      </>
-                    ) : null}
-                  </Text>
-                ) : null}
+                <Text style={styles.linkSubText}>
+                  Simplified for launch phase
+                </Text>
               </View>
               <Ionicons name="chevron-forward-outline" size={20} color="#999999" />
             </TouchableOpacity>

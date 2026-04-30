@@ -335,16 +335,23 @@ export default function MyListingsScreen({ navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Cars</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>My Cars</Text>
+          <Text style={styles.headerSubtitle}>{allListings.length}/10 listings used</Text>
+        </View>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => {
             lightHaptic();
+            if (allListings.length >= 10) {
+              Alert.alert('Listing Limit Reached', 'You have reached the limit of 10 car listings. Please contact support to increase your limit.');
+              return;
+            }
             navigation.navigate('HostVehicle');
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="add" size={28} color={COLORS.brand} />
+          <Ionicons name="add" size={28} color={allListings.length >= 10 ? COLORS.subtle : COLORS.brand} />
         </TouchableOpacity>
       </View>
 
@@ -417,6 +424,14 @@ const styles = StyleSheet.create({
     ...TYPE.largeTitle,
     fontSize: 20,
     color: COLORS.text,
+  },
+  headerSubtitle: {
+    ...TYPE.caption,
+    fontSize: 12,
+    color: COLORS.subtle,
+  },
+  headerTitleContainer: {
+    alignItems: 'center',
   },
   listContent: {
     paddingHorizontal: SPACING.l,

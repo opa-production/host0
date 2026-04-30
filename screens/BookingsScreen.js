@@ -124,11 +124,16 @@ const bookingSkeletonStyles = StyleSheet.create({
 export default function BookingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [bookings, setBookings] = useState([]);
+  const bookingsRef = useRef([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const fetchGenerationRef = useRef(0);
   const hasFetchedOnceRef = useRef(false);
   const fetchingRef = useRef(false);
+
+  useEffect(() => {
+    bookingsRef.current = bookings;
+  }, [bookings]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -181,7 +186,8 @@ export default function BookingsScreen({ navigation }) {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
 
-    const hadCached = bookingsRef.current.length > 0;
+    const currentBookings = bookingsRef.current || [];
+    const hadCached = currentBookings.length > 0;
     const useFullLoader =
       showFullScreenLoader !== undefined
         ? showFullScreenLoader
@@ -195,89 +201,111 @@ export default function BookingsScreen({ navigation }) {
       setIsLoading(true);
     }
 
+    const startTime = Date.now();
+    console.log('📅 [Bookings] Starting to load bookings...');
     try {
       const result = await getHostBookings();
-      if (gen !== fetchGenerationRef.current) return;
+      console.log(`📅 [Bookings] getHostBookings completed in ${Date.now() - startTime}ms. Success:`, result.success);
+      
+      if (gen !== fetchGenerationRef.current) {
+        fetchingRef.current = false;
+        return;
+      }
 
       if (result.success && result.bookings) {
         const activeBookings = result.bookings.filter(
           (b) => !isBookingCompleted(b) && !isBookingCancelled(b)
         );
-        const userId = await getUserId();
+        console.log(`📅 [Bookings] Found ${activeBookings.length} active bookings out of ${result.bookings.length} total.`);
+        
+        if (activeBookings.length === 0) {
+          setBookings([]);
+        } else {
+          const userId = await getUserId();
+          console.log('📅 [Bookings] Starting N+1 fetches for car images and extensions...');
 
-        const mappedBookings = await Promise.all(
-          activeBookings.map(async (booking) => {
-            // Resolve images from Supabase by car_id
-            let carImageUrls = [];
-            if (booking.car_id && userId) {
-              const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
-              if (imageResult.images?.length > 0) carImageUrls = imageResult.images;
-            }
-
-            // Fetch extensions for active/confirmed bookings
-            const statusLower = (booking.status || '').toLowerCase();
-            let pendingExtension = null;
-            if (statusLower === 'confirmed' || statusLower === 'active') {
-              try {
-                const extResult = await getBookingExtensions(booking.booking_id || booking.id);
-                if (extResult.success && extResult.extensions?.length > 0) {
-                  pendingExtension = extResult.extensions.find(e => e.status === 'pending_host_approval') || null;
+          const mappedBookings = await Promise.all(
+            activeBookings.map(async (booking, index) => {
+              const bStartTime = Date.now();
+              // Resolve images from Supabase by car_id
+              let carImageUrls = [];
+              if (booking.car_id && userId) {
+                try {
+                  const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
+                  if (imageResult.images?.length > 0) carImageUrls = imageResult.images;
+                } catch (err) {
+                  console.error(`📅 [Bookings] Error fetching images for car ${booking.car_id}:`, err);
                 }
-              } catch (_) {}
-            }
+              }
 
-            return {
-              id: booking.id,
-              bookingId: booking.booking_id,
-              clientId: booking.client_id,
-              carId: booking.car_id,
-              carName: booking.car_name || 'Unknown Car',
-              carModel: booking.car_model || '',
-              carYear: booking.car_year,
-              carMake: booking.car_make || '',
-              carImageUrls,
-              clientName: getClientDisplayName(booking),
-              clientEmail: booking.client_email,
-              clientMobile: booking.client_mobile_number,
-              startDate: booking.start_date,
-              endDate: booking.end_date,
-              pickupTime: booking.pickup_time,
-              returnTime: booking.return_time,
-              pickupLocation: booking.pickup_location || [],
-              returnLocation: booking.return_location || [],
-              dropoffSameAsPickup: booking.dropoff_same_as_pickup,
-              dailyRate: booking.daily_rate,
-              rentalDays: booking.rental_days,
-              basePrice: booking.base_price,
-              damageWaiverFee: booking.damage_waiver_fee,
-              totalPrice: booking.total_price,
-              damageWaiverEnabled: booking.damage_waiver_enabled,
-              driveType: booking.drive_type,
-              checkInPreference: booking.check_in_preference,
-              specialRequirements: booking.special_requirements,
-              status: booking.status,
-              statusUpdatedAt: booking.status_updated_at,
-              cancellationReason: booking.cancellation_reason,
-              createdAt: booking.created_at,
-              updatedAt: booking.updated_at,
-              pendingExtension,
-            };
-          })
-        );
+              // Fetch extensions for active/confirmed bookings
+              const statusLower = (booking.status || '').toLowerCase();
+              let pendingExtension = null;
+              if (statusLower === 'confirmed' || statusLower === 'active') {
+                try {
+                  const extResult = await getBookingExtensions(booking.booking_id || booking.id);
+                  if (extResult.success && extResult.extensions?.length > 0) {
+                    pendingExtension = extResult.extensions.find(e => e.status === 'pending_host_approval') || null;
+                  }
+                } catch (_) {}
+              }
+              
+              console.log(`📅 [Bookings] Processed booking ${index + 1}/${activeBookings.length} in ${Date.now() - bStartTime}ms`);
 
-        if (gen !== fetchGenerationRef.current) return;
-        setBookings(mappedBookings);
+              return {
+                id: booking.id,
+                bookingId: booking.booking_id,
+                clientId: booking.client_id,
+                carId: booking.car_id,
+                carName: booking.car_name || 'Unknown Car',
+                carModel: booking.car_model || '',
+                carYear: booking.car_year,
+                carMake: booking.car_make || '',
+                carImageUrls,
+                clientName: getClientDisplayName(booking),
+                clientEmail: booking.client_email,
+                clientMobile: booking.client_mobile_number,
+                startDate: booking.start_date,
+                endDate: booking.end_date,
+                pickupTime: booking.pickup_time,
+                returnTime: booking.return_time,
+                pickupLocation: booking.pickup_location || [],
+                returnLocation: booking.return_location || [],
+                dropoffSameAsPickup: booking.dropoff_same_as_pickup,
+                dailyRate: booking.daily_rate,
+                rentalDays: booking.rental_days,
+                basePrice: booking.base_price,
+                damageWaiverFee: booking.damage_waiver_fee,
+                totalPrice: booking.total_price,
+                damageWaiverEnabled: booking.damage_waiver_enabled,
+                driveType: booking.drive_type,
+                checkInPreference: booking.check_in_preference,
+                specialRequirements: booking.special_requirements,
+                status: booking.status,
+                statusUpdatedAt: booking.status_updated_at,
+                cancellationReason: booking.cancellation_reason,
+                createdAt: booking.created_at,
+                updatedAt: booking.updated_at,
+                pendingExtension,
+              };
+            })
+          );
+
+          if (gen === fetchGenerationRef.current) {
+            setBookings(mappedBookings);
+          }
+        }
       } else {
-        if (gen !== fetchGenerationRef.current) return;
         if (!hadCached) setBookings([]);
       }
     } catch (error) {
       console.error('Error loading bookings:', error);
-      if (gen !== fetchGenerationRef.current) return;
-      if (!hadCached) setBookings([]);
-    } finally {
-      fetchingRef.current = false;
       if (gen === fetchGenerationRef.current) {
+        if (!hadCached) setBookings([]);
+      }
+    } finally {
+      if (gen === fetchGenerationRef.current) {
+        fetchingRef.current = false;
         hasFetchedOnceRef.current = true;
         setIsLoading(false);
         setRefreshing(false);
