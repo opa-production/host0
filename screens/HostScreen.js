@@ -254,24 +254,35 @@ export default function HostScreen({ navigation }) {
   const renderSkeletonCard = () => (
     <View style={[styles.carCard, styles.skeletonCard]}>
       <View style={styles.carCardContent}>
-        {/* Skeleton Image */}
-        <View style={styles.carImageContainer}>
-          <View style={[styles.carImagePlaceholder, { backgroundColor: '#E5E5EA' }]} />
-        </View>
+        {/* Circular image skeleton */}
+        <SkeletonBox width={80} height={80} style={{ borderRadius: 40, marginRight: 12, flexShrink: 0 }} />
 
-        {/* Skeleton Info */}
+        {/* Info skeleton */}
         <View style={styles.carInfo}>
           <View style={styles.carHeader}>
-            <SkeletonBox width={120} height={16} style={{ marginBottom: 8, borderRadius: 4 }} />
-            <SkeletonBox width={150} height={12} style={{ borderRadius: 4 }} />
+            <SkeletonBox width={140} height={14} style={{ borderRadius: 4, marginBottom: 6 }} />
+            <SkeletonBox width={100} height={11} style={{ borderRadius: 4 }} />
           </View>
 
           <View style={styles.carMetrics}>
-            <SkeletonBox width={100} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
-            <SkeletonBox width={80} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
-            <SkeletonBox width={90} height={12} style={{ marginBottom: 6, borderRadius: 4 }} />
-            <SkeletonBox width={60} height={12} style={{ borderRadius: 4 }} />
+            {[90, 70, 85, 60].map((w, i) => (
+              <View key={i} style={styles.metricItem}>
+                <SkeletonBox width={14} height={14} style={{ borderRadius: 7 }} />
+                <SkeletonBox width={w} height={11} style={{ borderRadius: 4 }} />
+              </View>
+            ))}
           </View>
+        </View>
+      </View>
+
+      {/* Visibility toggle footer skeleton */}
+      <View style={styles.visibilityToggleContainer}>
+        <View style={styles.visibilityToggleContent}>
+          <View style={styles.visibilityToggleText}>
+            <SkeletonBox width={110} height={12} style={{ borderRadius: 4, marginBottom: 5 }} />
+            <SkeletonBox width={50} height={10} style={{ borderRadius: 4 }} />
+          </View>
+          <SkeletonBox width={44} height={26} style={{ borderRadius: 13 }} />
         </View>
       </View>
     </View>
@@ -556,7 +567,7 @@ export default function HostScreen({ navigation }) {
       {isLoading && cars.length === 0 ? (
         // Only show skeleton on initial load when no cars exist
         <FlatList
-          data={Array.from({ length: previousCarsCount > 0 ? previousCarsCount : 1 }, (_, i) => i + 1)}
+          data={Array.from({ length: previousCarsCount > 0 ? previousCarsCount : 3 }, (_, i) => i + 1)}
           renderItem={renderSkeletonCard}
           keyExtractor={(item) => `skeleton-${item}`}
           showsVerticalScrollIndicator={false}
