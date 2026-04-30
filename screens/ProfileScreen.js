@@ -377,7 +377,7 @@ export default function ProfileScreen({ navigation }) {
               <View style={styles.linkTextBlock}>
                 <Text style={styles.linkTextInner}>Ardena for Business</Text>
                 <Text style={styles.linkSubText}>
-                  Simplified for launch phase
+                  Business verification &amp; fleet tools
                 </Text>
               </View>
               <Ionicons name="chevron-forward-outline" size={20} color="#999999" />

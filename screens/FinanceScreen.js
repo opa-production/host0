@@ -217,7 +217,7 @@ export default function FinanceScreen({ navigation }) {
 
           {isLoadingTransactions ? (
             <View style={styles.transactionsLoading}>
-              <AppLoader size="small" color={COLORS.subtle} />
+              <AppLoader size="small" color={COLORS.brand} />
               <Text style={styles.transactionsLoadingText}>Loading transactions…</Text>
             </View>
           ) : recentTransactions.length > 0 ? (

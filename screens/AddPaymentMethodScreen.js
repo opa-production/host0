@@ -200,7 +200,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
       >
         {isLoadingMethods && savedMethods.length === 0 ? (
           <View style={styles.loadingWrap}>
-            <AppLoader size="small" color={COLORS.text} />
+            <AppLoader size="small" color={COLORS.brand} />
           </View>
         ) : (
           <>

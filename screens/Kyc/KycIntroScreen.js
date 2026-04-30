@@ -15,17 +15,11 @@ import { COLORS, TYPE, SPACING, RADIUS } from '../../ui/tokens';
 import { lightHaptic } from '../../ui/haptics';
 import { lookupKycDetails, initializeKycWidget, getKycStatus } from '../../services/kycService';
 import AppLoader from "../../ui/AppLoader";
-import Constants, { ExecutionEnvironment } from 'expo-constants';
-
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-
 let Dojah;
-if (!isExpoGo) {
-  try {
-    Dojah = require('dojah-kyc-sdk-react-expo').default;
-  } catch (e) {
-    console.warn('Dojah SDK missing');
-  }
+try {
+  Dojah = require('dojah-kyc-sdk-react-expo').default;
+} catch (e) {
+  console.warn('Dojah SDK missing');
 }
 
 const ID_TYPES = [
@@ -210,11 +204,11 @@ export default function KycIntroScreen({ navigation }) {
     }
 
     if (step === 4 && widgetCreds) {
-      if (isExpoGo) {
+      if (!Dojah) {
         return (
           <View style={styles.minimalContent}>
-            <Text style={styles.titleSmall}>Native Build Required</Text>
-            <Text style={styles.subtitleSmall}>Face Match requires a development build to run the Dojah SDK.</Text>
+            <Text style={styles.stepLabel}>Error</Text>
+            <Text style={styles.stepHeading}>SDK not available</Text>
             <TouchableOpacity style={styles.primaryButton} onPress={() => setStep(3)}>
               <Text style={styles.primaryButtonText}>Go Back</Text>
             </TouchableOpacity>

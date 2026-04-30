@@ -286,7 +286,7 @@ export default function SignUpScreen({ navigation }) {
               disabled={isGoogleLoading}
             >
               {isGoogleLoading ? (
-                <AppLoader color={COLORS.subtle} size="small" />
+                <AppLoader color={COLORS.brand} size="small" />
               ) : (
                 <>
                   <Image source={require('../assets/images/google.png')} style={styles.socialIcon} resizeMode="contain" />

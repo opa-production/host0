@@ -234,7 +234,7 @@ export default function LoginScreen({ navigation }) {
 
       {checkingBiometric ? (
         <View style={styles.loadingContainer}>
-          <AppLoader size="large" color={COLORS.text} />
+          <AppLoader size="large" color={COLORS.brand} />
           <Text style={styles.loadingText}>Checking biometric authentication...</Text>
         </View>
       ) : (
@@ -315,7 +315,7 @@ export default function LoginScreen({ navigation }) {
               disabled={isGoogleLoading}
             >
               {isGoogleLoading ? (
-                <AppLoader color={COLORS.subtle} size="small" />
+                <AppLoader color={COLORS.brand} size="small" />
               ) : (
                 <>
                   <Image source={require('../assets/images/google.png')} style={styles.socialIcon} resizeMode="contain" />

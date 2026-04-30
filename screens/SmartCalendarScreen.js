@@ -92,7 +92,6 @@ function mergeRanges(ranges) {
     const prevEnd = startOfDay(prev.end).getTime();
     const curStart = startOfDay(r.start).getTime();
 
-    // merge touching ranges too (prevEnd + 1 day)
     const oneDay = 24 * 60 * 60 * 1000;
     if (curStart <= prevEnd + oneDay) {
       const curEnd = startOfDay(r.end).getTime();
@@ -105,7 +104,6 @@ function mergeRanges(ranges) {
   return out;
 }
 
-/** Merge consecutive blocked date ranges for display; each item has { start, end, ids: (number|string)[] } for unblock. */
 function mergeConsecutiveBlockedRanges(ranges) {
   if (!ranges || ranges.length === 0) return [];
   const oneDayMs = 24 * 60 * 60 * 1000;
@@ -151,13 +149,12 @@ export default function SmartCalendarScreen({ navigation }) {
   const [selectionEnd, setSelectionEnd] = useState(null);
 
   const [unavailable, setUnavailable] = useState([]);
-  const [blockedDatesData, setBlockedDatesData] = useState([]); // Store API blocked dates with IDs
+  const [blockedDatesData, setBlockedDatesData] = useState([]);
 
   const [instantBooking, setInstantBooking] = useState(false);
   const [bufferHours, setBufferHours] = useState(0);
   const [syncEnabled, setSyncEnabled] = useState(false);
 
-  // Car selection
   const [cars, setCars] = useState([]);
   const [selectedCarId, setSelectedCarId] = useState(null);
   const [selectedCar, setSelectedCar] = useState(null);
@@ -171,7 +168,7 @@ export default function SmartCalendarScreen({ navigation }) {
     const m = month.getMonth();
 
     const first = new Date(y, m, 1);
-    const startWeekday = first.getDay(); // 0=Sun
+    const startWeekday = first.getDay();
 
     const daysInMonth = new Date(y, m + 1, 0).getDate();
 
@@ -179,8 +176,6 @@ export default function SmartCalendarScreen({ navigation }) {
     for (let i = 0; i < startWeekday; i += 1) cells.push(null);
     for (let d = 1; d <= daysInMonth; d += 1) cells.push(new Date(y, m, d));
     while (cells.length % 7 !== 0) cells.push(null);
-
-    // cap to 6 rows
     while (cells.length < 42) cells.push(null);
     return cells.slice(0, 42);
   }, [month]);
@@ -199,18 +194,14 @@ export default function SmartCalendarScreen({ navigation }) {
 
   const onDayPress = (d) => {
     if (!d || !selectedCarId) {
-      if (!selectedCarId) {
-        Alert.alert('Select Car', 'Please select a car first to manage its calendar');
-      }
+      if (!selectedCarId) Alert.alert('Select Car', 'Please select a car first to manage its calendar');
       return;
     }
-
     if (!selectionStart || (selectionStart && selectionEnd)) {
       setSelectionStart(d);
       setSelectionEnd(null);
       return;
     }
-
     setSelectionEnd(d);
   };
 
@@ -227,21 +218,15 @@ export default function SmartCalendarScreen({ navigation }) {
 
     const end = selectionEnd || selectionStart;
     const range = normalizeRange(selectionStart, end);
-    const startDate = startOfDay(range.start).toISOString();
-    const endDate = startOfDay(range.end).toISOString();
 
     setIsBlocking(true);
     try {
-      // If backend only creates one day per request, block each day in the range.
       const startMs = startOfDay(range.start).getTime();
       const endMs = startOfDay(range.end).getTime();
       const oneDayMs = 24 * 60 * 60 * 1000;
       const daysToBlock = Math.round((endMs - startMs) / oneDayMs) + 1;
 
-      if (daysToBlock <= 0) {
-        setIsBlocking(false);
-        return;
-      }
+      if (daysToBlock <= 0) { setIsBlocking(false); return; }
 
       let allOk = true;
       let lastError = null;
@@ -249,24 +234,18 @@ export default function SmartCalendarScreen({ navigation }) {
       for (let i = 0; i < daysToBlock; i += 1) {
         const dayStart = new Date(startMs + i * oneDayMs);
         const dayEnd = new Date(startMs + i * oneDayMs);
-        const dayStartStr = startOfDay(dayStart).toISOString();
-        const dayEndStr = startOfDay(dayEnd).toISOString();
-        const result = await blockCarDates(selectedCarId, dayStartStr, dayEndStr);
-        if (!result.success) {
-          allOk = false;
-          lastError = result.error;
-        }
+        const result = await blockCarDates(selectedCarId, startOfDay(dayStart).toISOString(), startOfDay(dayEnd).toISOString());
+        if (!result.success) { allOk = false; lastError = result.error; }
       }
 
       if (allOk) {
         await loadBlockedDates();
         clearSelection();
-        Alert.alert('Success', daysToBlock === 1 ? 'Date blocked successfully' : `${daysToBlock} dates blocked successfully`);
+        Alert.alert('Done', daysToBlock === 1 ? 'Date blocked' : `${daysToBlock} dates blocked`);
       } else {
         Alert.alert('Error', lastError || 'Failed to block some dates');
       }
     } catch (error) {
-      console.error('Error blocking dates:', error);
       Alert.alert('Error', 'Failed to block dates. Please try again.');
     } finally {
       setIsBlocking(false);
@@ -274,19 +253,15 @@ export default function SmartCalendarScreen({ navigation }) {
   };
 
   const unblockSelected = async () => {
-    if (!selectedCarId) {
-      Alert.alert('Error', 'Please select a car first');
-      return;
-    }
+    if (!selectedCarId) { Alert.alert('Error', 'Please select a car first'); return; }
     if (!selectionStart) {
-      Alert.alert('Select dates', 'Tap a start date, then an end date on the calendar to select the range to unblock.');
+      Alert.alert('Select dates', 'Tap a start date, then an end date to select the range to unblock.');
       return;
     }
 
     const end = selectionEnd || selectionStart;
     const sel = normalizeRange(selectionStart, end);
 
-    // Find blocked dates that overlap with selection
     const overlappingBlockedDates = blockedDatesData.filter((bd) => {
       const bdStart = startOfDay(new Date(bd.start_date));
       const bdEnd = startOfDay(new Date(bd.end_date));
@@ -294,41 +269,32 @@ export default function SmartCalendarScreen({ navigation }) {
     });
 
     if (overlappingBlockedDates.length === 0) {
-      Alert.alert('Info', 'No blocked dates found for the selected range');
+      Alert.alert('Info', 'No blocked dates in the selected range');
       return;
     }
 
-    // Unblock all overlapping dates
     setIsBlocking(true);
     try {
-      const unblockPromises = overlappingBlockedDates.map((bd) =>
-        unblockCarDate(selectedCarId, bd.id || bd.blocked_date_id)
+      const results = await Promise.all(
+        overlappingBlockedDates.map((bd) => unblockCarDate(selectedCarId, bd.id || bd.blocked_date_id))
       );
-      const results = await Promise.all(unblockPromises);
-      
       if (results.every((r) => r.success)) {
-        // Reload blocked dates
         await loadBlockedDates();
         clearSelection();
-        Alert.alert('Success', 'Dates unblocked successfully');
+        Alert.alert('Done', 'Dates unblocked');
       } else {
         const errors = results.filter((r) => !r.success).map((r) => r.error);
         Alert.alert('Error', errors.join('\n') || 'Failed to unblock some dates');
       }
     } catch (error) {
-      console.error('Error unblocking dates:', error);
       Alert.alert('Error', 'Failed to unblock dates. Please try again.');
     } finally {
       setIsBlocking(false);
     }
   };
 
-  // Load cars on mount
-  useEffect(() => {
-    loadCars();
-  }, []);
+  useEffect(() => { loadCars(); }, []);
 
-  // Load blocked dates when car is selected
   useEffect(() => {
     if (selectedCarId) {
       loadBlockedDates();
@@ -338,16 +304,13 @@ export default function SmartCalendarScreen({ navigation }) {
     }
   }, [selectedCarId]);
 
-  // Reload sync status when screen is focused
+  // Only reload sync status on focus — blocked dates load when car is selected
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadSyncStatus();
-      if (selectedCarId) {
-        loadBlockedDates();
-      }
     });
     return unsubscribe;
-  }, [navigation, selectedCarId]);
+  }, [navigation]);
 
   const loadCars = async () => {
     setIsLoadingCars(true);
@@ -355,7 +318,6 @@ export default function SmartCalendarScreen({ navigation }) {
       const result = await getHostCars({ summary: true });
       if (result.success && result.cars) {
         setCars(result.cars);
-        // Auto-select first car if available
         if (result.cars.length > 0 && !selectedCarId) {
           setSelectedCarId(result.cars[0].id);
           setSelectedCar(result.cars[0]);
@@ -370,13 +332,11 @@ export default function SmartCalendarScreen({ navigation }) {
 
   const loadBlockedDates = async () => {
     if (!selectedCarId) return;
-    
     setIsLoadingBlockedDates(true);
     try {
       const result = await getBlockedDates(selectedCarId);
       if (result.success && result.blockedDates) {
         setBlockedDatesData(result.blockedDates);
-        // Convert API blocked dates to unavailable ranges
         const ranges = result.blockedDates.map((bd) => ({
           start: new Date(bd.start_date),
           end: new Date(bd.end_date),
@@ -402,21 +362,17 @@ export default function SmartCalendarScreen({ navigation }) {
       setSyncEnabled(isEnabled);
 
       if (isEnabled) {
-        // Load blocked dates from synced calendar
         const blockedDatesJson = await AsyncStorage.getItem('@calendar_blocked_dates');
         if (blockedDatesJson) {
-          const blockedDates = JSON.parse(blockedDatesJson).map(bd => ({
+          const blockedDates = JSON.parse(blockedDatesJson).map((bd) => ({
             start: new Date(bd.start),
             end: new Date(bd.end),
           }));
-          
-          // Merge with existing unavailable dates using functional update
-          setUnavailable(prevUnavailable => {
-            const existingRanges = prevUnavailable.map(r => normalizeRange(r.start, r.end));
-            const newRanges = blockedDates.map(bd => normalizeRange(bd.start, bd.end));
-            
-            // Combine and merge all ranges
-            const allRanges = [...existingRanges, ...newRanges];
+          setUnavailable((prevUnavailable) => {
+            const allRanges = [
+              ...prevUnavailable.map((r) => normalizeRange(r.start, r.end)),
+              ...blockedDates.map((bd) => normalizeRange(bd.start, bd.end)),
+            ];
             return mergeRanges(allRanges);
           });
         }
@@ -426,20 +382,15 @@ export default function SmartCalendarScreen({ navigation }) {
     }
   };
 
-  const onSyncPress = () => {
-    lightHaptic();
-    navigation.navigate('CalendarSync');
-  };
-
+  const onSyncPress = () => { lightHaptic(); navigation.navigate('CalendarSync'); };
   const shiftMonth = (delta) => {
     const y = month.getFullYear();
     const m = month.getMonth();
     setMonth(new Date(y, m + delta, 1));
   };
 
-  const selectedLabel = selectionStart ? fmtRange(selectionStart, selectionEnd || selectionStart) : 'No dates selected';
+  const selectedLabel = selectionStart ? fmtRange(selectionStart, selectionEnd || selectionStart) : null;
 
-  // Merge consecutive blocked dates for display as ranges (e.g. "Mar 8 – Mar 17")
   const mergedBlockedForDisplay = useMemo(
     () => mergeConsecutiveBlockedRanges(unavailable),
     [unavailable]
@@ -449,77 +400,52 @@ export default function SmartCalendarScreen({ navigation }) {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
 
-      <View style={[styles.header, { paddingTop: insets.top + 2, paddingBottom: 4 }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => {
-            lightHaptic();
-            navigation.goBack();
-          }}
-          activeOpacity={0.7}
-        >
+      <View style={[styles.header, { paddingTop: insets.top + 2 }]}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => { lightHaptic(); navigation.goBack(); }} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Smart Calendar</Text>
-        <View style={styles.backButton} />
+        <View style={styles.iconBtn} />
       </View>
 
-      <ScrollView 
-        contentContainerStyle={[styles.content, { paddingTop: SPACING.m }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.card}>
-          {/* Car Selector */}
-          <View style={styles.carSelectorContainer}>
-            <Text style={styles.carSelectorLabel}>Select Car</Text>
-            {isLoadingCars ? (
-              <AppLoader size="small" color={COLORS.text} />
-            ) : (
-              <TouchableOpacity
-                style={styles.carSelectorButton}
-                onPress={() => setIsCarPickerVisible(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.carSelectorText} numberOfLines={1}>
-                  {selectedCar 
-                    ? `${selectedCar.name || 'Car'} ${selectedCar.model ? `• ${selectedCar.model}` : ''}`
-                    : 'Select a car'}
-                </Text>
-                <Ionicons name="chevron-down" size={18} color={COLORS.text} />
-              </TouchableOpacity>
-            )}
-          </View>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-          {selectedCarId && isLoadingBlockedDates && (
-            <View style={styles.loadingContainer}>
-              <AppLoader size="small" color={COLORS.text} />
-              <Text style={styles.loadingText}>Loading blocked dates...</Text>
+        {/* Car selector */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Vehicle</Text>
+          {isLoadingCars ? (
+            <View style={styles.loaderRow}>
+              <AppLoader size="small" color={COLORS.brand} />
             </View>
+          ) : (
+            <TouchableOpacity style={styles.carRow} onPress={() => setIsCarPickerVisible(true)} activeOpacity={0.7}>
+              <Text style={styles.carRowText} numberOfLines={1}>
+                {selectedCar
+                  ? `${selectedCar.name || 'Car'}${selectedCar.model ? ` · ${selectedCar.model}` : ''}`
+                  : 'Select a car'}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color={COLORS.subtle} />
+            </TouchableOpacity>
           )}
+        </View>
 
-          {!selectedCarId && (
-            <Text style={styles.helperText}>
-              Please select a car to manage its calendar
-            </Text>
-          )}
+        <View style={styles.hairline} />
 
+        {/* Calendar */}
+        <View style={styles.section}>
           <View style={styles.monthRow}>
-            <TouchableOpacity style={styles.monthNav} onPress={() => shiftMonth(-1)} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.monthNavBtn} onPress={() => shiftMonth(-1)} activeOpacity={0.8}>
               <Ionicons name="chevron-back" size={18} color={COLORS.text} />
             </TouchableOpacity>
-
             <Text style={styles.monthTitle}>{formatMonthYear(month)}</Text>
-
-            <TouchableOpacity style={styles.monthNav} onPress={() => shiftMonth(1)} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.monthNavBtn} onPress={() => shiftMonth(1)} activeOpacity={0.8}>
               <Ionicons name="chevron-forward" size={18} color={COLORS.text} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.weekRow}>
             {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-              <Text key={`${d}-${i}`} style={styles.weekDay}>
-                {d}
-              </Text>
+              <Text key={`${d}-${i}`} style={styles.weekDay}>{d}</Text>
             ))}
           </View>
 
@@ -528,7 +454,6 @@ export default function SmartCalendarScreen({ navigation }) {
               const unavailableDay = isUnavailableDay(d);
               const selected = isSelectedDay(d);
               const isToday = d ? isSameDay(d, new Date()) : false;
-
               return (
                 <TouchableOpacity
                   key={`${idx}-${d ? d.toISOString() : 'x'}`}
@@ -541,20 +466,24 @@ export default function SmartCalendarScreen({ navigation }) {
                   activeOpacity={0.85}
                   disabled={!d}
                 >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      selected && styles.dayTextSelected,
-                      unavailableDay && styles.dayTextUnavailable,
-                      isToday && !selected && !unavailableDay && styles.dayTextToday,
-                    ]}
-                  >
+                  <Text style={[
+                    styles.dayText,
+                    selected && styles.dayTextSelected,
+                    unavailableDay && styles.dayTextUnavailable,
+                    isToday && !selected && !unavailableDay && styles.dayTextToday,
+                  ]}>
                     {d ? d.getDate() : ''}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
+
+          {isLoadingBlockedDates && (
+            <View style={styles.loaderRow}>
+              <AppLoader size="small" color={COLORS.brand} />
+            </View>
+          )}
 
           <View style={styles.legendRow}>
             <View style={styles.legendItem}>
@@ -565,53 +494,46 @@ export default function SmartCalendarScreen({ navigation }) {
               <View style={[styles.legendDot, { backgroundColor: COLORS.danger }]} />
               <Text style={styles.legendText}>Unavailable</Text>
             </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#E5E5EA' }]} />
-              <Text style={styles.legendText}>Available</Text>
-            </View>
           </View>
 
-          <Text style={styles.selectionLabel}>{selectedLabel}</Text>
+          {selectedLabel ? (
+            <Text style={styles.selectionLabel}>{selectedLabel}</Text>
+          ) : null}
 
           <View style={styles.actionsRow}>
-            <TouchableOpacity style={styles.secondaryButton} onPress={clearSelection} activeOpacity={0.9}>
-              <Text style={styles.secondaryButtonText}>Clear</Text>
+            <TouchableOpacity style={styles.ghostBtn} onPress={clearSelection} activeOpacity={0.9}>
+              <Text style={styles.ghostBtnText}>Clear</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.dangerButton, (!selectedCarId || isBlocking) && styles.dangerButtonDisabled]} 
-              onPress={unblockSelected} 
+            <TouchableOpacity
+              style={[styles.outlineBtn, (!selectedCarId || isBlocking) && styles.btnDisabled]}
+              onPress={unblockSelected}
               activeOpacity={0.9}
               disabled={!selectedCarId || isBlocking}
             >
-              {isBlocking ? (
-                <AppLoader size="small" color={COLORS.danger} />
-              ) : (
-                <Text style={styles.dangerButtonText}>Unblock</Text>
-              )}
+              {isBlocking
+                ? <AppLoader size="small" color={COLORS.danger} />
+                : <Text style={styles.outlineBtnText}>Unblock</Text>}
             </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.primaryButton, (!selectedCarId || isBlocking) && styles.primaryButtonDisabled]} 
-              onPress={blockSelected} 
+            <TouchableOpacity
+              style={[styles.solidBtn, (!selectedCarId || isBlocking) && styles.btnDisabled]}
+              onPress={blockSelected}
               activeOpacity={0.9}
               disabled={!selectedCarId || isBlocking}
             >
-              {isBlocking ? (
-                <AppLoader size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Block</Text>
-              )}
+              {isBlocking
+                ? <AppLoader size="small" color="#FFF" />
+                : <Text style={styles.solidBtnText}>Block</Text>}
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.helperText}>
-            Tap a start date, then tap an end date to select a multi-day range. Use Block/Unblock to update availability.
-          </Text>
+          <Text style={styles.hint}>Tap a start date, then tap an end date to select a range.</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Booking settings</Text>
+        <View style={styles.hairline} />
+
+        {/* Booking settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Booking Settings</Text>
 
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
@@ -629,31 +551,23 @@ export default function SmartCalendarScreen({ navigation }) {
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
               <Text style={styles.settingLabel}>Buffer time</Text>
-              <Text style={styles.settingHint}>Automatically add time between rentals.</Text>
+              <Text style={styles.settingHint}>Add time between rentals.</Text>
             </View>
             <View style={styles.stepper}>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setBufferHours((h) => Math.max(0, h - 1))}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="remove" size={18} color={COLORS.text} />
+              <TouchableOpacity style={styles.stepperBtn} onPress={() => setBufferHours((h) => Math.max(0, h - 1))} activeOpacity={0.85}>
+                <Ionicons name="remove" size={16} color={COLORS.text} />
               </TouchableOpacity>
               <Text style={styles.stepperValue}>{bufferHours}h</Text>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setBufferHours((h) => Math.min(12, h + 1))}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="add" size={18} color={COLORS.text} />
+              <TouchableOpacity style={styles.stepperBtn} onPress={() => setBufferHours((h) => Math.min(12, h + 1))} activeOpacity={0.85}>
+                <Ionicons name="add" size={16} color={COLORS.text} />
               </TouchableOpacity>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.syncRow} onPress={onSyncPress} activeOpacity={0.85}>
-            <View style={styles.syncLeft}>
+          <TouchableOpacity style={styles.settingRow} onPress={onSyncPress} activeOpacity={0.85}>
+            <View style={styles.settingLeft}>
               <View style={styles.syncLabelRow}>
-                <Text style={styles.settingLabel}>Sync with personal calendar</Text>
+                <Text style={styles.settingLabel}>Calendar sync</Text>
                 {syncEnabled && (
                   <View style={styles.syncBadge}>
                     <Text style={styles.syncBadgeText}>Active</Text>
@@ -661,22 +575,24 @@ export default function SmartCalendarScreen({ navigation }) {
                 )}
               </View>
               <Text style={styles.settingHint}>
-                {syncEnabled 
-                  ? 'Calendar sync is enabled. Events will block dates automatically.'
-                  : 'Connect Google/Apple calendar to auto-block dates.'}
+                {syncEnabled
+                  ? 'Synced — events block dates automatically.'
+                  : 'Connect Google/Apple calendar.'}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.subtle} />
+            <Ionicons name="chevron-forward" size={16} color={COLORS.subtle} />
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.card, { marginBottom: SPACING.xl }]}
-        >
-          <Text style={styles.sectionTitle}>Blocked dates</Text>
+        <View style={styles.hairline} />
+
+        {/* Blocked dates */}
+        <View style={[styles.section, { paddingBottom: SPACING.xl }]}>
+          <Text style={styles.sectionLabel}>Blocked Dates</Text>
           {!selectedCarId ? (
-            <Text style={styles.helperText}>Select a car to view blocked dates</Text>
+            <Text style={styles.hint}>Select a car to view blocked dates.</Text>
           ) : mergedBlockedForDisplay.length === 0 ? (
-            <Text style={styles.helperText}>No blocked dates yet.</Text>
+            <Text style={styles.hint}>No blocked dates yet.</Text>
           ) : (
             mergedBlockedForDisplay.map((r, i) => (
               <TouchableOpacity
@@ -700,16 +616,14 @@ export default function SmartCalendarScreen({ navigation }) {
                             const results = await Promise.all(
                               idsToUnblock.map((id) => unblockCarDate(carId, id))
                             );
-                            const allOk = results.every((res) => res.success);
-                            if (allOk) {
+                            if (results.every((res) => res.success)) {
                               await loadBlockedDates();
-                              Alert.alert('Success', 'Dates unblocked successfully');
+                              Alert.alert('Done', 'Dates unblocked');
                             } else {
                               const err = results.find((res) => !res.success);
                               Alert.alert('Error', err?.error || 'Failed to unblock');
                             }
                           } catch (error) {
-                            console.error('Error unblocking date:', error);
                             Alert.alert('Error', 'Failed to unblock. Please try again.');
                           } finally {
                             setIsBlocking(false);
@@ -721,63 +635,49 @@ export default function SmartCalendarScreen({ navigation }) {
                 }}
                 activeOpacity={0.7}
               >
-                <View style={styles.blockedRowLeft}>
-                  <Text style={styles.blockedText}>{fmtRange(r.start, r.end)}</Text>
-                </View>
-                <Ionicons name="close-circle" size={18} color={COLORS.subtle} />
+                <Text style={styles.blockedText}>{fmtRange(r.start, r.end)}</Text>
+                <Ionicons name="close-circle-outline" size={18} color={COLORS.subtle} />
               </TouchableOpacity>
             ))
           )}
         </View>
       </ScrollView>
 
-      {/* Car Picker Modal */}
+      {/* Car picker modal */}
       <Modal
         visible={isCarPickerVisible}
-        transparent={true}
+        transparent
         animationType="slide"
         onRequestClose={() => setIsCarPickerVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Car</Text>
-              <TouchableOpacity
-                onPress={() => setIsCarPickerVisible(false)}
-                style={styles.modalCloseButton}
-              >
-                <Ionicons name="close" size={24} color={COLORS.text} />
+              <Text style={styles.modalTitle}>Select Vehicle</Text>
+              <TouchableOpacity onPress={() => setIsCarPickerVisible(false)} style={styles.iconBtn}>
+                <Ionicons name="close" size={22} color={COLORS.text} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalScrollView}>
+            <ScrollView style={styles.modalScroll}>
               {cars.length === 0 ? (
-                <Text style={styles.modalEmptyText}>No cars available</Text>
+                <Text style={styles.hint}>No cars available.</Text>
               ) : (
                 cars.map((car) => (
                   <TouchableOpacity
                     key={car.id}
-                    style={[
-                      styles.carOption,
-                      selectedCarId === car.id && styles.carOptionSelected,
-                    ]}
-                    onPress={() => {
-                      setSelectedCarId(car.id);
-                      setSelectedCar(car);
-                      setIsCarPickerVisible(false);
-                      lightHaptic();
-                    }}
+                    style={[styles.carOption, selectedCarId === car.id && styles.carOptionActive]}
+                    onPress={() => { setSelectedCarId(car.id); setSelectedCar(car); setIsCarPickerVisible(false); lightHaptic(); }}
                     activeOpacity={0.7}
                   >
-                    <View style={styles.carOptionContent}>
+                    <View style={{ flex: 1 }}>
                       <Text style={styles.carOptionName}>
-                        {car.name || 'Car'} {car.model ? `• ${car.model}` : ''}
+                        {car.name || 'Car'}{car.model ? ` · ${car.model}` : ''}
                       </Text>
-                      {car.year && (
-                        <Text style={styles.carOptionYear}>{car.year}</Text>
-                      )}
+                      {car.year ? <Text style={styles.carOptionYear}>{car.year}</Text> : null}
                     </View>
                     {selectedCarId === car.id && (
-                      <Ionicons name="checkmark-circle" size={24} color={COLORS.brand} />
+                      <Ionicons name="checkmark-circle" size={22} color={COLORS.brand} />
                     )}
                   </TouchableOpacity>
                 ))
@@ -791,366 +691,169 @@ export default function SmartCalendarScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
+  safeArea: { flex: 1, backgroundColor: COLORS.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.l,
-    paddingBottom: 12,
-    backgroundColor: COLORS.bg,
+    paddingBottom: 8,
   },
-  backButton: {
-    width: 40,
-    height: 40,
+  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { ...TYPE.section, fontSize: 16, color: COLORS.text },
+  content: { paddingBottom: SPACING.xl },
+  hairline: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(0,0,0,0.12)', marginHorizontal: SPACING.l },
+  section: { paddingHorizontal: SPACING.l, paddingVertical: SPACING.m },
+  sectionLabel: {
+    ...TYPE.micro,
+    fontSize: 11,
+    color: COLORS.subtle,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
+  loaderRow: { alignItems: 'center', paddingVertical: 12 },
+  carRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
   },
-  headerTitle: {
-    ...TYPE.largeTitle,
-    fontSize: 20,
-    color: COLORS.text,
-  },
-  content: {
-    paddingHorizontal: SPACING.l,
-    paddingBottom: SPACING.xl,
-    gap: SPACING.l,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.l,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
-  },
+  carRowText: { ...TYPE.bodyStrong, fontSize: 15, color: COLORS.text, flex: 1, marginRight: 8 },
   monthRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: SPACING.m,
   },
-  monthNav: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  monthTitle: {
-    ...TYPE.section,
-  },
+  monthNavBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  monthTitle: { ...TYPE.bodyStrong, fontSize: 15, color: COLORS.text },
   weekRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: SPACING.s,
-    paddingHorizontal: 2,
+    marginBottom: 6,
   },
-  weekDay: {
-    width: 38,
-    textAlign: 'center',
-    ...TYPE.micro,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
+  weekDay: { width: 38, textAlign: 'center', ...TYPE.micro, color: COLORS.subtle },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   dayCell: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
-    backgroundColor: COLORS.bg,
+    marginBottom: 6,
   },
   dayCellSelected: {
-    backgroundColor: 'rgba(0, 122, 255, 0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 122, 255, 0.35)',
+    backgroundColor: 'rgba(0,122,255,0.12)',
   },
   dayCellUnavailable: {
-    backgroundColor: 'rgba(255, 45, 85, 0.12)',
+    backgroundColor: 'rgba(255,45,85,0.1)',
+  },
+  dayText: { ...TYPE.body, fontSize: 13, color: COLORS.text },
+  dayTextSelected: { color: COLORS.brand, fontFamily: 'Nunito-SemiBold' },
+  dayTextUnavailable: { color: COLORS.danger },
+  dayTextToday: { textDecorationLine: 'underline' },
+  legendRow: { flexDirection: 'row', gap: 20, marginTop: 10, marginBottom: 6 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 7, height: 7, borderRadius: 4 },
+  legendText: { ...TYPE.caption, color: COLORS.subtle },
+  selectionLabel: { ...TYPE.bodyStrong, fontSize: 13, color: COLORS.text, marginTop: 8 },
+  actionsRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  ghostBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(0,0,0,0.2)',
+  },
+  ghostBtnText: { ...TYPE.body, fontSize: 14, color: COLORS.muted },
+  outlineBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 45, 85, 0.28)',
+    borderColor: 'rgba(255,45,85,0.3)',
+    backgroundColor: 'rgba(255,45,85,0.06)',
   },
-  dayText: {
-    ...TYPE.bodyStrong,
-    fontSize: 13,
-  },
-  dayTextSelected: {
-    color: COLORS.brand,
-  },
-  dayTextUnavailable: {
-    color: COLORS.danger,
-  },
-  dayTextToday: {
-    textDecorationLine: 'underline',
-  },
-  legendRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: SPACING.s,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
-    ...TYPE.caption,
-  },
-  selectionLabel: {
-    ...TYPE.bodyStrong,
-    marginTop: SPACING.m,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: SPACING.m,
-  },
-  primaryButton: {
+  outlineBtnText: { ...TYPE.bodyStrong, fontSize: 14, color: COLORS.danger },
+  solidBtn: {
     flex: 1,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: COLORS.text,
-    borderRadius: RADIUS.button,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
   },
-  primaryButtonText: {
-    ...TYPE.section,
-    color: '#ffffff',
-  },
-  secondaryButton: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-    borderRadius: RADIUS.button,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
-  secondaryButtonText: {
-    ...TYPE.section,
-    color: COLORS.text,
-  },
-  dangerButton: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 45, 85, 0.14)',
-    borderRadius: RADIUS.button,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 45, 85, 0.22)',
-  },
-  dangerButtonText: {
-    ...TYPE.section,
-    color: COLORS.danger,
-  },
-  helperText: {
-    ...TYPE.caption,
-    marginTop: SPACING.m,
-  },
-  sectionTitle: {
-    ...TYPE.section,
-    marginBottom: SPACING.m,
-  },
+  solidBtnText: { ...TYPE.bodyStrong, fontSize: 14, color: '#FFF' },
+  btnDisabled: { opacity: 0.4 },
+  hint: { ...TYPE.caption, color: COLORS.subtle, marginTop: 8, lineHeight: 18 },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: SPACING.m,
+    paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.border,
+    borderTopColor: 'rgba(0,0,0,0.08)',
   },
-  settingLeft: {
-    flex: 1,
-    paddingRight: SPACING.m,
-  },
-  settingLabel: {
-    ...TYPE.bodyStrong,
-  },
-  settingHint: {
-    ...TYPE.caption,
-    marginTop: 2,
-  },
+  settingLeft: { flex: 1, paddingRight: SPACING.m },
+  settingLabel: { ...TYPE.bodyStrong, fontSize: 14 },
+  settingHint: { ...TYPE.caption, marginTop: 2, color: COLORS.subtle },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.bg,
     borderRadius: RADIUS.pill,
-    paddingHorizontal: 8,
-    height: 36,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
-  },
-  stepperBtn: {
-    width: 34,
+    paddingHorizontal: 4,
     height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(0,0,0,0.15)',
   },
-  stepperValue: {
-    ...TYPE.bodyStrong,
-    minWidth: 34,
-    textAlign: 'center',
-  },
-  syncRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: SPACING.m,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.border,
-  },
-  syncLeft: {
-    flex: 1,
-    paddingRight: SPACING.m,
-  },
+  stepperBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  stepperValue: { ...TYPE.bodyStrong, minWidth: 30, textAlign: 'center', fontSize: 13 },
+  syncLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  syncBadge: { backgroundColor: '#34C759', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 },
+  syncBadgeText: { ...TYPE.micro, color: '#FFF', fontSize: 10, fontFamily: 'Nunito-SemiBold' },
   blockedRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: SPACING.m,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.border,
-  },
-  blockedText: {
-    ...TYPE.body,
-    color: COLORS.text,
-  },
-  syncLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  syncBadge: {
-    backgroundColor: '#34C759',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  syncBadgeText: {
-    ...TYPE.micro,
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontFamily: 'Nunito-SemiBold',
-  },
-  carSelectorContainer: {
-    marginBottom: SPACING.m,
-    paddingBottom: SPACING.m,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
-  },
-  carSelectorLabel: {
-    ...TYPE.body,
-    fontSize: 13,
-    color: COLORS.subtle,
-    marginBottom: 8,
-  },
-  carSelectorButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.bg,
-    borderRadius: RADIUS.button,
     paddingVertical: 12,
-    paddingHorizontal: SPACING.m,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.borderStrong,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(0,0,0,0.08)',
   },
-  carSelectorText: {
-    ...TYPE.bodyStrong,
-    flex: 1,
-    marginRight: 8,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.m,
-    gap: 8,
-  },
-  loadingText: {
-    ...TYPE.body,
-    fontSize: 13,
-    color: COLORS.subtle,
-  },
-  primaryButtonDisabled: {
-    opacity: 0.5,
-  },
-  dangerButtonDisabled: {
-    opacity: 0.5,
-  },
-  blockedRowLeft: {
-    flex: 1,
-  },
-  blockedReason: {
-    ...TYPE.caption,
-    color: COLORS.subtle,
-    marginTop: 2,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: COLORS.surface,
+  blockedText: { ...TYPE.body, fontSize: 14, color: COLORS.text },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modalSheet: {
+    backgroundColor: COLORS.bg,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '80%',
+    maxHeight: '75%',
     paddingBottom: SPACING.xl,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 4,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.l,
-    paddingTop: SPACING.l,
-    paddingBottom: SPACING.m,
+    paddingVertical: SPACING.m,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
-  modalTitle: {
-    ...TYPE.section,
-    fontSize: 18,
-  },
-  modalCloseButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalScrollView: {
-    maxHeight: 400,
-  },
-  modalEmptyText: {
-    ...TYPE.body,
-    textAlign: 'center',
-    paddingVertical: SPACING.xl,
-    color: COLORS.subtle,
-  },
+  modalTitle: { ...TYPE.section, fontSize: 15 },
+  modalScroll: { maxHeight: 380 },
   carOption: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1158,21 +861,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.l,
     paddingVertical: SPACING.m,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: 'rgba(0,0,0,0.07)',
   },
-  carOptionSelected: {
-    backgroundColor: 'rgba(0, 122, 255, 0.08)',
-  },
-  carOptionContent: {
-    flex: 1,
-  },
-  carOptionName: {
-    ...TYPE.bodyStrong,
-    fontSize: 15,
-  },
-  carOptionYear: {
-    ...TYPE.caption,
-    color: COLORS.subtle,
-    marginTop: 2,
-  },
+  carOptionActive: { backgroundColor: 'rgba(0,122,255,0.06)' },
+  carOptionName: { ...TYPE.bodyStrong, fontSize: 15 },
+  carOptionYear: { ...TYPE.caption, color: COLORS.subtle, marginTop: 2 },
 });

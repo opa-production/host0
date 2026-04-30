@@ -111,7 +111,7 @@ export default function AllTransactionsScreen({ navigation, route }) {
         <View style={styles.card}>
           {isLoading ? (
             <View style={styles.emptyState}>
-              <AppLoader size="large" color={COLORS.subtle} />
+              <AppLoader size="large" color={COLORS.brand} />
               <Text style={styles.emptySub}>Loading transactions…</Text>
             </View>
           ) : transactions.length === 0 ? (
