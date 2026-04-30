@@ -6,7 +6,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, TYPE, SPACING } from '../ui/tokens';
 import { createCarBasics, updateCarSpecs, updateCarPricing, saveVehicleImageUrls } from '../services/carService';
 import { uploadVehicleImages, uploadVehicleVideo } from '../services/mediaService';
-import { myListingsScreenCache } from '../utils/screenDataCache';
 import CitySelectionScreen, { HOST_LISTING_CITIES } from './HostVehicle/CitySelectionScreen';
 import BasicInfoScreen from './HostVehicle/BasicInfoMediaScreen';
 import MediaUploadScreen from './HostVehicle/MediaUploadScreen';
@@ -228,10 +227,6 @@ export default function HostVehicleScreen({ navigation, route }) {
       if (imageUrls.length > 0) {
         await saveVehicleImageUrls(currentCarId, coverUrl, imageUrls, videoUrl);
       }
-      
-      myListingsScreenCache.cars = null;
-      myListingsScreenCache.fetchedOnce = false;
-      myListingsScreenCache.cachedUserId = null;
       
       setShowSuccessModal(true);
     } catch (error) {

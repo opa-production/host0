@@ -16,7 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPE, SPACING, RADIUS } from '../ui/tokens';
 import { lightHaptic } from '../ui/haptics';
 import { getHostCars } from '../services/carService';
-import { myListingsScreenCache } from '../utils/screenDataCache';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -149,8 +148,6 @@ export default function MyListingsScreen({ navigation }) {
       if (result.success) {
         const fresh = result.cars || [];
         setCars(fresh);
-        myListingsScreenCache.cars = fresh;
-        myListingsScreenCache.fetchedOnce = true;
         lastFetchTimeRef.current = Date.now();
       }
     } catch (error) {
@@ -166,14 +163,12 @@ export default function MyListingsScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       const isFirstLoad = !hasLoadedRef.current;
-      // HostVehicleScreen sets fetchedOnce=false after a car is submitted
-      const cacheInvalidated = !myListingsScreenCache.fetchedOnce;
       const isStale = Date.now() - lastFetchTimeRef.current > 30_000;
 
-      if (!isFirstLoad && !cacheInvalidated && !isStale) return;
+      if (!isFirstLoad && !isStale) return;
 
       hasLoadedRef.current = true;
-      // Only show skeleton on the very first visit — never flash it on re-focus
+      // Fetch fresh data from backend (leveraging Redis)
       loadCars({ initial: isFirstLoad });
     }, [loadCars])
   );

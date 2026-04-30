@@ -24,29 +24,17 @@ import {
 } from '../services/paymentService';
 import { formatPhoneNumber } from '../utils/phoneUtils';
 import StatusModal from '../ui/StatusModal';
-import { addPaymentMethodScreenCache } from '../utils/screenDataCache';
 import AppLoader from "../ui/AppLoader";
 
 export default function AddPaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
-  const [savedMethods, setSavedMethods] = useState(() =>
-    addPaymentMethodScreenCache.savedMethods.length > 0
-      ? addPaymentMethodScreenCache.savedMethods.map((m) => ({ ...m }))
-      : []
-  );
-
-  // Show the form immediately only when there are no saved methods yet
-  const [showForm, setShowForm] = useState(
-    () => addPaymentMethodScreenCache.savedMethods.length === 0
-  );
-
+  const [savedMethods, setSavedMethods] = useState([]);
+  const [showForm, setShowForm] = useState(true);
   const [mpesaForm, setMpesaForm] = useState({ name: '', mobileNumber: '', isDefault: false });
   const [mpesaErrors, setMpesaErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingMethods, setIsLoadingMethods] = useState(
-    () => !addPaymentMethodScreenCache.loadedOnce && addPaymentMethodScreenCache.savedMethods.length === 0
-  );
+  const [isLoadingMethods, setIsLoadingMethods] = useState(true);
   const fetchGenRef = useRef(0);
   const [statusModal, setStatusModal] = useState({ visible: false, type: 'success', title: '', message: '' });
 
@@ -143,8 +131,6 @@ export default function AddPaymentMethodScreen({ navigation }) {
             return null;
           })
           .filter(Boolean);
-        addPaymentMethodScreenCache.savedMethods = transformed;
-        addPaymentMethodScreenCache.loadedOnce = true;
         setSavedMethods(transformed);
         // Auto-hide form once methods are loaded
         if (transformed.length > 0) setShowForm(false);
@@ -158,7 +144,7 @@ export default function AddPaymentMethodScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      loadPaymentMethods({ silent: addPaymentMethodScreenCache.loadedOnce });
+      loadPaymentMethods();
     }, [loadPaymentMethods])
   );
 

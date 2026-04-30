@@ -58,41 +58,12 @@ export function getSessionId() {
 // ─── Cache objects ────────────────────────────────────────────────────────────
 
 /**
- * UX buffer for My Cars screen.
- * SENSITIVE — only use for instant display; always back with a live API call.
- */
-export const myListingsScreenCache = {
-  cars: null,
-  fetchedOnce: false,
-  cachedUserId: null,
-};
-
-export const messagesScreenCache = {
-  supportConversation: null,
-  clientConversations: [],
-  unreadCount: 0,
-  loadedOnce: false,
-};
-
-export const notificationsScreenCache = {
-  notifications: [],
-  loadedOnce: false,
-};
-
-export const addPaymentMethodScreenCache = {
-  savedMethods: [],
-  loadedOnce: false,
-};
-
-/** Keyed by bookingId. Entry shape: { mappedBooking, clientAvatar, timestamp } */
-export const activeBookingScreenCache = new Map();
-
-/**
  * Cache for PastBookingDetailScreen enrichment data.
  * Keyed by bookingId string.
  * Entry: { detailBooking, clientProfile, clientRatingSummary,
  *          vehicleImage, clientAvatar, carTrips, timestamp }
  * Past bookings are immutable so a 5-minute TTL is generous.
+ * This is kept because it's an infrequent page.
  */
 export const pastBookingDetailCache = new Map();
 export const PAST_BOOKING_DETAIL_TTL_MS = 5 * 60 * 1000;
@@ -100,22 +71,6 @@ export const PAST_BOOKING_DETAIL_TTL_MS = 5 * 60 * 1000;
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
 function _clearAllCaches() {
-  myListingsScreenCache.cars = null;
-  myListingsScreenCache.fetchedOnce = false;
-  myListingsScreenCache.cachedUserId = null;
-
-  messagesScreenCache.supportConversation = null;
-  messagesScreenCache.clientConversations = [];
-  messagesScreenCache.unreadCount = 0;
-  messagesScreenCache.loadedOnce = false;
-
-  notificationsScreenCache.notifications = [];
-  notificationsScreenCache.loadedOnce = false;
-
-  addPaymentMethodScreenCache.savedMethods = [];
-  addPaymentMethodScreenCache.loadedOnce = false;
-
-  activeBookingScreenCache.clear();
   pastBookingDetailCache.clear();
 }
 

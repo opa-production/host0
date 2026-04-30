@@ -9,7 +9,6 @@ import { getHostNotifications } from '../services/notificationService';
 import { getSupportConversation } from '../services/supportService';
 import { getHostConversations } from '../services/messageService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
-import { messagesScreenCache } from '../utils/screenDataCache';
 
 function SkeletonPulse({ style }) {
   const opacity = useRef(new Animated.Value(0.35)).current;
@@ -89,19 +88,11 @@ const skeletonStyles = StyleSheet.create({
 
 export default function MessagesScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [unreadCount, setUnreadCount] = useState(() => messagesScreenCache.unreadCount || 0);
-  const [supportConversation, setSupportConversation] = useState(
-    () => messagesScreenCache.supportConversation
-  );
-  const [isLoadingSupport, setIsLoadingSupport] = useState(() => !messagesScreenCache.loadedOnce);
-  const [clientConversations, setClientConversations] = useState(() =>
-    messagesScreenCache.loadedOnce
-      ? [...(messagesScreenCache.clientConversations || [])]
-      : []
-  );
-  const [isLoadingConversations, setIsLoadingConversations] = useState(
-    () => !messagesScreenCache.loadedOnce
-  );
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [supportConversation, setSupportConversation] = useState(null);
+  const [isLoadingSupport, setIsLoadingSupport] = useState(true);
+  const [clientConversations, setClientConversations] = useState([]);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const fetchGenerationRef = useRef(0);
 
@@ -139,17 +130,12 @@ export default function MessagesScreen({ navigation }) {
   const refreshMessagesData = useCallback(
     async ({ silent = false, isPullRefresh = false } = {}) => {
       const gen = ++fetchGenerationRef.current;
-      const showSectionSkeleton =
-        !silent && !isPullRefresh && !messagesScreenCache.loadedOnce;
-
+      
       if (isPullRefresh) setRefreshing(true);
-      if (showSectionSkeleton) {
+      if (!silent && !isPullRefresh) {
         setIsLoadingSupport(true);
         setIsLoadingConversations(true);
       }
-
-      const hadCachedConversations =
-        (messagesScreenCache.clientConversations?.length || 0) > 0;
 
       try {
         const [notifRes, supResult, convResult] = await Promise.all([
@@ -162,14 +148,12 @@ export default function MessagesScreen({ navigation }) {
 
         if (notifRes.success && notifRes.notifications) {
           const unread = notifRes.notifications.filter((n) => !n.isRead).length;
-          messagesScreenCache.unreadCount = unread;
           setUnreadCount(unread);
         } else {
-          messagesScreenCache.unreadCount = 0;
           setUnreadCount(0);
         }
 
-        let nextSupport = messagesScreenCache.supportConversation;
+        let nextSupport = null;
         if (supResult.success && supResult.messages) {
           const messages = supResult.messages || [];
           if (messages.length > 0) {
@@ -193,11 +177,8 @@ export default function MessagesScreen({ navigation }) {
               hasUnread: false,
             };
           }
-        } else if (!messagesScreenCache.loadedOnce) {
-          nextSupport = null;
         }
 
-        messagesScreenCache.supportConversation = nextSupport;
         setSupportConversation(nextSupport);
 
         if (convResult.success && convResult.conversations) {
@@ -242,27 +223,17 @@ export default function MessagesScreen({ navigation }) {
 
           if (gen !== fetchGenerationRef.current) return;
 
-          messagesScreenCache.clientConversations = mappedConversations;
           setClientConversations(mappedConversations);
-          const uc = convResult.unreadCount || 0;
-          messagesScreenCache.unreadCount = uc;
-          setUnreadCount(uc);
+          setUnreadCount(convResult.unreadCount || 0);
         } else {
-          if (!hadCachedConversations && !messagesScreenCache.loadedOnce) {
-            messagesScreenCache.clientConversations = [];
-            setClientConversations([]);
-          }
+          setClientConversations([]);
         }
       } catch (error) {
         console.error('Error loading messages screen data:', error);
         if (gen !== fetchGenerationRef.current) return;
-        if (!hadCachedConversations && !messagesScreenCache.loadedOnce) {
-          messagesScreenCache.clientConversations = [];
-          setClientConversations([]);
-        }
+        setClientConversations([]);
       } finally {
         if (gen === fetchGenerationRef.current) {
-          messagesScreenCache.loadedOnce = true;
           setIsLoadingSupport(false);
           setIsLoadingConversations(false);
           setRefreshing(false);
@@ -274,8 +245,7 @@ export default function MessagesScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      const silent = messagesScreenCache.loadedOnce;
-      refreshMessagesData({ silent });
+      refreshMessagesData();
     }, [refreshMessagesData])
   );
 

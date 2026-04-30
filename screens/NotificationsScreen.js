@@ -11,24 +11,17 @@ import AppLoader from "../ui/AppLoader";
 
 export default function NotificationsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [notifications, setNotifications] = useState(() => [
-    ...(notificationsScreenCache.notifications || []),
-  ]);
-  const [isLoading, setIsLoading] = useState(
-    () => !notificationsScreenCache.loadedOnce && (notificationsScreenCache.notifications || []).length === 0
-  );
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const fetchGenerationRef = useRef(0);
 
   const loadNotifications = useCallback(async ({ silent = false, isPullRefresh = false } = {}) => {
     const gen = ++fetchGenerationRef.current;
-    const cachedCount = (notificationsScreenCache.notifications || []).length;
-    const showFullLoader =
-      !silent && !isPullRefresh && !notificationsScreenCache.loadedOnce && cachedCount === 0;
-
+    
     if (isPullRefresh) setIsRefreshing(true);
-    if (showFullLoader) setIsLoading(true);
+    if (!silent && !isPullRefresh) setIsLoading(true);
     if (!silent) setError(null);
 
     try {
@@ -37,23 +30,17 @@ export default function NotificationsScreen({ navigation }) {
 
       if (result.success) {
         const list = result.notifications || [];
-        notificationsScreenCache.notifications = list;
-        notificationsScreenCache.loadedOnce = true;
         setNotifications(list);
         setError(null);
       } else {
-        if (!notificationsScreenCache.loadedOnce) {
-          setError(result.error || 'Failed to load notifications');
-          setNotifications([]);
-        }
+        setError(result.error || 'Failed to load notifications');
+        setNotifications([]);
       }
     } catch (err) {
       console.error('Error loading notifications:', err);
       if (gen !== fetchGenerationRef.current) return;
-      if (!notificationsScreenCache.loadedOnce) {
-        setError('An unexpected error occurred');
-        setNotifications([]);
-      }
+      setError('An unexpected error occurred');
+      setNotifications([]);
     } finally {
       if (gen === fetchGenerationRef.current) {
         setIsLoading(false);
@@ -64,8 +51,7 @@ export default function NotificationsScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      const silent = notificationsScreenCache.loadedOnce;
-      loadNotifications({ silent });
+      loadNotifications();
     }, [loadNotifications])
   );
 
@@ -80,16 +66,13 @@ export default function NotificationsScreen({ navigation }) {
             const next = prevNotifications.map((n) =>
               n.id === notification.id ? { ...n, isRead: true } : n
             );
-            notificationsScreenCache.notifications = next;
             return next;
           });
         } else {
           console.error('Failed to mark notification as read:', result.error);
-          // Don't show error to user, just log it
         }
       } catch (error) {
         console.error('Error marking notification as read:', error);
-        // Don't show error to user, just log it
       }
     }
   };

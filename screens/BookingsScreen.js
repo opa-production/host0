@@ -126,14 +126,10 @@ export default function BookingsScreen({ navigation }) {
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const bookingsRef = useRef([]);
   const fetchGenerationRef = useRef(0);
   const hasFetchedOnceRef = useRef(false);
   const fetchingRef = useRef(false);
 
-  useEffect(() => {
-    bookingsRef.current = bookings;
-  }, [bookings]);
   const formatDate = (dateString) => {
     if (!dateString) return '';
     try {
@@ -209,44 +205,25 @@ export default function BookingsScreen({ navigation }) {
         );
         const userId = await getUserId();
 
-        // Build a lookup of already-loaded images/extensions so re-focus
-        // refreshes don't repeat the N+1 Supabase/extension fetches
-        const cachedById = {};
-        for (const b of bookingsRef.current) {
-          cachedById[b.bookingId || b.id] = b;
-        }
-
         const mappedBookings = await Promise.all(
           activeBookings.map(async (booking) => {
-            const cacheKey = booking.booking_id || booking.id;
-            const cached = cachedById[cacheKey];
-
-            // Always resolve images from Supabase by car_id — the booking API's
-            // car_image_urls can point to the wrong car, so we ignore them.
-            // Reuse the cached result if available to avoid redundant fetches.
+            // Resolve images from Supabase by car_id
             let carImageUrls = [];
-            if (cached?.carImageUrls?.length > 0) {
-              carImageUrls = cached.carImageUrls;
-            } else if (booking.car_id && userId) {
+            if (booking.car_id && userId) {
               const imageResult = await fetchCarImagesFromSupabase(booking.car_id, userId);
               if (imageResult.images?.length > 0) carImageUrls = imageResult.images;
             }
 
-            // Re-fetch extensions only if status changed or not yet cached
+            // Fetch extensions for active/confirmed bookings
             const statusLower = (booking.status || '').toLowerCase();
             let pendingExtension = null;
             if (statusLower === 'confirmed' || statusLower === 'active') {
-              const statusChanged = cached?.status !== booking.status;
-              if (!cached || statusChanged) {
-                try {
-                  const extResult = await getBookingExtensions(booking.booking_id || booking.id);
-                  if (extResult.success && extResult.extensions?.length > 0) {
-                    pendingExtension = extResult.extensions.find(e => e.status === 'pending_host_approval') || null;
-                  }
-                } catch (_) {}
-              } else {
-                pendingExtension = cached.pendingExtension ?? null;
-              }
+              try {
+                const extResult = await getBookingExtensions(booking.booking_id || booking.id);
+                if (extResult.success && extResult.extensions?.length > 0) {
+                  pendingExtension = extResult.extensions.find(e => e.status === 'pending_host_approval') || null;
+                }
+              } catch (_) {}
             }
 
             return {

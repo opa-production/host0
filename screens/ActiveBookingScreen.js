@@ -12,7 +12,6 @@ import { fetchCarImagesFromSupabase } from '../services/carService';
 import { fetchClientAvatarFromSupabase } from '../services/mediaService';
 import { getUserId } from '../utils/userStorage';
 import { getBookingExtensions, approveExtension, rejectExtension } from '../services/extensionService';
-import { activeBookingScreenCache } from '../utils/screenDataCache';
 import AppLoader from "../ui/AppLoader";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -229,15 +228,6 @@ export default function ActiveBookingScreen({ navigation, route }) {
       return;
     }
 
-    const cacheKey = String(bookingId);
-    if (!bypassCache && activeBookingScreenCache.has(cacheKey)) {
-      const entry = activeBookingScreenCache.get(cacheKey);
-      setBooking(entry.mappedBooking);
-      setClientAvatar(entry.clientAvatar ?? null);
-      setIsLoading(false);
-      return;
-    }
-
     if (!silent) {
       setIsLoading(true);
     }
@@ -248,23 +238,16 @@ export default function ActiveBookingScreen({ navigation, route }) {
         
         // Fetch car images from Supabase if not provided by API
         let vehicleImages = bookingData.car_image_urls || [];
-        console.log('🚗 [ActiveBooking] Initial vehicleImages from API:', vehicleImages.length);
-        console.log('🚗 [ActiveBooking] car_id:', bookingData.car_id);
         
         if (vehicleImages.length === 0 && bookingData.car_id) {
           const userId = await getUserId();
-          console.log('🚗 [ActiveBooking] Fetching from Supabase, userId:', userId);
           if (userId) {
             const imageResult = await fetchCarImagesFromSupabase(bookingData.car_id, userId);
-            console.log('🚗 [ActiveBooking] Supabase image result:', imageResult.images?.length || 0);
             if (imageResult.images && imageResult.images.length > 0) {
               vehicleImages = imageResult.images;
-              console.log('🚗 [ActiveBooking] Using Supabase images:', vehicleImages.length);
             }
           }
         }
-        
-        console.log('🚗 [ActiveBooking] Final vehicleImages:', vehicleImages.length, vehicleImages[0]);
         
         // Fetch client avatar from API response or Supabase
         let clientAvatarUrl = bookingData.client_avatar_url 
@@ -275,12 +258,10 @@ export default function ActiveBookingScreen({ navigation, route }) {
         
         // If no avatar from API, fetch from Supabase
         if (!clientAvatarUrl && bookingData.client_id) {
-          console.log('👤 [ActiveBooking] Fetching client avatar from Supabase for client_id:', bookingData.client_id);
           clientAvatarUrl = await fetchClientAvatarFromSupabase(bookingData.client_id);
-          console.log('👤 [ActiveBooking] Client avatar result:', clientAvatarUrl ? 'Found' : 'Not found');
         }
 
-        // Fetch client profile (trips_count, average_rating, full_name, avatar_url, email) from API
+        // Fetch client profile from API
         let clientProfile = null;
         if (bookingData.client_id) {
           const profileResult = await getHostClientProfile(bookingData.client_id);
@@ -356,20 +337,14 @@ export default function ActiveBookingScreen({ navigation, route }) {
           createdAt: bookingData.created_at,
         };
 
-        activeBookingScreenCache.set(cacheKey, {
-          mappedBooking,
-          clientAvatar: clientAvatarUrl ?? null,
-        });
         setBooking(mappedBooking);
       } else {
         setBooking(null);
-        activeBookingScreenCache.delete(cacheKey);
       }
     } catch (error) {
       console.error('Error loading booking details:', error);
       if (!silent) {
         setBooking(null);
-        activeBookingScreenCache.delete(cacheKey);
       }
     } finally {
       if (!silent) {
@@ -416,14 +391,6 @@ export default function ActiveBookingScreen({ navigation, route }) {
         // for a moment even with Cache-Control: no-cache on some CDN layers).
         const optimisticStatus = 'active';
         setBooking((prev) => prev ? { ...prev, status: optimisticStatus } : prev);
-        const cacheKey = String(bookingId);
-        if (activeBookingScreenCache.has(cacheKey)) {
-          const entry = activeBookingScreenCache.get(cacheKey);
-          activeBookingScreenCache.set(cacheKey, {
-            ...entry,
-            mappedBooking: { ...entry.mappedBooking, status: optimisticStatus },
-          });
-        }
         // Then reload to sync full state (extensions, updated timestamps, etc.)
         loadBookingDetails({ bypassCache: true, silent: true });
       } else {
