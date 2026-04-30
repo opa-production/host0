@@ -199,11 +199,26 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
   };
 
   const canProceed = () => {
+    // 1. Must have cover photo and at least 4 gallery images
+    const hasEnoughImages = 
+      formData.coverPhoto !== null && 
+      formData.images.length >= 4;
+    
+    if (!hasEnoughImages) return false;
+
+    // 2. All selected images MUST be uploaded (have a remote URL)
+    const coverUploaded = !!formData.coverPhotoUrl;
+    const galleryCount = formData.images.length;
+    const galleryUploadedCount = formData.imageUrls ? formData.imageUrls.length : 0;
+    
+    // Check if the video (if selected) is uploaded
+    const videoSelectionActive = !!formData.video;
+    const videoUploaded = !videoSelectionActive || !!formData.videoUrl;
+
     return (
-      formData.coverPhoto !== null &&
-      formData.coverPhoto !== undefined &&
-      formData.coverPhoto !== '' &&
-      formData.images.length >= 4 &&
+      coverUploaded && 
+      galleryUploadedCount >= galleryCount && 
+      videoUploaded &&
       !isUploadingAny
     );
   };
