@@ -271,32 +271,38 @@ export default function HostVehicleScreen({ navigation, route }) {
       try {
         const currentCarId = carId || formData.carId;
         const uploadResults = {
-          coverPhoto: null,
-          images: [],
-          video: null,
+          coverPhoto: formData.coverPhotoUrl || null,
+          images: formData.imageUrls || [],
+          video: formData.videoUrl || null,
         };
 
-        // Upload images (cover photo + additional images)
-        // Cover photo should be first in the array
-        console.log('📸 [Media Upload] Starting images upload...');
-        const allImages = [formData.coverPhoto, ...formData.images];
-        const imagesResult = await uploadVehicleImages(
-          allImages.map((uri, index) => ({
-            uri: uri,
-            name: `image_${currentCarId}_${index}.jpg`,
-            type: 'image/jpeg',
-          })),
-          currentCarId
-        );
-        
-        if (!imagesResult.success) {
-          throw new Error(`Images upload failed: ${imagesResult.error}`);
+        // If any media is missing its uploaded URL, upload it now
+        if (!uploadResults.coverPhoto || uploadResults.images.length < formData.images.length) {
+          console.log('📸 [Media Upload] Some media not uploaded yet, starting remaining uploads...');
+          
+          // Identify which images need uploading
+          // For simplicity, if we don't have all imageUrls, we re-upload everything that's not in imageUrls
+          // But wait, it's easier to just re-upload everything if we are missing any, 
+          // OR better: check if we have enough URLs.
+          
+          if (!uploadResults.coverPhoto || uploadResults.images.length < formData.images.length) {
+            const allImages = [formData.coverPhoto, ...formData.images];
+            const imagesResult = await uploadVehicleImages(
+              allImages.map((uri, index) => ({
+                uri: uri,
+                name: `image_${currentCarId}_${index}.jpg`,
+                type: 'image/jpeg',
+              })),
+              currentCarId
+            );
+            
+            if (!imagesResult.success) {
+              throw new Error(`Images upload failed: ${imagesResult.error}`);
+            }
+            uploadResults.images = imagesResult.urls || [];
+            uploadResults.coverPhoto = uploadResults.images[0] || null;
+          }
         }
-        uploadResults.images = imagesResult.urls || [];
-        // First image is the cover photo
-        uploadResults.coverPhoto = uploadResults.images[0] || null;
-        console.log('📸 [Media Upload] Images uploaded:', uploadResults.images.length);
-        console.log('📸 [Media Upload] Cover photo URL:', uploadResults.coverPhoto);
 
         // Save image URLs to backend database
         console.log('💾 [Media Upload] Saving image URLs to backend...');
@@ -304,19 +310,15 @@ export default function HostVehicleScreen({ navigation, route }) {
           currentCarId,
           uploadResults.coverPhoto,
           uploadResults.images,
-          null // Video will be saved separately if provided
+          uploadResults.video // Video will be saved separately if provided
         );
 
         if (!saveUrlsResult.success) {
           console.warn('⚠️ [Media Upload] Failed to save URLs to backend:', saveUrlsResult.error);
-          // Don't block progress - URLs are in Supabase, backend save is for optimization
-          // User can still proceed, but images won't be in backend database
-        } else {
-          console.log('✅ [Media Upload] Image URLs saved to backend successfully');
         }
 
-        // Upload video if provided
-        if (formData.video) {
+        // Upload video if provided and not yet uploaded
+        if (formData.video && !uploadResults.video) {
           console.log('📹 [Media Upload] Starting video upload...');
           const videoResult = await uploadVehicleVideo({
             uri: formData.video,
@@ -326,24 +328,16 @@ export default function HostVehicleScreen({ navigation, route }) {
           
           if (!videoResult.success) {
             console.warn('⚠️ [Media Upload] Video upload failed:', videoResult.error);
-            // Don't block progress if video fails
           } else {
             uploadResults.video = videoResult.url;
-            console.log('📹 [Media Upload] Video uploaded:', videoResult.url);
             
-            // Update video URL in backend if images were already saved
-            if (saveUrlsResult.success) {
-              console.log('💾 [Media Upload] Updating video URL in backend...');
-              const updateVideoResult = await saveVehicleImageUrls(
-                currentCarId,
-                uploadResults.coverPhoto,
-                uploadResults.images,
-                uploadResults.video
-              );
-              if (!updateVideoResult.success) {
-                console.warn('⚠️ [Media Upload] Failed to update video URL in backend:', updateVideoResult.error);
-              }
-            }
+            // Update video URL in backend
+            await saveVehicleImageUrls(
+              currentCarId,
+              uploadResults.coverPhoto,
+              uploadResults.images,
+              uploadResults.video
+            );
           }
         }
 
@@ -354,7 +348,7 @@ export default function HostVehicleScreen({ navigation, route }) {
           videoUrl: uploadResults.video,
         });
 
-        console.log('✅ [Media Upload] All media uploaded successfully');
+        console.log('✅ [Media Upload] All media handled successfully');
         setCurrentStep(5);
       } catch (error) {
         console.error('❌ [Media Upload] Error uploading media:', error);
@@ -452,42 +446,22 @@ export default function HostVehicleScreen({ navigation, route }) {
         return;
       }
       
-      // Step 4: Handle media upload if images exist
-      if (formData.images && formData.images.length > 0) {
-        let uploadedImageUrls = [];
-        let uploadedVideoUrl = null;
+      // Step 4: Handle media upload if not already done
+      const coverUrl = formData.coverPhotoUrl || (formData.imageUrls && formData.imageUrls[0]) || null;
+      const imageUrls = formData.imageUrls || [];
+      const videoUrl = formData.videoUrl || null;
+      
+      if (imageUrls.length > 0) {
+        console.log('💾 [Submit] Saving media URLs to backend...');
+        const mediaResult = await saveVehicleImageUrls(
+          currentCarId,
+          coverUrl,
+          imageUrls,
+          videoUrl
+        );
         
-        // Upload images
-        for (const image of formData.images) {
-          if (image.uri) {
-            const uploadResult = await uploadVehicleImages(image.uri, currentCarId);
-            if (uploadResult.success && uploadResult.url) {
-              uploadedImageUrls.push(uploadResult.url);
-            }
-          }
-        }
-        
-        // Upload video if exists
-        if (formData.video && formData.video.uri) {
-          const videoUploadResult = await uploadVehicleVideo(formData.video.uri, currentCarId);
-          if (videoUploadResult.success && videoUploadResult.url) {
-            uploadedVideoUrl = videoUploadResult.url;
-          }
-        }
-        
-        // Save image URLs to backend
-        if (uploadedImageUrls.length > 0) {
-          const mediaResult = await saveVehicleImageUrls(
-            currentCarId,
-            uploadedImageUrls[0], // cover image
-            uploadedImageUrls,   // all images
-            uploadedVideoUrl     // video (optional)
-          );
-          
-          if (!mediaResult.success) {
-            console.warn('Failed to save image URLs:', mediaResult.error);
-            // Don't fail the entire process if media upload fails
-          }
+        if (!mediaResult.success) {
+          console.warn('⚠️ [Submit] Failed to save image URLs:', mediaResult.error);
         }
       }
       
@@ -575,6 +549,7 @@ export default function HostVehicleScreen({ navigation, route }) {
             formData={formData}
             onBack={prevStep}
             onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
           />
         );
       default:

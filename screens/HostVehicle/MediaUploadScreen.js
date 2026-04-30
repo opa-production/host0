@@ -23,8 +23,66 @@ import AppLoader from "../../ui/AppLoader";
 
 export default function MediaUploadScreen({ formData, updateFormData, onNext, onBack, onSubmit, isSubmitting }) {
   const insets = useSafeAreaInsets();
-  const [uploading, setUploading] = useState(false);
-  const isUploading = isSubmitting || uploading;
+  const [uploadingAssets, setUploadingAssets] = useState({}); // { uri: boolean }
+  const [uploadErrors, setUploadErrors] = useState({}); // { uri: string }
+  
+  const isUploadingAny = Object.values(uploadingAssets).some(v => v === true);
+  const isUploading = isSubmitting || isUploadingAny;
+
+  const handleUpload = async (uri, type, isCover = false) => {
+    if (!uri || !formData.carId) return;
+
+    setUploadingAssets(prev => ({ ...prev, [uri]: true }));
+    setUploadErrors(prev => ({ ...prev, [uri]: null }));
+
+    try {
+      if (type === 'image') {
+        const result = await uploadVehicleImages([{
+          uri: uri,
+          name: isCover ? `cover_${formData.carId}.jpg` : `image_${formData.carId}_${Date.now()}.jpg`,
+          type: 'image/jpeg',
+        }], formData.carId);
+
+        if (result.success && result.urls && result.urls.length > 0) {
+          const uploadedUrl = result.urls[0];
+          if (isCover) {
+            updateFormData({ coverPhotoUrl: uploadedUrl });
+          } else {
+            const currentUrls = formData.imageUrls || [];
+            // We need to match the uploaded URL with the local URI
+            // Since we upload one by one here, it's the first one in result.urls
+            // We should store a mapping or just append to imageUrls
+            // To keep it simple and robust, let's store them in an object mapping uri -> url
+            const newImageUrlsMap = { ...(formData.imageUrlsMap || {}), [uri]: uploadedUrl };
+            updateFormData({ 
+              imageUrlsMap: newImageUrlsMap,
+              // Also keep the array for backward compatibility/simplicity in other screens
+              imageUrls: Object.values(newImageUrlsMap) 
+            });
+          }
+        } else {
+          throw new Error(result.error || 'Upload failed');
+        }
+      } else if (type === 'video') {
+        const result = await uploadVehicleVideo({
+          uri: uri,
+          name: `video_${formData.carId}.mp4`,
+          type: 'video/mp4',
+        }, formData.carId);
+
+        if (result.success && result.url) {
+          updateFormData({ videoUrl: result.url });
+        } else {
+          throw new Error(result.error || 'Upload failed');
+        }
+      }
+    } catch (error) {
+      console.error(`Upload error for ${type}:`, error);
+      setUploadErrors(prev => ({ ...prev, [uri]: error.message }));
+    } finally {
+      setUploadingAssets(prev => ({ ...prev, [uri]: false }));
+    }
+  };
 
   const pickCoverPhoto = async () => {
     try {
@@ -41,7 +99,9 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        updateFormData({ coverPhoto: result.assets[0].uri });
+        const uri = result.assets[0].uri;
+        updateFormData({ coverPhoto: uri });
+        handleUpload(uri, 'image', true);
       }
     } catch (error) {
       console.error('Error picking cover photo:', error);
@@ -79,6 +139,9 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
         const newImages = result.assets.map(asset => asset.uri);
         const updatedImages = [...formData.images, ...newImages].slice(0, 12);
         updateFormData({ images: updatedImages });
+        
+        // Trigger background uploads for new images
+        newImages.forEach(uri => handleUpload(uri, 'image', false));
       }
     } catch (error) {
       console.error('Error picking images:', error);
@@ -108,6 +171,7 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
           return;
         }
         updateFormData({ video: videoAsset.uri });
+        handleUpload(videoAsset.uri, 'video');
       }
     } catch (error) {
       console.error('Error picking video:', error);
@@ -116,12 +180,22 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
   };
 
   const removeImage = (index) => {
+    const uriToRemove = formData.images[index];
     const newImages = formData.images.filter((_, i) => i !== index);
-    updateFormData({ images: newImages });
+    
+    // Also remove from imageUrlsMap if it exists
+    const newImageUrlsMap = { ...(formData.imageUrlsMap || {}) };
+    delete newImageUrlsMap[uriToRemove];
+    
+    updateFormData({ 
+      images: newImages,
+      imageUrlsMap: newImageUrlsMap,
+      imageUrls: Object.values(newImageUrlsMap)
+    });
   };
 
   const removeVideo = () => {
-    updateFormData({ video: null });
+    updateFormData({ video: null, videoUrl: null });
   };
 
   const canProceed = () => {
@@ -129,7 +203,8 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
       formData.coverPhoto !== null &&
       formData.coverPhoto !== undefined &&
       formData.coverPhoto !== '' &&
-      formData.images.length >= 4
+      formData.images.length >= 4 &&
+      !isUploadingAny
     );
   };
 
@@ -148,9 +223,23 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
         {formData.coverPhoto ? (
           <View style={styles.coverPhotoContainer}>
             <Image source={{ uri: formData.coverPhoto }} style={styles.coverPhoto} />
+            {uploadingAssets[formData.coverPhoto] && (
+              <View style={styles.overlayLoader}>
+                <AppLoader size="small" color="#ffffff" />
+              </View>
+            )}
+            {uploadErrors[formData.coverPhoto] && (
+              <TouchableOpacity 
+                style={styles.errorOverlay}
+                onPress={() => handleUpload(formData.coverPhoto, 'image', true)}
+              >
+                <Ionicons name="refresh" size={24} color="#ffffff" />
+                <Text style={styles.errorText}>Retry</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.removeCoverButton}
-              onPress={() => updateFormData({ coverPhoto: null })}
+              onPress={() => updateFormData({ coverPhoto: null, coverPhotoUrl: null })}
               activeOpacity={1}
             >
               <Ionicons name="close-circle" size={28} color={COLORS.brand} />
@@ -183,6 +272,19 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
           {formData.images.map((uri, index) => (
             <View key={index} style={styles.imageContainer}>
               <Image source={{ uri }} style={styles.image} />
+              {uploadingAssets[uri] && (
+                <View style={styles.overlayLoader}>
+                  <AppLoader size="small" color="#ffffff" />
+                </View>
+              )}
+              {uploadErrors[uri] && (
+                <TouchableOpacity 
+                  style={styles.errorOverlay}
+                  onPress={() => handleUpload(uri, 'image', false)}
+                >
+                  <Ionicons name="refresh" size={20} color="#ffffff" />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 style={styles.removeButton}
                 onPress={() => removeImage(index)}
@@ -216,7 +318,22 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
           <View style={styles.videoContainer}>
             <View style={styles.videoPlaceholder}>
               <Ionicons name="videocam" size={48} color={COLORS.subtle} />
-              <Text style={styles.videoText}>Video Selected</Text>
+              {uploadingAssets[formData.video] ? (
+                <View style={styles.videoUploadStatus}>
+                  <AppLoader size="small" color={COLORS.brand} />
+                  <Text style={styles.videoText}>Uploading...</Text>
+                </View>
+              ) : uploadErrors[formData.video] ? (
+                <TouchableOpacity 
+                  style={styles.videoUploadStatus}
+                  onPress={() => handleUpload(formData.video, 'video')}
+                >
+                  <Ionicons name="refresh" size={20} color={COLORS.error} />
+                  <Text style={[styles.videoText, { color: COLORS.error }]}>Retry Upload</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={styles.videoText}>Video Selected & Uploaded</Text>
+              )}
             </View>
             <TouchableOpacity
               style={styles.removeVideoButton}
@@ -259,7 +376,9 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
             {isUploading ? (
               <>
                 <AppLoader size="small" color="#ffffff" style={styles.nextSpinner} />
-                <Text style={styles.nextButtonText}>Uploading…</Text>
+                <Text style={styles.nextButtonText}>
+                  {isUploadingAny ? 'Uploading…' : 'Processing…'}
+                </Text>
               </>
             ) : (
               <Text style={styles.nextButtonText}>Next</Text>
@@ -458,6 +577,32 @@ const styles = StyleSheet.create({
   },
   buttonDisabledText: {
     color: COLORS.subtle,
+  },
+  overlayLoader: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: RADIUS.card - 4,
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: RADIUS.card - 4,
+  },
+  errorText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontFamily: 'Nunito-Bold',
+    marginTop: 4,
+  },
+  videoUploadStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
   },
 });
 

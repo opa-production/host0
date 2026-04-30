@@ -10,8 +10,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../../ui/tokens';
+import AppLoader from "../../ui/AppLoader";
 
-export default function ReviewScreen({ formData, onBack, onSubmit }) {
+export default function ReviewScreen({ formData, onBack, onSubmit, isSubmitting }) {
   const insets = useSafeAreaInsets();
 
   const ReviewSection = ({ title, children }) => (
@@ -156,8 +157,17 @@ export default function ReviewScreen({ formData, onBack, onSubmit }) {
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.submitButton} onPress={onSubmit} activeOpacity={0.9}>
-          <Text style={styles.submitButtonText}>Finish</Text>
+        <TouchableOpacity 
+          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]} 
+          onPress={onSubmit} 
+          disabled={isSubmitting}
+          activeOpacity={0.9}
+        >
+          {isSubmitting ? (
+            <AppLoader size="small" color="#ffffff" />
+          ) : (
+            <Text style={styles.submitButtonText}>Finish</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -347,6 +357,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     borderRadius: 16,
     padding: 18,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#cccccc',
   },
   submitButtonText: {
     fontSize: 16,
