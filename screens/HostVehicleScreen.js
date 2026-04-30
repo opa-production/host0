@@ -34,7 +34,7 @@ export default function HostVehicleScreen({ navigation, route }) {
   const existingCarId = route?.params?.carId;
   
   const [currentStep, setCurrentStep] = useState(() =>
-    existingCar ? getInitialStep() : 0
+    existingCar ? 1 : 0
   );
   const [carId, setCarId] = useState(existingCarId || existingCar?.carId || existingCar?.id || null);
   const [isSubmitting, setIsSubmitting] = useState(false);

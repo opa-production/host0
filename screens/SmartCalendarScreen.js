@@ -411,7 +411,7 @@ export default function SmartCalendarScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Car selector */}
-        <View style={styles.section}>
+        <View style={styles.card}>
           <Text style={styles.sectionLabel}>Vehicle</Text>
           {isLoadingCars ? (
             <View style={styles.loaderRow}>
@@ -429,10 +429,8 @@ export default function SmartCalendarScreen({ navigation }) {
           )}
         </View>
 
-        <View style={styles.hairline} />
-
         {/* Calendar */}
-        <View style={styles.section}>
+        <View style={styles.card}>
           <View style={styles.monthRow}>
             <TouchableOpacity style={styles.monthNavBtn} onPress={() => shiftMonth(-1)} activeOpacity={0.8}>
               <Ionicons name="chevron-back" size={18} color={COLORS.text} />
@@ -529,10 +527,8 @@ export default function SmartCalendarScreen({ navigation }) {
           <Text style={styles.hint}>Tap a start date, then tap an end date to select a range.</Text>
         </View>
 
-        <View style={styles.hairline} />
-
         {/* Booking settings */}
-        <View style={styles.section}>
+        <View style={styles.card}>
           <Text style={styles.sectionLabel}>Booking Settings</Text>
 
           <View style={styles.settingRow}>
@@ -584,10 +580,8 @@ export default function SmartCalendarScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.hairline} />
-
         {/* Blocked dates */}
-        <View style={[styles.section, { paddingBottom: SPACING.xl }]}>
+        <View style={styles.card}>
           <Text style={styles.sectionLabel}>Blocked Dates</Text>
           {!selectedCarId ? (
             <Text style={styles.hint}>Select a car to view blocked dates.</Text>
@@ -701,9 +695,14 @@ const styles = StyleSheet.create({
   },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { ...TYPE.section, fontSize: 16, color: COLORS.text },
-  content: { paddingBottom: SPACING.xl },
-  hairline: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(0,0,0,0.12)', marginHorizontal: SPACING.l },
-  section: { paddingHorizontal: SPACING.l, paddingVertical: SPACING.m },
+  content: { paddingHorizontal: SPACING.l, paddingBottom: SPACING.xl, gap: SPACING.m },
+  card: {
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.18)',
+    borderRadius: 14,
+    padding: SPACING.m,
+    backgroundColor: COLORS.bg,
+  },
   sectionLabel: {
     ...TYPE.micro,
     fontSize: 11,

@@ -198,29 +198,12 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
     updateFormData({ video: null, videoUrl: null });
   };
 
+  const uploadedCount = formData.images.reduce(
+    (n, uri) => n + (formData.imageUrlsMap?.[uri] ? 1 : 0), 0
+  );
+
   const canProceed = () => {
-    // 1. Must have cover photo and at least 4 gallery images
-    const hasEnoughImages = 
-      formData.coverPhoto !== null && 
-      formData.images.length >= 4;
-    
-    if (!hasEnoughImages) return false;
-
-    // 2. All selected images MUST be uploaded (have a remote URL)
-    const coverUploaded = !!formData.coverPhotoUrl;
-    const galleryCount = formData.images.length;
-    const galleryUploadedCount = formData.imageUrls ? formData.imageUrls.length : 0;
-    
-    // Check if the video (if selected) is uploaded
-    const videoSelectionActive = !!formData.video;
-    const videoUploaded = !videoSelectionActive || !!formData.videoUrl;
-
-    return (
-      coverUploaded && 
-      galleryUploadedCount >= galleryCount && 
-      videoUploaded &&
-      !isUploadingAny
-    );
+    return formData.coverPhoto !== null && formData.images.length >= 4;
   };
 
   return (
@@ -375,28 +358,30 @@ export default function MediaUploadScreen({ formData, updateFormData, onNext, on
           <TouchableOpacity
             style={styles.backButton}
             onPress={onBack}
-            disabled={isUploading}
+            disabled={isSubmitting}
             activeOpacity={0.9}
           >
-            <Ionicons name="arrow-back" size={20} color={isUploading ? COLORS.subtle : COLORS.text} />
-            <Text style={[styles.backButtonText, isUploading && styles.buttonDisabledText]}>Back</Text>
+            <Ionicons name="arrow-back" size={20} color={isSubmitting ? COLORS.subtle : COLORS.text} />
+            <Text style={[styles.backButtonText, isSubmitting && styles.buttonDisabledText]}>Back</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.nextButton, (!canProceed() || isUploading) && styles.nextButtonDisabled]}
+            style={[styles.nextButton, (!canProceed() || isSubmitting) && styles.nextButtonDisabled]}
             onPress={onSubmit || onNext}
-            disabled={!canProceed() || isUploading}
+            disabled={!canProceed() || isSubmitting}
             activeOpacity={0.9}
           >
-            {isUploading ? (
+            {isSubmitting ? (
               <>
                 <AppLoader size="small" color="#ffffff" style={styles.nextSpinner} />
-                <Text style={styles.nextButtonText}>
-                  {isUploadingAny ? 'Uploading…' : 'Processing…'}
-                </Text>
+                <Text style={styles.nextButtonText}>Processing…</Text>
               </>
             ) : (
-              <Text style={styles.nextButtonText}>Next</Text>
+              <Text style={styles.nextButtonText}>
+                {isUploadingAny
+                  ? `Next  (${uploadedCount}/${formData.images.length} saved)`
+                  : 'Next'}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
